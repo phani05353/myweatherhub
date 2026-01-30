@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import requests
 from datetime import datetime
+import pytz
 from suntime import Sun
 
 app = Flask(__name__)
@@ -57,17 +58,25 @@ def get_weather_data(lat, lon):
 
         current = hourly_resp['properties']['periods'][0]
         temp = current['temperature']
-        humid = current.get('relativeHumidity', {}).get('value') or 50
         
-        # Parse wind speed (Handle "7 mph" or "Calm")
-        wind_str = str(current.get('windSpeed', '0')).split(' ')[0]
+        humid_data = current.get('relativeHumidity', {})
+        humid = humid_data.get('value') if (humid_data and humid_data.get('value') is not None) else 50
+        
+        wind_raw = str(current.get('windSpeed', '0')).lower()
+        if 'to' in wind_raw:
+            wind_str = wind_raw.split('to')[-1].strip().split(' ')[0]
+        else:
+            wind_str = wind_raw.split(' ')[0]
         wind_val = float(wind_str) if wind_str.replace('.','',1).isdigit() else 0
         
-        # Pressure conversions
         raw_p = obs_data.get('barometricPressure', {}).get('value')
         pressure_inhg = round(raw_p * 0.0002953, 2) if raw_p else "N/A"
 
         sun = Sun(lat_f, lon_f)
+        eastern_tz = pytz.timezone('US/Eastern')
+        sunrise_local = sun.get_sunrise_time().astimezone(eastern_tz)
+        sunset_local = sun.get_sunset_time().astimezone(eastern_tz)
+
         env_data = get_env_data(lat_f, lon_f)
 
         daily_forecasts = []
@@ -95,10 +104,10 @@ def get_weather_data(lat, lon):
             "hourly": hourly_resp['properties']['periods'][:24],
             "alerts": active_alerts,
             "sun": {
-                "sunrise": sun.get_local_sunrise_time().strftime("%I:%M %p"),
-                "sunset": sun.get_local_sunset_time().strftime("%I:%M %p")
+                "sunrise": sunrise_local.strftime("%I:%M %p"),
+                "sunset": sunset_local.strftime("%I:%M %p")
             },
-            "updated": datetime.now().strftime("%I:%M %p"),
+            "updated": datetime.now(eastern_tz).strftime("%I:%M %p"),
             "lat": lat_f, "lon": lon_f
         }
     except Exception as e:

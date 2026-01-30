@@ -14,14 +14,14 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --glass: rgba(0, 0, 0, 0.45);
+            --glass: rgba(255, 255, 255, 0.05);
             --bg-color: #0f111a;
             --card-bg: #1a1d29;
             --accent: #70a1ff;
         }
 
         [data-bs-theme="light"] {
-            --glass: rgba(255, 255, 255, 0.65);
+            --glass: rgba(0, 0, 0, 0.05);
             --bg-color: #f8f9fa;
             --card-bg: #ffffff;
             --accent: #0056b3;
@@ -30,29 +30,26 @@
         body {
             background-color: var(--bg-color) !important;
             font-family: system-ui, sans-serif;
-            padding: 10px 0;
+            padding: 0;
             overflow-x: hidden;
         }
 
         .main-card {
             background: var(--card-bg) !important;
-            border-radius: 28px;
+            border-radius: 0 0 28px 28px;
             overflow: hidden;
             box-shadow: 0 15px 45px rgba(0, 0, 0, 0.4);
             border: 1px solid rgba(128, 128, 128, 0.2);
             position: relative;
-            z-index: 1;
         }
 
-        /* Pill Toggle */
         .controls {
-            position: fixed;
+            position: absolute;
             top: 15px;
             right: 15px;
             z-index: 1050;
             display: flex;
             gap: 12px;
-            align-items: center;
         }
 
         .unit-pill {
@@ -63,214 +60,134 @@
             padding: 4px;
             border-radius: 50px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            width: 100px;
-            height: 42px;
+            width: 90px;
+            height: 38px;
         }
 
-        .unit-pill input {
-            display: none;
-        }
+        .unit-pill input { display: none; }
+        .unit-pill label { flex: 1; z-index: 2; text-align: center; line-height: 30px; font-size: 0.8rem; font-weight: 700; cursor: pointer; color: rgba(255, 255, 255, 0.5); transition: color 0.3s; }
+        .unit-pill input:checked+label { color: white; }
+        .pill-bg { position: absolute; top: 4px; left: 4px; width: 41px; height: 30px; background: var(--accent); border-radius: 50px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1; }
+        #c-unit:checked~.pill-bg { transform: translateX(41px); }
 
-        .unit-pill label {
-            flex: 1;
-            z-index: 2;
-            text-align: center;
-            line-height: 34px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            cursor: pointer;
-            color: rgba(255, 255, 255, 0.5);
-            transition: color 0.3s;
-        }
+        .btn-circle { width: 38px; height: 38px; border-radius: 50%; border: none; background: rgba(0,0,0,0.3); backdrop-filter: blur(10px); color: white; display: flex; align-items: center; justify-content: center; }
 
-        .unit-pill input:checked+label {
-            color: white;
-        }
-
-        .pill-bg {
-            position: absolute;
-            top: 4px;
-            left: 4px;
-            width: 46px;
-            height: 34px;
-            background: var(--accent);
-            border-radius: 50px;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 1;
-        }
-
-        #c-unit:checked~.pill-bg {
-            transform: translateX(46px);
-        }
-
-        .btn-circle {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            border: none;
-            background: var(--accent);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-
-        .header-bg {
-            position: relative;
-            height: 360px;
-            width: 100%;
-            overflow: hidden;
-        }
-
-        #dynamic-bg {
-            position: absolute;
-            inset: 0;
-            background-size: cover;
-            background-position: center;
-            z-index: 1;
-            transition: background 1s ease-in-out;
-        }
+        .header-bg { position: relative; height: 420px; width: 100%; overflow: hidden; }
+        #dynamic-bg { position: absolute; inset: 0; background-size: cover; background-position: center; transition: background 1s; }
 
         .header-content {
             position: relative;
             z-index: 5;
             height: 100%;
-            padding: 25px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
             color: white !important;
-            background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.85) 100%);
+            background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.8) 100%);
         }
 
-        .temp-display {
-            font-size: 4.8rem;
-            font-weight: 800;
-            line-height: 1;
-        }
+        .temp-display { font-size: 5.5rem; font-weight: 800; line-height: 0.9; }
 
-        .daily-row {
+        /* NEW SUNRISE/SUNSET UI */
+        .sun-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 15px;
+            margin-top: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+            justify-content: space-around;
+            text-align: center;
         }
+        .sun-item i { font-size: 1.5rem; color: #ffce00; display: block; margin-bottom: 5px; }
+        .sun-item span { font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; font-weight: 700; display: block; }
+        .sun-item b { font-size: 1.1rem; }
 
-        .temp-bar-container {
-            flex-grow: 1;
-            height: 4px;
-            background: rgba(128, 128, 128, 0.2);
-            border-radius: 2px;
-            margin: 0 15px;
-            position: relative;
-        }
-
-        .temp-bar-fill {
-            position: absolute;
-            height: 100%;
-            border-radius: 2px;
-            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
-        }
+        .daily-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(128, 128, 128, 0.1); }
+        .temp-bar-container { flex-grow: 1; height: 4px; background: rgba(128, 128, 128, 0.2); border-radius: 2px; margin: 0 15px; position: relative; }
+        .temp-bar-fill { position: absolute; height: 100%; border-radius: 2px; background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%); }
 
         .env-badge {
-            padding: 5px 14px;
-            border-radius: 20px;
+            padding: 6px 12px;
+            border-radius: 12px;
             font-size: 0.75rem;
             font-weight: 600;
-            margin-top: 8px;
-            display: inline-block;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            margin-right: 6px;
-            background: rgba(0, 0, 0, 0.25);
-            backdrop-filter: blur(5px);
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 4px;
         }
 
-        #loader {
-            position: absolute;
-            inset: 0;
-            background: var(--card-bg);
-            z-index: 2000;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .chart-wrapper {
-            height: 320px;
-            width: 100%;
-            padding: 15px 0;
-        }
+        #loader { position: fixed; inset: 0; background: #0f111a; z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; }
     </style>
 </head>
 
 <body>
-    <div class="controls">
-        <div class="unit-pill">
-            <input type="radio" id="f-unit" name="unit" value="imperial" onchange="saveAndRefresh()">
-            <label for="f-unit">°F</label>
-            <input type="radio" id="c-unit" name="unit" value="metric" onchange="saveAndRefresh()">
-            <label for="c-unit">°C</label>
-            <span class="pill-bg"></span>
-        </div>
-        <button class="btn-circle" onclick="toggleTheme()"><i class="wi wi-day-sunny" id="theme-icon"></i></button>
+    <div id="loader">
+        <div class="spinner-border text-primary mb-3"></div>
+        <p>Syncing Atmosphere...</p>
     </div>
 
-    <div class="container px-2" style="max-width: 850px;">
-        <div class="main-card">
-            <div id="loader">
-                <div class="spinner-border text-primary mb-3"></div>
-                <p>Syncing Atmosphere...</p>
+    <div class="main-card">
+        <div class="controls">
+            <div class="unit-pill">
+                <input type="radio" id="f-unit" name="unit" value="imperial" onchange="saveAndRefresh()">
+                <label for="f-unit">°F</label>
+                <input type="radio" id="c-unit" name="unit" value="metric" onchange="saveAndRefresh()">
+                <label for="c-unit">°C</label>
+                <span class="pill-bg"></span>
             </div>
-            <div class="header-bg">
-                <div id="dynamic-bg"></div>
-                <div class="header-content">
-                    <h6 id="loc-name" class="text-uppercase opacity-75 small fw-bold">---</h6>
-                    <div class="d-flex justify-content-between align-items-end">
-                        <div class="flex-grow-1">
-                            <h1 class="temp-display mb-0"><span id="temp">--</span>°</h1>
-                            <p class="opacity-75 mb-2 fs-5">Feels like <span id="windchill">--</span>°</p>
-                            <p id="main-forecast" class="fw-light mb-3">--</p>
-                            <div class="d-flex flex-wrap">
-                                <div class="env-badge">AQI: <span id="aqi-val">--</span></div>
-                                <div class="env-badge">UV: <span id="uv-val">--</span></div>
-                                <div class="env-badge"><i class="wi wi-strong-wind me-1"></i> <span id="wind">--</span>
-                                </div>
-                                <div class="env-badge"><i class="wi wi-humidity me-1"></i> <span id="humidity">--</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="text-end">
-                            <i id="main-icon" class="wi" style="font-size: 4.5rem; color: #ffce00;"></i>
-                            <div class="small mt-2"><i class="wi wi-sunrise me-1"></i> <span id="sunrise">--</span>
-                            </div>
-                            <div class="small"><i class="wi wi-sunset me-1"></i> <span id="sunset">--</span></div>
-                        </div>
+            <button class="btn-circle" onclick="toggleTheme()"><i class="wi wi-day-sunny" id="theme-icon"></i></button>
+        </div>
+
+        <div class="header-bg">
+            <div id="dynamic-bg"></div>
+            <div class="header-content">
+                <h6 id="loc-name" class="text-uppercase opacity-75 small fw-bold mb-1">---</h6>
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h1 class="temp-display mb-0"><span id="temp">--</span>°</h1>
+                        <p class="opacity-75 mb-1 fs-5">Feels like <span id="windchill">--</span>°</p>
+                        <p id="main-forecast" class="fw-light mb-3">--</p>
+                    </div>
+                    <i id="main-icon" class="wi" style="font-size: 5rem; color: #ffce00; filter: drop-shadow(0 0 15px rgba(255,206,0,0.4));"></i>
+                </div>
+
+                <div class="d-flex flex-wrap mb-2">
+                    <div class="env-badge">AQI: <span id="aqi-val">--</span></div>
+                    <div class="env-badge">UV: <span id="uv-val">--</span></div>
+                    <div class="env-badge"><i class="wi wi-strong-wind me-1"></i> <span id="wind">--</span></div>
+                    <div class="env-badge"><i class="wi wi-humidity me-1"></i> <span id="humidity">--</span></div>
+                </div>
+
+                <div class="sun-card">
+                    <div class="sun-item">
+                        <i class="wi wi-sunrise"></i>
+                        <span>Sunrise</span>
+                        <b id="sunrise">--:--</b>
+                    </div>
+                    <div class="sun-item" style="width: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
+                    <div class="sun-item">
+                        <i class="wi wi-sunset"></i>
+                        <span>Sunset</span>
+                        <b id="sunset">--:--</b>
                     </div>
                 </div>
             </div>
-            <div class="p-4">
-                <div id="alert-container" style="display: none;"></div>
-                <ul class="nav nav-pills mb-4 gap-2 flex-nowrap overflow-auto">
-                    <li class="nav-item"><button class="nav-link active rounded-pill px-4" data-bs-toggle="pill"
-                            data-bs-target="#daily">7-Day</button></li>
-                    <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill"
-                            data-bs-target="#hourly">Hourly</button></li>
-                    <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill"
-                            data-bs-target="#radar">Radar</button></li>
-                </ul>
-                <div class="tab-content">
-                    <div class="tab-pane fade show active" id="daily">
-                        <div id="daily-container"></div>
-                    </div>
-                    <div class="tab-pane fade" id="hourly">
-                        <div class="chart-wrapper"><canvas id="hourlyChart"></canvas></div>
-                    </div>
-                    <div class="tab-pane fade" id="radar">
-                        <div id="radar-container"></div>
-                    </div>
-                </div>
+        </div>
+
+        <div class="p-4">
+            <div id="alert-container" style="display: none;"></div>
+            <ul class="nav nav-pills mb-4 gap-2 flex-nowrap overflow-auto">
+                <li class="nav-item"><button class="nav-link active rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#daily">7-Day</button></li>
+                <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#hourly">Hourly</button></li>
+                <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#radar">Radar</button></li>
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="daily"><div id="daily-container"></div></div>
+                <div class="tab-pane fade" id="hourly"><div class="chart-wrapper" style="height:300px"><canvas id="hourlyChart"></canvas></div></div>
+                <div class="tab-pane fade" id="radar"><div id="radar-container"></div></div>
             </div>
         </div>
     </div>
@@ -320,41 +237,6 @@
                 });
         }
 
-        function createChart(hourlyData) {
-            const ctx = document.getElementById('hourlyChart').getContext('2d');
-            const temps = hourlyData.map(h => formatTemp(h.temperature));
-            const labels = hourlyData.map(h => new Date(h.startTime).toLocaleTimeString([], { hour: 'numeric' }));
-
-            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-            gradient.addColorStop(0, 'rgba(255, 126, 0, 0.7)');
-            gradient.addColorStop(0.5, 'rgba(255, 206, 0, 0.4)');
-            gradient.addColorStop(1, 'rgba(0, 228, 255, 0.1)');
-
-            if (myChart) myChart.destroy();
-            myChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: temps,
-                        borderWidth: 0,
-                        pointRadius: 0,
-                        fill: true,
-                        backgroundColor: gradient,
-                        tension: 0.5
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { position: 'right', grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.5)', callback: v => v + '°' } },
-                        x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)' } }
-                    }
-                }
-            });
-        }
-
         function updateUI(data) {
             const isMetric = document.getElementById('c-unit').checked;
             document.getElementById('loc-name').innerText = data.location;
@@ -365,6 +247,12 @@
             document.getElementById('wind').innerText = isMetric ? Math.round(data.wind.speed * 1.609) + ' km/h' : data.wind.speed + ' mph';
             document.getElementById('sunrise').innerText = data.sun.sunrise;
             document.getElementById('sunset').innerText = data.sun.sunset;
+
+            const alertCont = document.getElementById('alert-container');
+            if (data.alerts && data.alerts.length > 0) {
+                alertCont.style.display = 'block';
+                alertCont.innerHTML = data.alerts.map(a => `<div class="alert alert-warning border-0 rounded-4 mb-3" style="background: rgba(255, 193, 7, 0.15); color: #ffc107;"><h6 class="fw-bold small mb-1">${a.properties.event}</h6><p class="small mb-0 opacity-75">${a.properties.headline}</p></div>`).join('');
+            } else { alertCont.style.display = 'none'; }
 
             const aqiEl = document.getElementById('aqi-val'); aqiEl.innerText = data.aqi;
             aqiEl.style.color = data.aqi <= 50 ? "#00e400" : (data.aqi <= 100 ? "#ffff00" : "#ff7e00");
@@ -393,6 +281,36 @@
             });
             document.getElementById('daily-container').innerHTML = dHtml;
             document.getElementById('radar-container').innerHTML = `<iframe class="w-100 rounded-4" style="height:400px;border:none" src="https://embed.windy.com/embed.html?type=radar&lat=${data.lat}&lon=${data.lon}"></iframe>`;
+        }
+
+        function createChart(hourlyData) {
+            const ctx = document.getElementById('hourlyChart').getContext('2d');
+            const temps = hourlyData.map(h => formatTemp(h.temperature));
+            const labels = hourlyData.map(h => new Date(h.startTime).toLocaleTimeString([], { hour: 'numeric' }));
+            if (myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: temps,
+                        borderWidth: 3,
+                        borderColor: '#70a1ff',
+                        pointRadius: 0,
+                        fill: true,
+                        backgroundColor: 'rgba(112, 161, 255, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { position: 'right', grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.5)', callback: v => v + '°' } },
+                        x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)' } }
+                    }
+                }
+            });
         }
 
         function getVisuals(text, isDay) {
