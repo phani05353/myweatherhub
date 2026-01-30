@@ -11,30 +11,22 @@
         :root { --glass: rgba(0, 0, 0, 0.45); --bg-color: #0f111a; --card-bg: #1a1d29; --accent: #70a1ff; }
         [data-bs-theme="light"] { --glass: rgba(255, 255, 255, 0.65); --bg-color: #f8f9fa; --card-bg: #ffffff; --accent: #0056b3; }
         body { background-color: var(--bg-color) !important; font-family: system-ui, sans-serif; padding: 10px 0; overflow-x: hidden; }
-        .main-card { background: var(--card-bg) !important; border-radius: 28px; overflow: hidden; box-shadow: 0 15px 45px rgba(0,0,0,0.4); border: 1px solid rgba(128,128,128,0.2); position: relative; z-index: 10; }
+        .main-card { background: var(--card-bg) !important; border-radius: 28px; overflow: hidden; box-shadow: 0 15px 45px rgba(0,0,0,0.4); border: 1px solid rgba(128,128,128,0.2); position: relative; z-index: 1; }
         .header-bg { position: relative; height: 340px; width: 100%; overflow: hidden; }
         #dynamic-bg { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 1; transition: background 1s; }
         .header-content { position: relative; z-index: 5; height: 100%; padding: 25px; display: flex; flex-direction: column; justify-content: flex-end; color: white !important; background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%); }
         .temp-display { font-size: 4.8rem; font-weight: 800; line-height: 1; }
         .stats-bar { background: var(--glass); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; margin-top: 15px; }
-
-        #weather-effects { position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: hidden; }
-        .rain { position: absolute; background: white; width: 1px; height: 80px; opacity: 0.2; animation: fall 0.8s linear infinite; }
-        @keyframes fall { to { transform: translateY(500px); } }
-        .sun-glare { position: absolute; top: -50px; left: -50px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%); filter: blur(40px); animation: drift 10s ease-in-out infinite alternate; }
-        @keyframes drift { from { transform: translate(0,0); } to { transform: translate(50px, 30px); } }
-
         .daily-row { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(128,128,128,0.1); }
         .temp-bar-container { flex-grow: 1; height: 4px; background: rgba(128,128,128,0.2); border-radius: 2px; margin: 0 15px; position: relative; }
         .temp-bar-fill { position: absolute; height: 100%; border-radius: 2px; background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%); }
-
         .env-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; margin-top: 8px; display: inline-block; border: 1px solid rgba(255,255,255,0.2); margin-right: 5px; background: rgba(0,0,0,0.2); }
         .controls { position: fixed; top: 15px; right: 15px; z-index: 1050; display: flex; gap: 10px; }
-        .btn-circle { width: 42px; height: 42px; border-radius: 50%; border: none; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; }
+        .btn-circle { width: 42px; height: 42px; border-radius: 50%; border: none; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         #loader { position: absolute; inset: 0; background: var(--card-bg); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        
-        .chart-wrapper { background: var(--glass); padding: 20px; border-radius: 20px; border: 1px solid rgba(128,128,128,0.1); }
-        .chart-container { position: relative; height: 260px; width: 100%; }
+        .instruction-box { background: rgba(255, 193, 7, 0.1); border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px; margin-top: 15px; color: #ffc107; font-size: 0.9rem; }
+        .modal { z-index: 9999 !important; }
+        .modal-backdrop { z-index: 9998 !important; }
     </style>
 </head>
 <body>
@@ -46,12 +38,27 @@
         <button class="btn-circle" onclick="toggleTheme()"><i class="wi wi-day-sunny" id="theme-icon"></i></button>
     </div>
 
+    <div class="modal fade" id="aMod" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="background: var(--card-bg); color: var(--text-main);">
+                <div class="modal-header border-bottom border-white border-opacity-10">
+                    <h5 class="modal-title" id="modalEventTitle">Weather Alert</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="modalAlertBody">
+                    </div>
+                <div class="modal-footer border-top border-white border-opacity-10">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container px-2 px-md-3" style="max-width: 850px;">
         <div class="main-card">
-            <div id="loader"><div class="spinner-border text-primary mb-3"></div><p>Detecting Atmosphere...</p></div>
+            <div id="loader"><div class="spinner-border text-primary mb-3"></div><p>Syncing Atmosphere...</p></div>
             <div class="header-bg">
                 <div id="dynamic-bg"></div>
-                <div id="weather-effects"></div>
                 <div class="header-content">
                     <h6 id="loc-name" class="text-uppercase opacity-75 small tracking-widest">---</h6>
                     <div class="d-flex justify-content-between align-items-end">
@@ -69,18 +76,9 @@
                         </div>
                     </div>
                     <div class="stats-bar d-flex justify-content-around text-center small">
-                        <div class="flex-fill">
-                            <i class="wi wi-strong-wind d-block fs-4 mb-1 opacity-50"></i>
-                            <strong id="wind">--</strong> <span id="wind-dir"></span>
-                        </div>
-                        <div class="flex-fill border-start border-end border-white border-opacity-10">
-                            <i class="wi wi-humidity d-block fs-4 mb-1 opacity-50"></i>
-                            <strong>HUMIDITY</strong><br><span id="humidity">--</span>
-                        </div>
-                        <div class="flex-fill">
-                            <i class="wi wi-barometer d-block fs-4 mb-1 opacity-50"></i>
-                            <strong>PRESSURE</strong><br><span id="pressure">--</span>
-                        </div>
+                        <div class="flex-fill"><i class="wi wi-strong-wind d-block fs-4 mb-1 opacity-50"></i><strong id="wind">--</strong> <span id="wind-dir"></span></div>
+                        <div class="flex-fill border-start border-end border-white border-opacity-10"><i class="wi wi-humidity d-block fs-4 mb-1 opacity-50"></i><strong>HUMIDITY</strong><br><span id="humidity">--</span></div>
+                        <div class="flex-fill"><i class="wi wi-barometer d-block fs-4 mb-1 opacity-50"></i><strong>PRESSURE</strong><br><span id="pressure">--</span></div>
                     </div>
                 </div>
             </div>
@@ -93,34 +91,22 @@
                 </ul>
                 <div class="tab-content">
                     <div class="tab-pane fade show active" id="daily"><div id="daily-container"></div></div>
-                    <div class="tab-pane fade" id="hourly">
-                        <div class="chart-wrapper">
-                            <div class="chart-container"><canvas id="hourlyChart"></canvas></div>
-                        </div>
-                    </div>
+                    <div class="tab-pane fade" id="hourly"><div class="chart-wrapper" style="height:260px"><canvas id="hourlyChart"></canvas></div></div>
                     <div class="tab-pane fade" id="radar"><div id="radar-container"></div></div>
                 </div>
             </div>
         </div>
-        <div class="text-center mt-3 text-muted small"><span id="clock" class="fw-bold">--:--</span> • Updated: <span id="update-time">--</span></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let lastData = null;
-        let myChart = null;
-        const DEFAULT_LAT = 41.3850;
-        const DEFAULT_LON = -105.5860;
-        // Near Laramie, Wyoming
+        let lastData = null; let myChart = null;
+        const DEFAULT_LAT = 42.8157; const DEFAULT_LON = -85.6729;
 
-        // Persistence
         if(localStorage.getItem('theme') === 'light') toggleTheme(true);
         if(localStorage.getItem('unit') === 'metric') document.getElementById('unit-toggle').checked = true;
 
-        function saveAndRefresh() {
-            localStorage.setItem('unit', document.getElementById('unit-toggle').checked ? 'metric' : 'imperial');
-            updateUI(lastData);
-        }
+        function saveAndRefresh() { localStorage.setItem('unit', document.getElementById('unit-toggle').checked ? 'metric' : 'imperial'); updateUI(lastData); }
 
         function toggleTheme(init = false) {
             const html = document.getElementById('main-html');
@@ -129,7 +115,7 @@
             html.setAttribute('data-bs-theme', newTheme);
             localStorage.setItem('theme', newTheme);
             document.getElementById('theme-icon').className = newTheme === 'light' ? 'wi wi-night-clear' : 'wi wi-day-sunny';
-            if (myChart) updateChartStyle();
+            if (myChart) myChart.update();
         }
 
         function formatTemp(val) { return document.getElementById('unit-toggle').checked ? Math.round((val - 32) * 5/9) : Math.round(val); }
@@ -138,99 +124,28 @@
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (pos) => fetchWeatherData(pos.coords.latitude, pos.coords.longitude),
-                    () => fetchWeatherData(DEFAULT_LAT, DEFAULT_LON),
-                    { timeout: 5000 }
+                    () => fetchWeatherData(DEFAULT_LAT, DEFAULT_LON), { timeout: 5000 }
                 );
-            } else {
-                fetchWeatherData(DEFAULT_LAT, DEFAULT_LON);
-            }
+            } else { fetchWeatherData(DEFAULT_LAT, DEFAULT_LON); }
         };
 
         function fetchWeatherData(lat, lon) {
-            fetch('/weather_data', { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({lat, lon}) 
-            })
-            .then(res => res.json()).then(data => { 
-                lastData = data; 
-                updateUI(data); 
-                document.getElementById('loader').style.display = 'none'; 
-            });
+            fetch('/weather_data', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({lat, lon}) })
+            .then(res => res.json()).then(data => { lastData = data; updateUI(data); document.getElementById('loader').style.display = 'none'; });
         }
 
-        document.getElementById('hourly-tab').addEventListener('shown.bs.tab', function () {
-            if (myChart) { myChart.resize(); myChart.update(); }
-        });
-
-        function getAQIColor(val) {
-            if (val <= 50) return "#00e400";
-            if (val <= 100) return "#ffff00";
-            if (val <= 150) return "#ff7e00";
-            return "#ff0000";
-        }
-
-        function updateChartStyle() {
-            if (!myChart) return;
-            const isDark = document.getElementById('main-html').getAttribute('data-bs-theme') === 'dark';
-            const color = isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)';
-            myChart.options.scales.x.ticks.color = color;
-            myChart.options.scales.y.ticks.color = color;
-            myChart.update();
-        }
+        document.getElementById('hourly-tab').addEventListener('shown.bs.tab', function () { if (myChart) { myChart.resize(); myChart.update(); } });
 
         function createChart(hourlyData) {
             const ctx = document.getElementById('hourlyChart').getContext('2d');
-            const strokeGradient = ctx.createLinearGradient(0, 0, 0, 260);
-            strokeGradient.addColorStop(0, '#ff4757'); strokeGradient.addColorStop(0.5, '#ffa502'); strokeGradient.addColorStop(1, '#2e86de');
-            const fillGradient = ctx.createLinearGradient(0, 0, 0, 260);
-            fillGradient.addColorStop(0, 'rgba(255, 71, 87, 0.4)'); fillGradient.addColorStop(0.5, 'rgba(255, 165, 2, 0.2)'); fillGradient.addColorStop(1, 'rgba(46, 134, 222, 0.05)');
-
             const labels = hourlyData.map(h => new Date(h.startTime).toLocaleTimeString([], {hour: '2-digit'}));
             const temps = hourlyData.map(h => formatTemp(h.temperature));
-            
             if (myChart) myChart.destroy();
             myChart = new Chart(ctx, {
                 type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Temperature',
-                        data: temps,
-                        borderColor: strokeGradient,
-                        borderWidth: 4,
-                        pointRadius: 0,
-                        backgroundColor: fillGradient,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { intersect: false, backgroundColor: 'rgba(0,0,0,0.85)', callbacks: { label: (context) => ` ${context.parsed.y}°` } } },
-                    scales: { y: { grid: { color: 'rgba(128,128,128,0.08)', drawBorder: false }, ticks: { font: { size: 11 } } }, x: { grid: { display: false }, ticks: { font: { size: 11 } } } }
-                }
+                data: { labels: labels, datasets: [{ label: 'Temp', data: temps, borderColor: '#70a1ff', borderWidth: 4, pointRadius: 0, fill: true, tension: 0.4, backgroundColor: 'rgba(112, 161, 255, 0.1)' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(128,128,128,0.1)' } }, x: { grid: { display: false } } } }
             });
-            updateChartStyle();
-        }
-
-        function setWeatherEffects(text) {
-            const container = document.getElementById('weather-effects');
-            container.innerHTML = ''; text = text.toLowerCase();
-            if(text.includes('rain') || text.includes('shower')) {
-                for(let i=0; i<30; i++) {
-                    let drop = document.createElement('div');
-                    drop.className = 'rain';
-                    drop.style.left = Math.random() * 100 + '%';
-                    drop.style.animationDelay = Math.random() * 2 + 's';
-                    container.appendChild(drop);
-                }
-            } else if (text.includes('clear') || text.includes('sunny')) {
-                let glare = document.createElement('div');
-                glare.className = 'sun-glare';
-                container.appendChild(glare);
-            }
         }
 
         function updateUI(data) {
@@ -245,18 +160,24 @@
             document.getElementById('sunrise').innerText = data.sun.sunrise;
             document.getElementById('sunset').innerText = data.sun.sunset;
             
-            const aqiEl = document.getElementById('aqi-val');
-            aqiEl.innerText = data.aqi; aqiEl.style.color = getAQIColor(data.aqi);
+            const aqiEl = document.getElementById('aqi-val'); aqiEl.innerText = data.aqi;
+            aqiEl.style.color = data.aqi <= 50 ? "#00e400" : (data.aqi <= 100 ? "#ffff00" : "#ff7e00");
             document.getElementById('uv-val').innerText = data.uv;
-            document.getElementById('update-time').innerText = data.updated;
+
+            // UPDATING STATIC MODAL CONTENT
+            const alertBox = document.getElementById('alert-container'); alertBox.innerHTML = '';
+            if(data.alerts?.length > 0) {
+                const a = data.alerts[0].properties;
+                document.getElementById('modalEventTitle').innerText = a.event;
+                document.getElementById('modalAlertBody').innerHTML = `${a.description} ${a.instruction ? `<div class="instruction-box"><strong>INSTRUCTIONS:</strong><br>${a.instruction}</div>` : ''}`;
+                alertBox.innerHTML = `<div class="alert alert-danger border-0 rounded-4 mb-4 py-3" style="cursor:pointer" data-bs-toggle="modal" data-bs-target="#aMod"><strong>⚠️ ${a.event}</strong></div>`;
+            }
 
             const vis = getVisuals(data.current.shortForecast, data.current.isDaytime);
             document.getElementById('main-icon').className = `wi ${vis.icon}`;
             document.getElementById('dynamic-bg').style.backgroundImage = `url('${vis.url}')`;
-            setWeatherEffects(data.current.shortForecast);
-
+            
             createChart(data.hourly);
-
             const allTemps = data.daily.flatMap(d => [d.high, d.low]);
             const minW = Math.min(...allTemps); const maxW = Math.max(...allTemps); const rangeW = maxW - minW;
             let dHtml = ''; data.daily.forEach((day, idx) => {
@@ -270,16 +191,10 @@
         }
 
         function getVisuals(text, isDay) {
-            text = text.toLowerCase();
-            let icon = isDay ? "wi-day-sunny" : "wi-night-clear";
-            let img = isDay ? "1534088568595-a066f410bcda" : "1507400492013-162706c8c05e";
-            if(text.includes("storm")) icon = "wi-thunderstorm";
-            else if(text.includes("rain")) icon = "wi-showers";
-            else if(text.includes("cloud")) icon = "wi-cloudy";
+            text = text.toLowerCase(); let icon = isDay ? "wi-day-sunny" : "wi-night-clear"; let img = isDay ? "1534088568595-a066f410bcda" : "1507400492013-162706c8c05e";
+            if(text.includes("storm")) icon = "wi-thunderstorm"; else if(text.includes("rain")) icon = "wi-showers"; else if(text.includes("cloud")) icon = "wi-cloudy";
             return { icon, url: `https://images.unsplash.com/photo-${img}?auto=format&fit=crop&w=1000&q=80` };
         }
-        function updateClock() { document.getElementById('clock').innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); }
-        setInterval(updateClock, 1000); updateClock();
     </script>
 </body>
 </html>
