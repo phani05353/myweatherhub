@@ -1,98 +1,275 @@
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark" id="main-html">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Weather Hub">
+    <link rel="apple-touch-icon" href="/static/icon.png">
     <title>Weather Hub</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/weather-icons/2.0.12/css/weather-icons.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --glass: rgba(0, 0, 0, 0.45); --bg-color: #0f111a; --card-bg: #1a1d29; --accent: #70a1ff; }
-        [data-bs-theme="light"] { --glass: rgba(255, 255, 255, 0.65); --bg-color: #f8f9fa; --card-bg: #ffffff; --accent: #0056b3; }
-        body { background-color: var(--bg-color) !important; font-family: system-ui, sans-serif; padding: 10px 0; overflow-x: hidden; }
-        .main-card { background: var(--card-bg) !important; border-radius: 28px; overflow: hidden; box-shadow: 0 15px 45px rgba(0,0,0,0.4); border: 1px solid rgba(128,128,128,0.2); position: relative; z-index: 1; }
-        .header-bg { position: relative; height: 340px; width: 100%; overflow: hidden; }
-        #dynamic-bg { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 1; transition: background 1s; }
-        .header-content { position: relative; z-index: 5; height: 100%; padding: 25px; display: flex; flex-direction: column; justify-content: flex-end; color: white !important; background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%); }
-        .temp-display { font-size: 4.8rem; font-weight: 800; line-height: 1; }
-        .stats-bar { background: var(--glass); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; margin-top: 15px; }
-        .daily-row { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(128,128,128,0.1); }
-        .temp-bar-container { flex-grow: 1; height: 4px; background: rgba(128,128,128,0.2); border-radius: 2px; margin: 0 15px; position: relative; }
-        .temp-bar-fill { position: absolute; height: 100%; border-radius: 2px; background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%); }
-        .env-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; margin-top: 8px; display: inline-block; border: 1px solid rgba(255,255,255,0.2); margin-right: 5px; background: rgba(0,0,0,0.2); }
-        .controls { position: fixed; top: 15px; right: 15px; z-index: 1050; display: flex; gap: 10px; }
-        .btn-circle { width: 42px; height: 42px; border-radius: 50%; border: none; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        #loader { position: absolute; inset: 0; background: var(--card-bg); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .instruction-box { background: rgba(255, 193, 7, 0.1); border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px; margin-top: 15px; color: #ffc107; font-size: 0.9rem; }
-        .modal { z-index: 9999 !important; }
-        .modal-backdrop { z-index: 9998 !important; }
+        :root {
+            --glass: rgba(0, 0, 0, 0.45);
+            --bg-color: #0f111a;
+            --card-bg: #1a1d29;
+            --accent: #70a1ff;
+        }
+
+        [data-bs-theme="light"] {
+            --glass: rgba(255, 255, 255, 0.65);
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --accent: #0056b3;
+        }
+
+        body {
+            background-color: var(--bg-color) !important;
+            font-family: system-ui, sans-serif;
+            padding: 10px 0;
+            overflow-x: hidden;
+        }
+
+        .main-card {
+            background: var(--card-bg) !important;
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(128, 128, 128, 0.2);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Pill Toggle */
+        .controls {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 1050;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .unit-pill {
+            position: relative;
+            display: flex;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            padding: 4px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100px;
+            height: 42px;
+        }
+
+        .unit-pill input {
+            display: none;
+        }
+
+        .unit-pill label {
+            flex: 1;
+            z-index: 2;
+            text-align: center;
+            line-height: 34px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.5);
+            transition: color 0.3s;
+        }
+
+        .unit-pill input:checked+label {
+            color: white;
+        }
+
+        .pill-bg {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 46px;
+            height: 34px;
+            background: var(--accent);
+            border-radius: 50px;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
+        }
+
+        #c-unit:checked~.pill-bg {
+            transform: translateX(46px);
+        }
+
+        .btn-circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: none;
+            background: var(--accent);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .header-bg {
+            position: relative;
+            height: 360px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        #dynamic-bg {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            z-index: 1;
+            transition: background 1s ease-in-out;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 5;
+            height: 100%;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            color: white !important;
+            background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.85) 100%);
+        }
+
+        .temp-display {
+            font-size: 4.8rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .daily-row {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+        }
+
+        .temp-bar-container {
+            flex-grow: 1;
+            height: 4px;
+            background: rgba(128, 128, 128, 0.2);
+            border-radius: 2px;
+            margin: 0 15px;
+            position: relative;
+        }
+
+        .temp-bar-fill {
+            position: absolute;
+            height: 100%;
+            border-radius: 2px;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .env-badge {
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 8px;
+            display: inline-block;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-right: 6px;
+            background: rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(5px);
+        }
+
+        #loader {
+            position: absolute;
+            inset: 0;
+            background: var(--card-bg);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chart-wrapper {
+            height: 320px;
+            width: 100%;
+            padding: 15px 0;
+        }
     </style>
 </head>
+
 <body>
     <div class="controls">
-        <div class="form-check form-switch bg-dark bg-opacity-50 p-2 rounded-pill px-3 d-flex align-items-center" style="backdrop-filter: blur(8px);">
-            <input class="form-check-input mt-0 me-2" type="checkbox" id="unit-toggle" onchange="saveAndRefresh()">
-            <label class="form-check-label small text-white" for="unit-toggle">Metric</label>
+        <div class="unit-pill">
+            <input type="radio" id="f-unit" name="unit" value="imperial" onchange="saveAndRefresh()">
+            <label for="f-unit">°F</label>
+            <input type="radio" id="c-unit" name="unit" value="metric" onchange="saveAndRefresh()">
+            <label for="c-unit">°C</label>
+            <span class="pill-bg"></span>
         </div>
         <button class="btn-circle" onclick="toggleTheme()"><i class="wi wi-day-sunny" id="theme-icon"></i></button>
     </div>
 
-    <div class="modal fade" id="aMod" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg" style="background: var(--card-bg); color: var(--text-main);">
-                <div class="modal-header border-bottom border-white border-opacity-10">
-                    <h5 class="modal-title" id="modalEventTitle">Weather Alert</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="modalAlertBody">
-                    </div>
-                <div class="modal-footer border-top border-white border-opacity-10">
-                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="container px-2 px-md-3" style="max-width: 850px;">
+    <div class="container px-2" style="max-width: 850px;">
         <div class="main-card">
-            <div id="loader"><div class="spinner-border text-primary mb-3"></div><p>Syncing Atmosphere...</p></div>
+            <div id="loader">
+                <div class="spinner-border text-primary mb-3"></div>
+                <p>Syncing Atmosphere...</p>
+            </div>
             <div class="header-bg">
                 <div id="dynamic-bg"></div>
                 <div class="header-content">
-                    <h6 id="loc-name" class="text-uppercase opacity-75 small tracking-widest">---</h6>
+                    <h6 id="loc-name" class="text-uppercase opacity-75 small fw-bold">---</h6>
                     <div class="d-flex justify-content-between align-items-end">
-                        <div>
+                        <div class="flex-grow-1">
                             <h1 class="temp-display mb-0"><span id="temp">--</span>°</h1>
-                            <p class="opacity-75 mb-1 fs-5">Feels like <span id="windchill">--</span>°</p>
-                            <p id="main-forecast" class="fw-light mb-0">--</p>
-                            <div class="env-badge">AQI: <span id="aqi-val">--</span></div>
-                            <div class="env-badge">UV: <span id="uv-val">--</span></div>
+                            <p class="opacity-75 mb-2 fs-5">Feels like <span id="windchill">--</span>°</p>
+                            <p id="main-forecast" class="fw-light mb-3">--</p>
+                            <div class="d-flex flex-wrap">
+                                <div class="env-badge">AQI: <span id="aqi-val">--</span></div>
+                                <div class="env-badge">UV: <span id="uv-val">--</span></div>
+                                <div class="env-badge"><i class="wi wi-strong-wind me-1"></i> <span id="wind">--</span>
+                                </div>
+                                <div class="env-badge"><i class="wi wi-humidity me-1"></i> <span id="humidity">--</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="text-end">
                             <i id="main-icon" class="wi" style="font-size: 4.5rem; color: #ffce00;"></i>
-                            <div class="small mt-2"><i class="wi wi-sunrise me-1"></i> <span id="sunrise">--</span></div>
+                            <div class="small mt-2"><i class="wi wi-sunrise me-1"></i> <span id="sunrise">--</span>
+                            </div>
                             <div class="small"><i class="wi wi-sunset me-1"></i> <span id="sunset">--</span></div>
                         </div>
-                    </div>
-                    <div class="stats-bar d-flex justify-content-around text-center small">
-                        <div class="flex-fill"><i class="wi wi-strong-wind d-block fs-4 mb-1 opacity-50"></i><strong id="wind">--</strong> <span id="wind-dir"></span></div>
-                        <div class="flex-fill border-start border-end border-white border-opacity-10"><i class="wi wi-humidity d-block fs-4 mb-1 opacity-50"></i><strong>HUMIDITY</strong><br><span id="humidity">--</span></div>
-                        <div class="flex-fill"><i class="wi wi-barometer d-block fs-4 mb-1 opacity-50"></i><strong>PRESSURE</strong><br><span id="pressure">--</span></div>
                     </div>
                 </div>
             </div>
             <div class="p-4">
-                <div id="alert-container"></div>
-                <ul class="nav nav-pills mb-4 gap-2 flex-nowrap overflow-auto" id="weatherTabs">
-                    <li class="nav-item"><button class="nav-link active rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#daily">7-Day</button></li>
-                    <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#hourly" id="hourly-tab">Hourly</button></li>
-                    <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#radar">Radar</button></li>
+                <div id="alert-container" style="display: none;"></div>
+                <ul class="nav nav-pills mb-4 gap-2 flex-nowrap overflow-auto">
+                    <li class="nav-item"><button class="nav-link active rounded-pill px-4" data-bs-toggle="pill"
+                            data-bs-target="#daily">7-Day</button></li>
+                    <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill"
+                            data-bs-target="#hourly">Hourly</button></li>
+                    <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill"
+                            data-bs-target="#radar">Radar</button></li>
                 </ul>
                 <div class="tab-content">
-                    <div class="tab-pane fade show active" id="daily"><div id="daily-container"></div></div>
-                    <div class="tab-pane fade" id="hourly"><div class="chart-wrapper" style="height:260px"><canvas id="hourlyChart"></canvas></div></div>
-                    <div class="tab-pane fade" id="radar"><div id="radar-container"></div></div>
+                    <div class="tab-pane fade show active" id="daily">
+                        <div id="daily-container"></div>
+                    </div>
+                    <div class="tab-pane fade" id="hourly">
+                        <div class="chart-wrapper"><canvas id="hourlyChart"></canvas></div>
+                    </div>
+                    <div class="tab-pane fade" id="radar">
+                        <div id="radar-container"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -101,14 +278,16 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let lastData = null; let myChart = null;
-        const DEFAULT_LAT = 41.3850;
-        const DEFAULT_LON = -105.5860;
-        // Near Laramie, Wyoming
+        const DEFAULT_LAT = 41.3850, DEFAULT_LON = -105.5860;
 
-        if(localStorage.getItem('theme') === 'light') toggleTheme(true);
-        if(localStorage.getItem('unit') === 'metric') document.getElementById('unit-toggle').checked = true;
+        if (localStorage.getItem('theme') === 'light') toggleTheme(true);
+        const savedUnit = localStorage.getItem('unit') || 'imperial';
+        document.getElementById(savedUnit === 'metric' ? 'c-unit' : 'f-unit').checked = true;
 
-        function saveAndRefresh() { localStorage.setItem('unit', document.getElementById('unit-toggle').checked ? 'metric' : 'imperial'); updateUI(lastData); }
+        function saveAndRefresh() {
+            localStorage.setItem('unit', document.getElementById('c-unit').checked ? 'metric' : 'imperial');
+            if (lastData) updateUI(lastData);
+        }
 
         function toggleTheme(init = false) {
             const html = document.getElementById('main-html');
@@ -117,86 +296,115 @@
             html.setAttribute('data-bs-theme', newTheme);
             localStorage.setItem('theme', newTheme);
             document.getElementById('theme-icon').className = newTheme === 'light' ? 'wi wi-night-clear' : 'wi wi-day-sunny';
-            if (myChart) myChart.update();
         }
 
-        function formatTemp(val) { return document.getElementById('unit-toggle').checked ? Math.round((val - 32) * 5/9) : Math.round(val); }
+        function formatTemp(val) {
+            return document.getElementById('c-unit').checked ? Math.round((val - 32) * 5 / 9) : Math.round(val);
+        }
 
-        window.onload = function() {
+        window.onload = function () {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (pos) => fetchWeatherData(pos.coords.latitude, pos.coords.longitude),
-                    () => fetchWeatherData(DEFAULT_LAT, DEFAULT_LON), { timeout: 5000 }
+                    () => fetchWeatherData(DEFAULT_LAT, DEFAULT_LON)
                 );
             } else { fetchWeatherData(DEFAULT_LAT, DEFAULT_LON); }
         };
 
         function fetchWeatherData(lat, lon) {
-            fetch('/weather_data', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({lat, lon}) })
-            .then(res => res.json()).then(data => { lastData = data; updateUI(data); document.getElementById('loader').style.display = 'none'; });
+            fetch('/weather_data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lat, lon }) })
+                .then(res => res.json()).then(data => {
+                    lastData = data;
+                    updateUI(data);
+                    document.getElementById('loader').style.display = 'none';
+                });
         }
-
-        document.getElementById('hourly-tab').addEventListener('shown.bs.tab', function () { if (myChart) { myChart.resize(); myChart.update(); } });
 
         function createChart(hourlyData) {
             const ctx = document.getElementById('hourlyChart').getContext('2d');
-            const labels = hourlyData.map(h => new Date(h.startTime).toLocaleTimeString([], {hour: '2-digit'}));
             const temps = hourlyData.map(h => formatTemp(h.temperature));
+            const labels = hourlyData.map(h => new Date(h.startTime).toLocaleTimeString([], { hour: 'numeric' }));
+
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(255, 126, 0, 0.7)');
+            gradient.addColorStop(0.5, 'rgba(255, 206, 0, 0.4)');
+            gradient.addColorStop(1, 'rgba(0, 228, 255, 0.1)');
+
             if (myChart) myChart.destroy();
             myChart = new Chart(ctx, {
                 type: 'line',
-                data: { labels: labels, datasets: [{ label: 'Temp', data: temps, borderColor: '#70a1ff', borderWidth: 4, pointRadius: 0, fill: true, tension: 0.4, backgroundColor: 'rgba(112, 161, 255, 0.1)' }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(128,128,128,0.1)' } }, x: { grid: { display: false } } } }
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: temps,
+                        borderWidth: 0,
+                        pointRadius: 0,
+                        fill: true,
+                        backgroundColor: gradient,
+                        tension: 0.5
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { position: 'right', grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.5)', callback: v => v + '°' } },
+                        x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)' } }
+                    }
+                }
             });
         }
 
         function updateUI(data) {
-            if(!data) return;
+            const isMetric = document.getElementById('c-unit').checked;
             document.getElementById('loc-name').innerText = data.location;
             document.getElementById('temp').innerText = formatTemp(data.current.temperature);
             document.getElementById('windchill').innerText = formatTemp(data.feels_like);
             document.getElementById('main-forecast').innerText = data.current.shortForecast;
-            document.getElementById('wind').innerText = data.wind.speed;
             document.getElementById('humidity').innerText = (data.current.relativeHumidity?.value || 0) + '%';
-            document.getElementById('pressure').innerText = data.pressure + ' inHg';
+            document.getElementById('wind').innerText = isMetric ? Math.round(data.wind.speed * 1.609) + ' km/h' : data.wind.speed + ' mph';
             document.getElementById('sunrise').innerText = data.sun.sunrise;
             document.getElementById('sunset').innerText = data.sun.sunset;
-            
+
             const aqiEl = document.getElementById('aqi-val'); aqiEl.innerText = data.aqi;
             aqiEl.style.color = data.aqi <= 50 ? "#00e400" : (data.aqi <= 100 ? "#ffff00" : "#ff7e00");
             document.getElementById('uv-val').innerText = data.uv;
 
-            // UPDATING STATIC MODAL CONTENT
-            const alertBox = document.getElementById('alert-container'); alertBox.innerHTML = '';
-            if(data.alerts?.length > 0) {
-                const a = data.alerts[0].properties;
-                document.getElementById('modalEventTitle').innerText = a.event;
-                document.getElementById('modalAlertBody').innerHTML = `${a.description} ${a.instruction ? `<div class="instruction-box"><strong>INSTRUCTIONS:</strong><br>${a.instruction}</div>` : ''}`;
-                alertBox.innerHTML = `<div class="alert alert-danger border-0 rounded-4 mb-4 py-3" style="cursor:pointer" data-bs-toggle="modal" data-bs-target="#aMod"><strong>⚠️ ${a.event}</strong></div>`;
-            }
-
             const vis = getVisuals(data.current.shortForecast, data.current.isDaytime);
             document.getElementById('main-icon').className = `wi ${vis.icon}`;
             document.getElementById('dynamic-bg').style.backgroundImage = `url('${vis.url}')`;
-            
+
             createChart(data.hourly);
-            const allTemps = data.daily.flatMap(d => [d.high, d.low]);
-            const minW = Math.min(...allTemps); const maxW = Math.max(...allTemps); const rangeW = maxW - minW;
-            let dHtml = ''; data.daily.forEach((day, idx) => {
-                const dayLabel = idx === 0 ? "Today" : day.name.substring(0, 3);
+
+            const allT = data.daily.flatMap(d => [d.high, d.low]);
+            const minT = Math.min(...allT), maxT = Math.max(...allT), rangeT = (maxT - minT) || 1;
+            let dHtml = '';
+            data.daily.forEach((day, i) => {
                 const dv = getVisuals(day.icon, true);
-                const left = ((day.low - minW) / rangeW) * 100; const width = ((day.high - day.low) / rangeW) * 100;
-                dHtml += `<div class="daily-row"><div style="width:60px">${dayLabel}</div><div style="width:40px"><i class="wi ${dv.icon}"></i></div><div style="width:35px;opacity:0.6">${formatTemp(day.low)}°</div><div class="temp-bar-container"><div class="temp-bar-fill" style="left:${left}%;width:${width}%"></div></div><div style="width:35px;font-weight:600">${formatTemp(day.high)}°</div></div>`;
+                const left = ((day.low - minT) / rangeT) * 100;
+                const width = ((day.high - day.low) / rangeT) * 100;
+                dHtml += `<div class="daily-row">
+                    <div style="width:60px">${i === 0 ? 'Today' : day.name.substring(0, 3)}</div>
+                    <div style="width:40px"><i class="wi ${dv.icon}"></i></div>
+                    <div style="width:35px;opacity:0.6">${formatTemp(day.low)}°</div>
+                    <div class="temp-bar-container"><div class="temp-bar-fill" style="left:${left}%;width:${width}%"></div></div>
+                    <div style="width:35px;font-weight:600">${formatTemp(day.high)}°</div>
+                </div>`;
             });
             document.getElementById('daily-container').innerHTML = dHtml;
             document.getElementById('radar-container').innerHTML = `<iframe class="w-100 rounded-4" style="height:400px;border:none" src="https://embed.windy.com/embed.html?type=radar&lat=${data.lat}&lon=${data.lon}"></iframe>`;
         }
 
         function getVisuals(text, isDay) {
-            text = text.toLowerCase(); let icon = isDay ? "wi-day-sunny" : "wi-night-clear"; let img = isDay ? "1534088568595-a066f410bcda" : "1507400492013-162706c8c05e";
-            if(text.includes("storm")) icon = "wi-thunderstorm"; else if(text.includes("rain")) icon = "wi-showers"; else if(text.includes("cloud")) icon = "wi-cloudy";
-            return { icon, url: `https://images.unsplash.com/photo-${img}?auto=format&fit=crop&w=1000&q=80` };
+            text = text.toLowerCase();
+            let icon = isDay ? "wi-day-sunny" : "wi-night-clear";
+            let imgId = isDay ? "1534088568595-a066f410bcda" : "1507400492013-162706c8c05e";
+            if (text.includes("thunder")) { icon = "wi-thunderstorm"; imgId = "1605727281914-c0993d79a29e"; }
+            else if (text.includes("rain") || text.includes("showers")) { icon = "wi-showers"; imgId = "1515694346934-f24203c1f5d7"; }
+            else if (text.includes("cloud")) { icon = isDay ? "wi-day-cloudy" : "wi-night-alt-cloudy"; imgId = "1483706600575-e3dec2d4972a"; }
+            return { icon, url: `https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&w=1200&q=80` };
         }
     </script>
 </body>
+
 </html>

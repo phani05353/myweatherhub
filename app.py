@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request, jsonify
 import requests
 from datetime import datetime
-import math
 from suntime import Sun
 
 app = Flask(__name__)
+# NWS requires a User-Agent with contact info
 HEADERS = {'User-Agent': '(MyHomeLabWeather, contact@example.com)'}
 
 def calculate_feels_like(temp_f, humidity, wind_speed_mph):
@@ -24,7 +24,7 @@ def calculate_feels_like(temp_f, humidity, wind_speed_mph):
 def get_env_data(lat, lon):
     try:
         url = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&current=us_aqi,uv_index&timezone=auto"
-        resp = requests.get(url).json()
+        resp = requests.get(url, timeout=5).json()
         return resp.get('current', {})
     except:
         return {"us_aqi": "N/A", "uv_index": "N/A"}
@@ -32,35 +32,46 @@ def get_env_data(lat, lon):
 def get_weather_data(lat, lon):
     try:
         lat_f, lon_f = round(float(lat), 4), round(float(lon), 4)
-        meta = requests.get(f"https://api.weather.gov/points/{lat_f},{lon_f}", headers=HEADERS).json()
+        meta_resp = requests.get(f"https://api.weather.gov/points/{lat_f},{lon_f}", headers=HEADERS, timeout=5)
+        if meta_resp.status_code != 200: return None
         
-        daily_resp = requests.get(meta['properties']['forecast'], headers=HEADERS).json()
-        hourly_resp = requests.get(meta['properties']['forecastHourly'], headers=HEADERS).json()
+        prop = meta_resp.json()['properties']
+        daily_resp = requests.get(prop['forecast'], headers=HEADERS).json()
+        hourly_resp = requests.get(prop['forecastHourly'], headers=HEADERS).json()
         
-        stations_url = meta['properties']['observationStations']
-        stations = requests.get(stations_url, headers=HEADERS).json()
-        st_id = stations['features'][0]['properties']['stationIdentifier']
-        obs = requests.get(f"https://api.weather.gov/stations/{st_id}/observations/latest", headers=HEADERS).json()
-        
-        alerts_resp = requests.get(f"https://api.weather.gov/alerts/active?point={lat_f},{lon_f}", headers=HEADERS).json()
+        obs_data = {}
+        try:
+            stations = requests.get(prop['observationStations'], headers=HEADERS).json()
+            if stations.get('features'):
+                st_id = stations['features'][0]['properties']['stationIdentifier']
+                obs_resp = requests.get(f"https://api.weather.gov/stations/{st_id}/observations/latest", headers=HEADERS).json()
+                obs_data = obs_resp.get('properties', {})
+        except: pass
 
-        sun = Sun(lat_f, lon_f)
-        sunrise = sun.get_local_sunrise_time().strftime("%I:%M %p")
-        sunset = sun.get_local_sunset_time().strftime("%I:%M %p")
-        env_data = get_env_data(lat_f, lon_f)
+        active_alerts = []
+        try:
+            alerts_url = f"https://api.weather.gov/alerts/active?point={lat_f},{lon_f}"
+            alerts_resp = requests.get(alerts_url, headers=HEADERS, timeout=3).json()
+            active_alerts = alerts_resp.get('features', [])
+        except: pass
 
         current = hourly_resp['properties']['periods'][0]
         temp = current['temperature']
-        humid = current.get('relativeHumidity', {}).get('value', 50)
-        wind_str = current.get('windSpeed', '0 mph').split(' ')[0]
-        wind_val = float(wind_str) if wind_str.isdigit() else 0
+        humid = current.get('relativeHumidity', {}).get('value') or 50
         
-        feels_like = calculate_feels_like(temp, humid, wind_val)
-        raw_pressure = obs['properties'].get('barometricPressure', {}).get('value')
-        pressure_inhg = round(raw_pressure * 0.0002953, 2) if raw_pressure else "N/A"
+        # Parse wind speed (Handle "7 mph" or "Calm")
+        wind_str = str(current.get('windSpeed', '0')).split(' ')[0]
+        wind_val = float(wind_str) if wind_str.replace('.','',1).isdigit() else 0
+        
+        # Pressure conversions
+        raw_p = obs_data.get('barometricPressure', {}).get('value')
+        pressure_inhg = round(raw_p * 0.0002953, 2) if raw_p else "N/A"
 
-        periods = daily_resp['properties']['periods']
+        sun = Sun(lat_f, lon_f)
+        env_data = get_env_data(lat_f, lon_f)
+
         daily_forecasts = []
+        periods = daily_resp['properties']['periods']
         for i in range(0, min(len(periods), 14), 2):
             day = periods[i]
             night = periods[i+1] if i+1 < len(periods) else day
@@ -69,18 +80,24 @@ def get_weather_data(lat, lon):
                 "high": day['temperature'], "low": night['temperature']
             })
 
+        city_camel = prop['relativeLocation']['properties']['city'].title()
+        state = prop['relativeLocation']['properties']['state']
+
         return {
-            "location": f"{meta['properties']['relativeLocation']['properties']['city']}, {meta['properties']['relativeLocation']['properties']['state']}",
+            "location": f"{city_camel}, {state}",
             "current": current,
-            "feels_like": round(feels_like),
-            "wind": {"speed": current.get('windSpeed'), "direction": current.get('windDirection'), "val": wind_val},
+            "feels_like": round(calculate_feels_like(temp, humid, wind_val)),
+            "wind": {"speed": wind_val, "direction": current.get('windDirection')},
             "pressure": pressure_inhg,
             "aqi": env_data.get('us_aqi'),
             "uv": env_data.get('uv_index'),
             "daily": daily_forecasts,
             "hourly": hourly_resp['properties']['periods'][:24],
-            "alerts": alerts_resp.get('features', []),
-            "sun": {"sunrise": sunrise, "sunset": sunset},
+            "alerts": active_alerts,
+            "sun": {
+                "sunrise": sun.get_local_sunrise_time().strftime("%I:%M %p"),
+                "sunset": sun.get_local_sunset_time().strftime("%I:%M %p")
+            },
             "updated": datetime.now().strftime("%I:%M %p"),
             "lat": lat_f, "lon": lon_f
         }
