@@ -89,7 +89,6 @@
 
         .temp-display { font-size: 5.5rem; font-weight: 800; line-height: 0.9; }
 
-        /* NEW SUNRISE/SUNSET UI */
         .sun-card {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(12px);
@@ -105,9 +104,40 @@
         .sun-item span { font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; font-weight: 700; display: block; }
         .sun-item b { font-size: 1.1rem; }
 
+        /* FIXED DAILY ROW STYLING */
         .daily-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(128, 128, 128, 0.1); }
-        .temp-bar-container { flex-grow: 1; height: 4px; background: rgba(128, 128, 128, 0.2); border-radius: 2px; margin: 0 15px; position: relative; }
-        .temp-bar-fill { position: absolute; height: 100%; border-radius: 2px; background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%); }
+        .day-label { width: 60px; font-weight: 500; font-size: 1.1rem; }
+        .day-icon-col { width: 45px; text-align: center; font-size: 1.3rem; color: var(--accent); }
+        .day-low-col { width: 40px; text-align: right; opacity: 0.5; font-size: 1.1rem; }
+        .day-high-col { width: 40px; text-align: left; font-weight: 600; font-size: 1.1rem; }
+
+        .temp-bar-container { 
+            flex-grow: 1; 
+            height: 6px; 
+            background: rgba(255, 255, 255, 0.1); 
+            border-radius: 10px; 
+            margin: 0 15px; 
+            position: relative; 
+            overflow: visible;
+        }
+        .temp-bar-fill { 
+            position: absolute; 
+            height: 100%; 
+            border-radius: 10px; 
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%); 
+        }
+        .current-temp-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: white;
+            border: 2px solid #1a1d29;
+            border-radius: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            box-shadow: 0 0 4px rgba(255,255,255,0.8);
+        }
 
         .env-badge {
             padding: 6px 12px;
@@ -240,7 +270,9 @@
         function updateUI(data) {
             const isMetric = document.getElementById('c-unit').checked;
             document.getElementById('loc-name').innerText = data.location;
-            document.getElementById('temp').innerText = formatTemp(data.current.temperature);
+            
+            const currentTempActual = formatTemp(data.current.temperature);
+            document.getElementById('temp').innerText = currentTempActual;
             document.getElementById('windchill').innerText = formatTemp(data.feels_like);
             document.getElementById('main-forecast').innerText = data.current.shortForecast;
             document.getElementById('humidity').innerText = (data.current.relativeHumidity?.value || 0) + '%';
@@ -264,19 +296,43 @@
 
             createChart(data.hourly);
 
-            const allT = data.daily.flatMap(d => [d.high, d.low]);
-            const minT = Math.min(...allT), maxT = Math.max(...allT), rangeT = (maxT - minT) || 1;
+            // CORRECT 7-DAY SCALE LOGIC
+            const weekTemps = data.daily.flatMap(d => [formatTemp(d.high), formatTemp(d.low)]);
+            const minWeek = Math.min(...weekTemps);
+            const maxWeek = Math.max(...weekTemps);
+            const rangeTotal = (maxWeek - minWeek) || 1;
+
             let dHtml = '';
             data.daily.forEach((day, i) => {
                 const dv = getVisuals(day.icon, true);
-                const left = ((day.low - minT) / rangeT) * 100;
-                const width = ((day.high - day.low) / rangeT) * 100;
-                dHtml += `<div class="daily-row">
-                    <div style="width:60px">${i === 0 ? 'Today' : day.name.substring(0, 3)}</div>
-                    <div style="width:40px"><i class="wi ${dv.icon}"></i></div>
-                    <div style="width:35px;opacity:0.6">${formatTemp(day.low)}°</div>
-                    <div class="temp-bar-container"><div class="temp-bar-fill" style="left:${left}%;width:${width}%"></div></div>
-                    <div style="width:35px;font-weight:600">${formatTemp(day.high)}°</div>
+                // Correct high/low assignment based on actual value
+                let high = formatTemp(day.high);
+                let low = formatTemp(day.low);
+                
+                // Ensure low is always the smaller number for calculation
+                if (low > high) { [low, high] = [high, low]; }
+
+                // The bar starts at 'low' relative to 'minWeek'
+                const leftPercent = ((low - minWeek) / rangeTotal) * 100;
+                // The width is the difference between high and low relative to rangeTotal
+                const widthPercent = ((high - low) / rangeTotal) * 100;
+
+                let dotHtml = '';
+                if (i === 0) {
+                    const dotPos = ((currentTempActual - minWeek) / rangeTotal) * 100;
+                    dotHtml = `<div class="current-temp-dot" style="left:${dotPos}%"></div>`;
+                }
+
+                dHtml += `
+                <div class="daily-row">
+                    <div class="day-label">${i === 0 ? 'Today' : day.name.substring(0, 3)}</div>
+                    <div class="day-icon-col"><i class="wi ${dv.icon}"></i></div>
+                    <div class="day-low-col">${low}°</div>
+                    <div class="temp-bar-container">
+                        <div class="temp-bar-fill" style="left:${leftPercent}%; width:${Math.max(widthPercent, 4)}%"></div>
+                        ${dotHtml}
+                    </div>
+                    <div class="day-high-col">${high}°</div>
                 </div>`;
             });
             document.getElementById('daily-container').innerHTML = dHtml;
@@ -320,6 +376,7 @@
             if (text.includes("thunder")) { icon = "wi-thunderstorm"; imgId = "1605727281914-c0993d79a29e"; }
             else if (text.includes("rain") || text.includes("showers")) { icon = "wi-showers"; imgId = "1515694346934-f24203c1f5d7"; }
             else if (text.includes("cloud")) { icon = isDay ? "wi-day-cloudy" : "wi-night-alt-cloudy"; imgId = "1483706600575-e3dec2d4972a"; }
+            else if (text.includes("snow")) { icon = "wi-snow"; imgId = "1517560280453-3f97473950e2"; }
             return { icon, url: `https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&w=1200&q=80` };
         }
     </script>
