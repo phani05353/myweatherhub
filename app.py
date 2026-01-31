@@ -6,7 +6,7 @@ from suntime import Sun
 
 app = Flask(__name__)
 # NWS requires a User-Agent with contact info
-HEADERS = {'User-Agent': '(MyHomeLabWeather, contact@example.com)'}
+HEADERS = {'User-Agent': '(MyHomeLab, maruthi.phanikumar@yopmail.com)'}
 
 def calculate_feels_like(temp_f, humidity, wind_speed_mph):
     if temp_f <= 50 and wind_speed_mph > 3:
