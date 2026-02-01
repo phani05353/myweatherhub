@@ -34,6 +34,69 @@
             overflow-x: hidden;
         }
 
+        /* CUSTOM LOADER ANIMATION */
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: #0f111a;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .weather-animation {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+        }
+
+        .cloud-icon {
+            font-size: 80px;
+            color: #fff;
+            animation: float 3s ease-in-out infinite;
+            position: absolute;
+            z-index: 2;
+        }
+
+        .sun-behind {
+            font-size: 50px;
+            color: #ffce00;
+            position: absolute;
+            top: -10px;
+            right: 5px;
+            animation: rotateSun 10s linear infinite;
+            z-index: 1;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        @keyframes rotateSun {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            opacity: 0.8;
+            animation: pulseText 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulseText {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+
+        /* UI STYLES */
         .main-card {
             background: var(--card-bg) !important;
             border-radius: 0 0 28px 28px;
@@ -64,9 +127,7 @@
             height: 38px;
         }
 
-        .unit-pill input {
-            display: none;
-        }
+        .unit-pill input { display: none; }
 
         .unit-pill label {
             flex: 1;
@@ -80,9 +141,7 @@
             transition: color 0.3s;
         }
 
-        .unit-pill input:checked+label {
-            color: white;
-        }
+        .unit-pill input:checked+label { color: white; }
 
         .pill-bg {
             position: absolute;
@@ -96,9 +155,7 @@
             z-index: 1;
         }
 
-        #c-unit:checked~.pill-bg {
-            transform: translateX(41px);
-        }
+        #c-unit:checked~.pill-bg { transform: translateX(41px); }
 
         .btn-circle {
             width: 38px;
@@ -173,11 +230,8 @@
             display: block;
         }
 
-        .sun-item b {
-            font-size: 1.1rem;
-        }
+        .sun-item b { font-size: 1.1rem; }
 
-        /* FIXED DAILY ROW STYLING */
         .daily-row {
             display: flex;
             align-items: center;
@@ -185,32 +239,10 @@
             border-bottom: 1px solid rgba(128, 128, 128, 0.1);
         }
 
-        .day-label {
-            width: 60px;
-            font-weight: 500;
-            font-size: 1.1rem;
-        }
-
-        .day-icon-col {
-            width: 45px;
-            text-align: center;
-            font-size: 1.3rem;
-            color: var(--accent);
-        }
-
-        .day-low-col {
-            width: 40px;
-            text-align: right;
-            opacity: 0.5;
-            font-size: 1.1rem;
-        }
-
-        .day-high-col {
-            width: 40px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 1.1rem;
-        }
+        .day-label { width: 60px; font-weight: 500; font-size: 1.1rem; }
+        .day-icon-col { width: 45px; text-align: center; font-size: 1.3rem; color: var(--accent); }
+        .day-low-col { width: 40px; text-align: right; opacity: 0.5; font-size: 1.1rem; }
+        .day-high-col { width: 40px; text-align: left; font-weight: 600; font-size: 1.1rem; }
 
         .temp-bar-container {
             flex-grow: 1;
@@ -219,7 +251,6 @@
             border-radius: 10px;
             margin: 0 15px;
             position: relative;
-            overflow: visible;
         }
 
         .temp-bar-fill {
@@ -251,25 +282,16 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             margin: 4px;
         }
-
-        #loader {
-            position: fixed;
-            inset: 0;
-            background: #0f111a;
-            z-index: 2000;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-        }
     </style>
 </head>
 
 <body>
     <div id="loader">
-        <div class="spinner-border text-primary mb-3"></div>
-        <p>Syncing Atmosphere...</p>
+        <div class="weather-animation">
+            <i class="wi wi-day-sunny sun-behind"></i>
+            <i class="wi wi-cloud cloud-icon"></i>
+        </div>
+        <p class="loading-text">Syncing Atmosphere</p>
     </div>
 
     <div class="main-card">
@@ -294,8 +316,7 @@
                         <p class="opacity-75 mb-1 fs-5">Feels like <span id="windchill">--</span>°</p>
                         <p id="main-forecast" class="fw-light mb-3">--</p>
                     </div>
-                    <i id="main-icon" class="wi"
-                        style="font-size: 5rem; color: #ffce00; filter: drop-shadow(0 0 15px rgba(255,206,0,0.4));"></i>
+                    <i id="main-icon" class="wi" style="font-size: 5rem; color: #ffce00; filter: drop-shadow(0 0 15px rgba(255,206,0,0.4));"></i>
                 </div>
 
                 <div class="d-flex flex-wrap mb-2">
@@ -324,23 +345,14 @@
         <div class="p-4">
             <div id="alert-container" style="display: none;"></div>
             <ul class="nav nav-pills mb-4 gap-2 flex-nowrap overflow-auto">
-                <li class="nav-item"><button class="nav-link active rounded-pill px-4" data-bs-toggle="pill"
-                        data-bs-target="#daily">7-Day</button></li>
-                <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill"
-                        data-bs-target="#hourly">Hourly</button></li>
-                <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill"
-                        data-bs-target="#radar">Radar</button></li>
+                <li class="nav-item"><button class="nav-link active rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#daily">7-Day</button></li>
+                <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#hourly">Hourly</button></li>
+                <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#radar">Radar</button></li>
             </ul>
             <div class="tab-content">
-                <div class="tab-pane fade show active" id="daily">
-                    <div id="daily-container"></div>
-                </div>
-                <div class="tab-pane fade" id="hourly">
-                    <div class="chart-wrapper" style="height:300px"><canvas id="hourlyChart"></canvas></div>
-                </div>
-                <div class="tab-pane fade" id="radar">
-                    <div id="radar-container"></div>
-                </div>
+                <div class="tab-pane fade show active" id="daily"><div id="daily-container"></div></div>
+                <div class="tab-pane fade" id="hourly"><div class="chart-wrapper" style="height:300px"><canvas id="hourlyChart"></canvas></div></div>
+                <div class="tab-pane fade" id="radar"><div id="radar-container"></div></div>
             </div>
         </div>
     </div>
@@ -386,7 +398,7 @@
                 .then(res => res.json()).then(data => {
                     lastData = data;
                     updateUI(data);
-                    document.getElementById('loader').style.display = 'none';
+                    setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 800);
                 });
         }
 
@@ -419,7 +431,6 @@
 
             createChart(data.hourly);
 
-            // CORRECT 7-DAY SCALE LOGIC
             const weekTemps = data.daily.flatMap(d => [formatTemp(d.high), formatTemp(d.low)]);
             const minWeek = Math.min(...weekTemps);
             const maxWeek = Math.max(...weekTemps);
@@ -428,16 +439,10 @@
             let dHtml = '';
             data.daily.forEach((day, i) => {
                 const dv = getVisuals(day.icon, true);
-                // Correct high/low assignment based on actual value
                 let high = formatTemp(day.high);
                 let low = formatTemp(day.low);
-
-                // Ensure low is always the smaller number for calculation
                 if (low > high) { [low, high] = [high, low]; }
-
-                // The bar starts at 'low' relative to 'minWeek'
                 const leftPercent = ((low - minWeek) / rangeTotal) * 100;
-                // The width is the difference between high and low relative to rangeTotal
                 const widthPercent = ((high - low) / rangeTotal) * 100;
 
                 let dotHtml = '';
@@ -467,16 +472,12 @@
             const labels = hourlyData.map(h => new Date(h.startTime).toLocaleTimeString([], { hour: '2-digit' }));
             const temps = hourlyData.map(h => formatTemp(h.temperature));
 
-            // Create Gradient for the line and background
             const chartHeight = 300;
             const gradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
-
-            // Color stops based on typical temp ranges
-            // Adjust these values if you want the color shift at different points
-            gradient.addColorStop(0, '#ff4757'); // Hot (Top)
-            gradient.addColorStop(0.5, '#ffa502'); // Warm
-            gradient.addColorStop(0.7, '#2ed573'); // Mild
-            gradient.addColorStop(1, '#1e90ff'); // Cold (Bottom)
+            gradient.addColorStop(0, '#ff4757'); 
+            gradient.addColorStop(0.5, '#ffa502'); 
+            gradient.addColorStop(0.7, '#2ed573'); 
+            gradient.addColorStop(1, '#1e90ff'); 
 
             if (myChart) myChart.destroy();
 
@@ -487,20 +488,22 @@
                     datasets: [{
                         label: 'Temp',
                         data: temps,
-                        borderColor: gradient, // Uses the temperature gradient for the line
-                        borderWidth: 5,
+                        borderColor: gradient,
+                        borderWidth: 4,
                         pointRadius: 0,
-                        pointBackgroundColor: 'white',
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: gradient,
+                        pointHoverBorderWidth: 3,
                         fill: true,
-                        tension: 0.4,
-                        // Creates a faded version of the gradient for the area under the curve
+                        tension: 0.45, 
                         backgroundColor: function (context) {
                             const chart = context.chart;
                             const { ctx, chartArea } = chart;
                             if (!chartArea) return null;
                             const bgGradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-                            bgGradient.addColorStop(0, 'rgba(255, 71, 87, 0.2)');
-                            bgGradient.addColorStop(1, 'rgba(30, 144, 255, 0.05)');
+                            bgGradient.addColorStop(0, 'rgba(255, 71, 87, 0.15)');
+                            bgGradient.addColorStop(1, 'rgba(30, 144, 255, 0.01)');
                             return bgGradient;
                         },
                     }]
@@ -508,26 +511,29 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            backgroundColor: 'rgba(0,0,0,0.8)',
-                            titleFont: { size: 14 },
-                            bodyFont: { size: 14 },
+                            enabled: true,
+                            backgroundColor: 'rgba(26, 29, 41, 0.9)',
+                            titleFont: { size: 13, weight: '600' },
+                            bodyFont: { size: 16, weight: 'bold' },
+                            padding: 12,
+                            cornerRadius: 12,
                             displayColors: false,
-                            callbacks: {
-                                label: (context) => ` ${context.parsed.y}°`
-                            }
+                            callbacks: { label: (context) => ` ${context.parsed.y}°` }
                         }
                     },
                     scales: {
                         y: {
-                            grid: { color: 'rgba(128,128,128,0.1)', drawBorder: false },
-                            ticks: { color: 'rgba(255,255,255,0.5)' }
+                            beginAtZero: false,
+                            grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false, tickLength: 0 },
+                            ticks: { color: 'rgba(255, 255, 255, 0.4)', font: { size: 11 }, padding: 10 }
                         },
                         x: {
                             grid: { display: false },
-                            ticks: { color: 'rgba(255,255,255,0.5)' }
+                            ticks: { color: 'rgba(255, 255, 255, 0.4)', font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }
                         }
                     }
                 }
