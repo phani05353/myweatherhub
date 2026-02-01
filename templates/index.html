@@ -23,13 +23,12 @@
             --accent: #0056b3;
         }
 
-        /* Fixed Mobile Scrolling - Removed Bounce Logic */
         html,
         body {
-            height: 100%;
+            height: auto;
+            min-height: 100%;
             margin: 0;
             padding: 0;
-            overscroll-behavior-y: none; /* Prevents browser-level rubber-banding */
         }
 
         body {
@@ -38,7 +37,7 @@
             font-size: 1.1rem;
             overflow-x: hidden;
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+            -webkit-overflow-scrolling: touch; 
         }
 
         .main-card {
@@ -49,7 +48,7 @@
             border: 1px solid rgba(128, 128, 128, 0.1);
             position: relative;
             max-width: 600px;
-            margin: 0 auto 60px auto; /* Added slightly more bottom margin for breathing room */
+            margin: 0 auto 60px auto;
             will-change: transform;
         }
 
@@ -407,8 +406,6 @@
         let lastData = null; 
         let myChart = null;
         const hourlyModal = new bootstrap.Modal(document.getElementById('hourlyModal'));
-
-        // Removed the scroll event listener that triggered the bounce animation.
 
         if (localStorage.getItem('theme') === 'light') toggleTheme(true);
         const savedUnit = localStorage.getItem('unit') || 'imperial';

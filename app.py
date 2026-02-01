@@ -86,11 +86,10 @@ def get_weather_data(lat, lon):
             daily_forecasts.append({
                 "name": day['name'], "icon": day['shortForecast'],
                 "high": day['temperature'], "low": night['temperature'],
-                "date": day['startTime'][:10] # Added date for filtering
+                "date": day['startTime'][:10]
             })
 
         processed_hourly = []
-        # Pull 120 hours to cover most of the week
         for p in hourly_resp['properties']['periods'][:120]:
             processed_hourly.append({
                 "startTime": p['startTime'],
