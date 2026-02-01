@@ -24,11 +24,12 @@
         }
 
         /* Fixed Mobile Scrolling & Bounce Prep */
-        html, body {
+        html,
+        body {
             height: 100%;
             margin: 0;
             padding: 0;
-            overscroll-behavior-y: contain; /* Allows natural bounce but prevents full page reload */
+            overscroll-behavior-y: contain;
         }
 
         body {
@@ -48,7 +49,8 @@
             border: 1px solid rgba(128, 128, 128, 0.1);
             position: relative;
             max-width: 600px;
-            margin: 0 auto;
+            margin: 0 auto 40px auto;
+            /* Added bottom margin since footer is gone */
             transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             will-change: transform;
         }
@@ -59,9 +61,17 @@
         }
 
         @keyframes bounceKeyframes {
-            0% { transform: translateY(0); }
-            30% { transform: translateY(-25px); } /* Upward pull */
-            100% { transform: translateY(0); }
+            0% {
+                transform: translateY(0);
+            }
+
+            30% {
+                transform: translateY(-25px);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
         }
 
         #loader {
@@ -83,62 +93,290 @@
             margin-bottom: 20px;
         }
 
-        .cloud-icon { font-size: 60px; color: #fff; animation: float 3s ease-in-out infinite; position: absolute; z-index: 2; }
-        .sun-behind { font-size: 40px; color: #ffce00; position: absolute; top: -10px; right: 5px; animation: rotateSun 10s linear infinite; z-index: 1; }
+        .cloud-icon {
+            font-size: 60px;
+            color: #fff;
+            animation: float 3s ease-in-out infinite;
+            position: absolute;
+            z-index: 2;
+        }
 
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        @keyframes rotateSun { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .sun-behind {
+            font-size: 40px;
+            color: #ffce00;
+            position: absolute;
+            top: -10px;
+            right: 5px;
+            animation: rotateSun 10s linear infinite;
+            z-index: 1;
+        }
 
-        .controls { position: absolute; top: 12px; right: 12px; z-index: 1050; display: flex; gap: 8px; }
-        .unit-pill { position: relative; display: flex; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px); padding: 3px; border-radius: 50px; border: 1px solid rgba(255, 255, 255, 0.1); width: 90px; height: 38px; }
-        .unit-pill input { display: none; }
-        .unit-pill label { flex: 1; z-index: 2; text-align: center; line-height: 32px; font-size: 0.9rem; font-weight: 700; cursor: pointer; color: rgba(255, 255, 255, 0.5); }
-        .unit-pill input:checked+label { color: white; }
-        .pill-bg { position: absolute; top: 3px; left: 3px; width: 42px; height: 32px; background: var(--accent); border-radius: 50px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1; }
-        #c-unit:checked~.pill-bg { transform: translateX(42px); }
+        @keyframes float {
 
-        .btn-circle { width: 38px; height: 38px; border-radius: 50%; border: none; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px); color: white; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+            0%,
+            100% {
+                transform: translateY(0);
+            }
 
-        .header-bg { position: relative; min-height: 400px; width: 100%; overflow: hidden; display: flex; flex-direction: column; }
-        #dynamic-bg { position: absolute; inset: 0; background-size: cover; background-position: center; transition: background 1s; }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
 
-        .header-content { position: relative; z-index: 5; flex: 1; padding: 24px; display: flex; flex-direction: column; justify-content: flex-end; color: white !important; background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.85) 100%); }
-        .temp-display { font-size: clamp(4.5rem, 18vw, 6.5rem); font-weight: 800; line-height: 0.85; letter-spacing: -2px; }
+        @keyframes rotateSun {
+            from {
+                transform: rotate(0deg);
+            }
 
-        .sun-card { background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(15px); border-radius: 20px; padding: 15px; margin-top: 15px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-around; }
-        .sun-item i { font-size: 1.4rem; color: #ffce00; display: block; margin-bottom: 4px; }
-        .sun-item span { font-size: 0.75rem; text-transform: uppercase; opacity: 0.7; font-weight: 700; display: block; }
-        .sun-item b { font-size: 1.1rem; }
+            to {
+                transform: rotate(360deg);
+            }
+        }
 
-        .daily-row { display: flex; align-items: center; padding: 16px 10px; border-bottom: 1px solid rgba(128, 128, 128, 0.08); }
-        .daily-row.clickable:active { background: rgba(255, 255, 255, 0.1); }
-        .day-label { width: 60px; font-weight: 600; }
-        .day-icon-col { width: 45px; text-align: center; font-size: 1.4rem; color: var(--accent); }
-        .day-low-col { width: 45px; text-align: right; opacity: 0.6; }
-        .day-high-col { width: 45px; text-align: left; font-weight: 700; }
+        .controls {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 1050;
+            display: flex;
+            gap: 8px;
+        }
 
-        .temp-bar-container { flex-grow: 1; height: 6px; background: rgba(128, 128, 128, 0.15); border-radius: 10px; margin: 0 12px; position: relative; }
-        .temp-bar-fill { position: absolute; height: 100%; border-radius: 10px; background: linear-gradient(90deg, #4facfe, #00f2fe); }
-        .current-temp-dot { position: absolute; width: 8px; height: 8px; background: white; border: 1.5px solid #1a1d29; border-radius: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 5; }
+        .unit-pill {
+            position: relative;
+            display: flex;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            padding: 3px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 90px;
+            height: 38px;
+        }
 
-        .env-badge { padding: 6px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); margin: 4px; white-space: nowrap; }
+        .unit-pill input {
+            display: none;
+        }
 
-        .nav-pills { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 8px; }
-        .nav-pills::-webkit-scrollbar { display: none; }
-        .nav-pills .nav-link { font-size: 1rem; padding: 10px 24px; color: rgba(255, 255, 255, 0.6); }
-        .nav-pills .nav-link.active { background-color: var(--accent) !important; color: white; }
-
-        .powered-by-footer {
-            padding: 40px 15px 100px 15px; /* Large bottom padding so the bounce isn't cut off */
+        .unit-pill label {
+            flex: 1;
+            z-index: 2;
             text-align: center;
-            opacity: 0.85;
+            line-height: 32px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .unit-pill input:checked+label {
+            color: white;
+        }
+
+        .pill-bg {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 42px;
+            height: 32px;
+            background: var(--accent);
+            border-radius: 50px;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
+        }
+
+        #c-unit:checked~.pill-bg {
+            transform: translateX(42px);
+        }
+
+        .btn-circle {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 1rem;
-            color: var(--accent);
+        }
+
+        .header-bg {
+            position: relative;
+            min-height: 400px;
+            width: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #dynamic-bg {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            transition: background 1s;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 5;
+            flex: 1;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            color: white !important;
+            background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.85) 100%);
+        }
+
+        .temp-display {
+            font-size: clamp(4.5rem, 18vw, 6.5rem);
+            font-weight: 800;
+            line-height: 0.85;
+            letter-spacing: -2px;
+        }
+
+        .sun-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .sun-item i {
+            font-size: 1.4rem;
+            color: #ffce00;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .sun-item span {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            opacity: 0.7;
+            font-weight: 700;
+            display: block;
+        }
+
+        .sun-item b {
+            font-size: 1.1rem;
+        }
+
+        .daily-row {
+            display: flex;
+            align-items: center;
+            padding: 16px 10px;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.08);
+        }
+
+        .daily-row.clickable:active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .day-label {
+            width: 60px;
             font-weight: 600;
         }
 
-        .modal-content { border-radius: 24px; border: none; background: #1a1d29; }
-        @media (max-width: 400px) { .temp-display { font-size: 4rem; } }
+        .day-icon-col {
+            width: 45px;
+            text-align: center;
+            font-size: 1.4rem;
+            color: var(--accent);
+        }
+
+        .day-low-col {
+            width: 45px;
+            text-align: right;
+            opacity: 0.6;
+        }
+
+        .day-high-col {
+            width: 45px;
+            text-align: left;
+            font-weight: 700;
+        }
+
+        .temp-bar-container {
+            flex-grow: 1;
+            height: 6px;
+            background: rgba(128, 128, 128, 0.15);
+            border-radius: 10px;
+            margin: 0 12px;
+            position: relative;
+        }
+
+        .temp-bar-fill {
+            position: absolute;
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+        }
+
+        .current-temp-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: white;
+            border: 1.5px solid #1a1d29;
+            border-radius: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+        }
+
+        .env-badge {
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin: 4px;
+            white-space: nowrap;
+        }
+
+        .nav-pills {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none;
+            gap: 8px;
+        }
+
+        .nav-pills::-webkit-scrollbar {
+            display: none;
+        }
+
+        .nav-pills .nav-link {
+            font-size: 1rem;
+            padding: 10px 24px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .nav-pills .nav-link.active {
+            background-color: var(--accent) !important;
+            color: white;
+        }
+
+        .modal-content {
+            border-radius: 24px;
+            border: none;
+            background: #1a1d29;
+        }
+
+        @media (max-width: 400px) {
+            .temp-display {
+                font-size: 4rem;
+            }
+        }
     </style>
 </head>
 
@@ -148,7 +386,8 @@
             <i class="wi wi-day-sunny sun-behind"></i>
             <i class="wi wi-cloud cloud-icon"></i>
         </div>
-        <p class="loading-text" style="font-size: 0.85rem; letter-spacing: 3px; font-weight: 600;">Syncing Atmosphere</p>
+        <p class="loading-text" style="font-size: 0.85rem; letter-spacing: 3px; font-weight: 600;">Syncing Atmosphere
+        </p>
     </div>
 
     <div class="modal fade" id="hourlyModal" tabindex="-1" aria-hidden="true">
@@ -156,7 +395,8 @@
             <div class="modal-content">
                 <div class="modal-header border-0 pb-0">
                     <h6 class="modal-title fw-bold" id="modalDayLabel">Hourly</h6>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div style="height: 280px;"><canvas id="hourlyChart"></canvas></div>
@@ -180,13 +420,16 @@
         <div class="header-bg">
             <div id="dynamic-bg"></div>
             <div class="header-content">
-                <h6 id="loc-name" class="text-uppercase opacity-50 fw-bold mb-1" style="font-size: 0.8rem; letter-spacing: 1px;">---</h6>
+                <h6 id="loc-name" class="text-uppercase opacity-50 fw-bold mb-1"
+                    style="font-size: 0.8rem; letter-spacing: 1px;">---</h6>
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h1 class="temp-display mb-0"><span id="temp">--</span>°</h1>
-                        <p class="opacity-75 mb-0" style="font-size: 1.1rem; margin-top: 5px;">Feels like <span id="windchill">--</span>°</p>
+                        <p class="opacity-75 mb-0" style="font-size: 1.1rem; margin-top: 5px;">Feels like <span
+                                id="windchill">--</span>°</p>
                     </div>
-                    <i id="main-icon" class="wi" style="font-size: 5rem; color: #ffce00; filter: drop-shadow(0 0 10px rgba(255,206,0,0.3));"></i>
+                    <i id="main-icon" class="wi"
+                        style="font-size: 5rem; color: #ffce00; filter: drop-shadow(0 0 10px rgba(255,206,0,0.3));"></i>
                 </div>
                 <p id="main-forecast" class="fw-light mt-3 mb-3" style="font-size: 1.25rem;">--</p>
 
@@ -198,7 +441,8 @@
                 </div>
 
                 <div class="sun-card">
-                    <div class="sun-item"><i class="wi wi-sunrise"></i><span>Sunrise</span><b id="sunrise">--:--</b></div>
+                    <div class="sun-item"><i class="wi wi-sunrise"></i><span>Sunrise</span><b id="sunrise">--:--</b>
+                    </div>
                     <div class="sun-item" style="width: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
                     <div class="sun-item"><i class="wi wi-sunset"></i><span>Sunset</span><b id="sunset">--:--</b></div>
                 </div>
@@ -208,8 +452,10 @@
         <div class="p-4">
             <div id="alert-container" style="display: none;"></div>
             <ul class="nav nav-pills mb-3">
-                <li class="nav-item"><button class="nav-link active rounded-pill" data-bs-toggle="pill" data-bs-target="#daily">7-Day</button></li>
-                <li class="nav-item"><button class="nav-link rounded-pill" data-bs-toggle="pill" data-bs-target="#radar">Radar</button></li>
+                <li class="nav-item"><button class="nav-link active rounded-pill" data-bs-toggle="pill"
+                        data-bs-target="#daily">7-Day</button></li>
+                <li class="nav-item"><button class="nav-link rounded-pill" data-bs-toggle="pill"
+                        data-bs-target="#radar">Radar</button></li>
             </ul>
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="daily">
@@ -222,23 +468,17 @@
         </div>
     </div>
 
-    <footer class="powered-by-footer">
-        Powered by National Weather Service, OpenMeteo & Windy
-    </footer>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let lastData = null; let myChart = null;
         const hourlyModal = new bootstrap.Modal(document.getElementById('hourlyModal'));
         let isBouncing = false;
 
-        // --- REFINED BOUNCE LOGIC ---
         window.addEventListener('scroll', () => {
             const scrollHeight = document.documentElement.scrollHeight;
             const scrollTop = window.scrollY || document.documentElement.scrollTop;
             const clientHeight = window.innerHeight;
 
-            // Trigger when reaching near bottom (threshold 10px)
             if (scrollTop + clientHeight >= scrollHeight - 10) {
                 const card = document.querySelector('.main-card');
                 if (!isBouncing) {
@@ -398,4 +638,5 @@
         }
     </script>
 </body>
+
 </html>
