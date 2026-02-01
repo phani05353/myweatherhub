@@ -28,7 +28,7 @@
             height: 100%;
             margin: 0;
             padding: 0;
-            overscroll-behavior-y: none; /* Stops the "pull-to-refresh" bounce effect */
+            overscroll-behavior-y: none; /* Keeps custom control over the bounce */
         }
 
         body {
@@ -37,11 +37,35 @@
             font-size: 1.1rem;
             overflow-x: hidden;
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch; /* Enables momentum scrolling on iOS */
+            -webkit-overflow-scrolling: touch;
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Loader */
+        /* --- BOUNCE EFFECT CSS --- */
+        .main-card {
+            background: var(--card-bg) !important;
+            border-radius: 0 0 32px 32px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(128, 128, 128, 0.1);
+            position: relative;
+            max-width: 600px;
+            margin: 0 auto;
+            /* Prep for animation */
+            transition: transform 0.1s ease-out;
+            will-change: transform;
+        }
+
+        .bounce-bottom {
+            animation: bounceKeyframes 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+        }
+
+        @keyframes bounceKeyframes {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); } /* Slight upward pull at the bottom */
+        }
+        /* ------------------------- */
+
         #loader {
             position: fixed;
             inset: 0;
@@ -87,18 +111,6 @@
         @keyframes rotateSun {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
-        }
-
-        /* Card & Layout */
-        .main-card {
-            background: var(--card-bg) !important;
-            border-radius: 0 0 32px 32px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(128, 128, 128, 0.1);
-            position: relative;
-            max-width: 600px;
-            margin: 0 auto;
         }
 
         .controls {
@@ -165,7 +177,6 @@
             font-size: 1rem;
         }
 
-        /* Header */
         .header-bg {
             position: relative;
             min-height: 400px;
@@ -230,7 +241,6 @@
 
         .sun-item b { font-size: 1.1rem; }
 
-        /* Daily List */
         .daily-row {
             display: flex;
             align-items: center;
@@ -307,13 +317,12 @@
             white-space: nowrap;
         }
 
-        /* Tabs and Navigation */
         .nav-pills {
             display: flex;
             flex-wrap: nowrap;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
-            overscroll-behavior-x: contain; /* Prevents sliding the whole page when scrolling tabs */
+            overscroll-behavior-x: contain;
             scrollbar-width: none;
             gap: 8px;
         }
@@ -333,9 +342,8 @@
             color: white;
         }
 
-        /* Footer */
         .powered-by-footer {
-            padding: 40px 15px;
+            padding: 40px 15px 80px 15px; /* Added bottom padding for bounce space */
             text-align: center;
             opacity: 0.85;
             font-size: 1rem;
@@ -445,6 +453,24 @@
     <script>
         let lastData = null; let myChart = null;
         const hourlyModal = new bootstrap.Modal(document.getElementById('hourlyModal'));
+
+        // --- BOUNCE LOGIC ---
+        window.addEventListener('scroll', () => {
+            const scrollHeight = document.documentElement.scrollHeight;
+            const scrollTop = window.scrollY || document.documentElement.scrollTop;
+            const clientHeight = window.innerHeight;
+
+            // Trigger when reaching the bottom
+            if (scrollTop + clientHeight >= scrollHeight - 2) {
+                const card = document.querySelector('.main-card');
+                if (!card.classList.contains('bounce-bottom')) {
+                    card.classList.add('bounce-bottom');
+                    setTimeout(() => {
+                        card.classList.remove('bounce-bottom');
+                    }, 400);
+                }
+            }
+        }, { passive: true });
 
         if (localStorage.getItem('theme') === 'light') toggleTheme(true);
         const savedUnit = localStorage.getItem('unit') || 'imperial';
