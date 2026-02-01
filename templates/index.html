@@ -23,12 +23,12 @@
             --accent: #0056b3;
         }
 
-        /* Essential Fixes for Mobile Friction */
+        /* Fixed Mobile Scrolling & Bounce Prep */
         html, body {
             height: 100%;
             margin: 0;
             padding: 0;
-            overscroll-behavior-y: none; /* Keeps custom control over the bounce */
+            overscroll-behavior-y: contain; /* Allows natural bounce but prevents full page reload */
         }
 
         body {
@@ -38,10 +38,8 @@
             overflow-x: hidden;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            -webkit-tap-highlight-color: transparent;
         }
 
-        /* --- BOUNCE EFFECT CSS --- */
         .main-card {
             background: var(--card-bg) !important;
             border-radius: 0 0 32px 32px;
@@ -51,20 +49,20 @@
             position: relative;
             max-width: 600px;
             margin: 0 auto;
-            /* Prep for animation */
-            transition: transform 0.1s ease-out;
+            transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             will-change: transform;
         }
 
+        /* Improved Bounce Animation */
         .bounce-bottom {
-            animation: bounceKeyframes 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+            animation: bounceKeyframes 0.5s ease-out;
         }
 
         @keyframes bounceKeyframes {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); } /* Slight upward pull at the bottom */
+            0% { transform: translateY(0); }
+            30% { transform: translateY(-25px); } /* Upward pull */
+            100% { transform: translateY(0); }
         }
-        /* ------------------------- */
 
         #loader {
             position: fixed;
@@ -85,283 +83,62 @@
             margin-bottom: 20px;
         }
 
-        .cloud-icon {
-            font-size: 60px;
-            color: #fff;
-            animation: float 3s ease-in-out infinite;
-            position: absolute;
-            z-index: 2;
-        }
+        .cloud-icon { font-size: 60px; color: #fff; animation: float 3s ease-in-out infinite; position: absolute; z-index: 2; }
+        .sun-behind { font-size: 40px; color: #ffce00; position: absolute; top: -10px; right: 5px; animation: rotateSun 10s linear infinite; z-index: 1; }
 
-        .sun-behind {
-            font-size: 40px;
-            color: #ffce00;
-            position: absolute;
-            top: -10px;
-            right: 5px;
-            animation: rotateSun 10s linear infinite;
-            z-index: 1;
-        }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes rotateSun { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-
-        @keyframes rotateSun {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .controls {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            z-index: 1050;
-            display: flex;
-            gap: 8px;
-        }
-
-        .unit-pill {
-            position: relative;
-            display: flex;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(10px);
-            padding: 3px;
-            border-radius: 50px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            width: 90px;
-            height: 38px;
-        }
-
+        .controls { position: absolute; top: 12px; right: 12px; z-index: 1050; display: flex; gap: 8px; }
+        .unit-pill { position: relative; display: flex; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px); padding: 3px; border-radius: 50px; border: 1px solid rgba(255, 255, 255, 0.1); width: 90px; height: 38px; }
         .unit-pill input { display: none; }
-
-        .unit-pill label {
-            flex: 1;
-            z-index: 2;
-            text-align: center;
-            line-height: 32px;
-            font-size: 0.9rem;
-            font-weight: 700;
-            cursor: pointer;
-            color: rgba(255, 255, 255, 0.5);
-        }
-
+        .unit-pill label { flex: 1; z-index: 2; text-align: center; line-height: 32px; font-size: 0.9rem; font-weight: 700; cursor: pointer; color: rgba(255, 255, 255, 0.5); }
         .unit-pill input:checked+label { color: white; }
-
-        .pill-bg {
-            position: absolute;
-            top: 3px;
-            left: 3px;
-            width: 42px;
-            height: 32px;
-            background: var(--accent);
-            border-radius: 50px;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 1;
-        }
-
+        .pill-bg { position: absolute; top: 3px; left: 3px; width: 42px; height: 32px; background: var(--accent); border-radius: 50px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1; }
         #c-unit:checked~.pill-bg { transform: translateX(42px); }
 
-        .btn-circle {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            border: none;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(10px);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-        }
+        .btn-circle { width: 38px; height: 38px; border-radius: 50%; border: none; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px); color: white; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
 
-        .header-bg {
-            position: relative;
-            min-height: 400px;
-            width: 100%;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
+        .header-bg { position: relative; min-height: 400px; width: 100%; overflow: hidden; display: flex; flex-direction: column; }
+        #dynamic-bg { position: absolute; inset: 0; background-size: cover; background-position: center; transition: background 1s; }
 
-        #dynamic-bg {
-            position: absolute;
-            inset: 0;
-            background-size: cover;
-            background-position: center;
-            transition: background 1s;
-        }
+        .header-content { position: relative; z-index: 5; flex: 1; padding: 24px; display: flex; flex-direction: column; justify-content: flex-end; color: white !important; background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.85) 100%); }
+        .temp-display { font-size: clamp(4.5rem, 18vw, 6.5rem); font-weight: 800; line-height: 0.85; letter-spacing: -2px; }
 
-        .header-content {
-            position: relative;
-            z-index: 5;
-            flex: 1;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            color: white !important;
-            background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.85) 100%);
-        }
-
-        .temp-display {
-            font-size: clamp(4.5rem, 18vw, 6.5rem);
-            font-weight: 800;
-            line-height: 0.85;
-            letter-spacing: -2px;
-        }
-
-        .sun-card {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(15px);
-            border-radius: 20px;
-            padding: 15px;
-            margin-top: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            justify-content: space-around;
-        }
-
-        .sun-item i {
-            font-size: 1.4rem;
-            color: #ffce00;
-            display: block;
-            margin-bottom: 4px;
-        }
-
-        .sun-item span {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            opacity: 0.7;
-            font-weight: 700;
-            display: block;
-        }
-
+        .sun-card { background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(15px); border-radius: 20px; padding: 15px; margin-top: 15px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-around; }
+        .sun-item i { font-size: 1.4rem; color: #ffce00; display: block; margin-bottom: 4px; }
+        .sun-item span { font-size: 0.75rem; text-transform: uppercase; opacity: 0.7; font-weight: 700; display: block; }
         .sun-item b { font-size: 1.1rem; }
 
-        .daily-row {
-            display: flex;
-            align-items: center;
-            padding: 16px 10px;
-            border-bottom: 1px solid rgba(128, 128, 128, 0.08);
-            transition: background 0.2s;
-        }
-
+        .daily-row { display: flex; align-items: center; padding: 16px 10px; border-bottom: 1px solid rgba(128, 128, 128, 0.08); }
         .daily-row.clickable:active { background: rgba(255, 255, 255, 0.1); }
+        .day-label { width: 60px; font-weight: 600; }
+        .day-icon-col { width: 45px; text-align: center; font-size: 1.4rem; color: var(--accent); }
+        .day-low-col { width: 45px; text-align: right; opacity: 0.6; }
+        .day-high-col { width: 45px; text-align: left; font-weight: 700; }
 
-        .day-label {
-            width: 60px;
-            font-weight: 600;
-            font-size: 1.1rem;
-        }
+        .temp-bar-container { flex-grow: 1; height: 6px; background: rgba(128, 128, 128, 0.15); border-radius: 10px; margin: 0 12px; position: relative; }
+        .temp-bar-fill { position: absolute; height: 100%; border-radius: 10px; background: linear-gradient(90deg, #4facfe, #00f2fe); }
+        .current-temp-dot { position: absolute; width: 8px; height: 8px; background: white; border: 1.5px solid #1a1d29; border-radius: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 5; }
 
-        .day-icon-col {
-            width: 45px;
-            text-align: center;
-            font-size: 1.4rem;
-            color: var(--accent);
-        }
+        .env-badge { padding: 6px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); margin: 4px; white-space: nowrap; }
 
-        .day-low-col {
-            width: 45px;
-            text-align: right;
-            opacity: 0.6;
-            font-size: 1.05rem;
-        }
-
-        .day-high-col {
-            width: 45px;
-            text-align: left;
-            font-weight: 700;
-            font-size: 1.05rem;
-        }
-
-        .temp-bar-container {
-            flex-grow: 1;
-            height: 6px;
-            background: rgba(128, 128, 128, 0.15);
-            border-radius: 10px;
-            margin: 0 12px;
-            position: relative;
-        }
-
-        .temp-bar-fill {
-            position: absolute;
-            height: 100%;
-            border-radius: 10px;
-            background: linear-gradient(90deg, #4facfe, #00f2fe);
-        }
-
-        .current-temp-dot {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            background: white;
-            border: 1.5px solid #1a1d29;
-            border-radius: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 5;
-        }
-
-        .env-badge {
-            padding: 6px 12px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            background: rgba(0, 0, 0, 0.35);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            margin: 4px;
-            white-space: nowrap;
-        }
-
-        .nav-pills {
-            display: flex;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            overscroll-behavior-x: contain;
-            scrollbar-width: none;
-            gap: 8px;
-        }
-
+        .nav-pills { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 8px; }
         .nav-pills::-webkit-scrollbar { display: none; }
-
-        .nav-pills .nav-link {
-            font-size: 1rem;
-            padding: 10px 24px;
-            color: rgba(255, 255, 255, 0.6);
-            border: 1px solid transparent;
-            white-space: nowrap;
-        }
-
-        .nav-pills .nav-link.active {
-            background-color: var(--accent) !important;
-            color: white;
-        }
+        .nav-pills .nav-link { font-size: 1rem; padding: 10px 24px; color: rgba(255, 255, 255, 0.6); }
+        .nav-pills .nav-link.active { background-color: var(--accent) !important; color: white; }
 
         .powered-by-footer {
-            padding: 40px 15px 80px 15px; /* Added bottom padding for bounce space */
+            padding: 40px 15px 100px 15px; /* Large bottom padding so the bounce isn't cut off */
             text-align: center;
             opacity: 0.85;
             font-size: 1rem;
             color: var(--accent);
             font-weight: 600;
-            line-height: 1.6;
         }
 
-        .modal-content {
-            border-radius: 24px;
-            border: none;
-            background: #1a1d29;
-        }
-
-        @media (max-width: 400px) {
-            .temp-display { font-size: 4rem; }
-            .env-badge { font-size: 0.75rem; padding: 4px 10px; }
-        }
+        .modal-content { border-radius: 24px; border: none; background: #1a1d29; }
+        @media (max-width: 400px) { .temp-display { font-size: 4rem; } }
     </style>
 </head>
 
@@ -453,21 +230,24 @@
     <script>
         let lastData = null; let myChart = null;
         const hourlyModal = new bootstrap.Modal(document.getElementById('hourlyModal'));
+        let isBouncing = false;
 
-        // --- BOUNCE LOGIC ---
+        // --- REFINED BOUNCE LOGIC ---
         window.addEventListener('scroll', () => {
             const scrollHeight = document.documentElement.scrollHeight;
             const scrollTop = window.scrollY || document.documentElement.scrollTop;
             const clientHeight = window.innerHeight;
 
-            // Trigger when reaching the bottom
-            if (scrollTop + clientHeight >= scrollHeight - 2) {
+            // Trigger when reaching near bottom (threshold 10px)
+            if (scrollTop + clientHeight >= scrollHeight - 10) {
                 const card = document.querySelector('.main-card');
-                if (!card.classList.contains('bounce-bottom')) {
+                if (!isBouncing) {
+                    isBouncing = true;
                     card.classList.add('bounce-bottom');
                     setTimeout(() => {
                         card.classList.remove('bounce-bottom');
-                    }, 400);
+                        isBouncing = false;
+                    }, 500);
                 }
             }
         }, { passive: true });
@@ -509,7 +289,7 @@
                     lastData = data;
                     updateUI(data);
                     setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 800);
-                });
+                }).catch(err => console.error("Fetch Error:", err));
         }
 
         function showDayHourly(dateStr, dayName) {
@@ -607,7 +387,7 @@
         }
 
         function getVisuals(text, isDay) {
-            text = text.toLowerCase();
+            text = (text || "").toLowerCase();
             let icon = isDay ? "wi-day-sunny" : "wi-night-clear";
             let imgId = isDay ? "1534088568595-a066f410bcda" : "1507400492013-162706c8c05e";
             if (text.includes("thunder")) { icon = "wi-thunderstorm"; imgId = "1605727281914-c0993d79a29e"; }
