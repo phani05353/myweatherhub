@@ -37,7 +37,17 @@
             font-size: 1.1rem;
             overflow-x: hidden;
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch; 
+            -webkit-overflow-scrolling: touch;
+            /* FIX 1: Prevents uneven elastic bouncing at scroll boundaries */
+            overscroll-behavior-y: none;
+        }
+
+        /* FIX 2: Replaces collapsing margin with a stable document spacer */
+        body::after {
+            content: "";
+            display: block;
+            height: 60px;
+            width: 100%;
         }
 
         .main-card {
@@ -48,8 +58,9 @@
             border: 1px solid rgba(128, 128, 128, 0.1);
             position: relative;
             max-width: 600px;
-            margin: 0 auto 60px auto;
-            will-change: transform;
+            margin: 0 auto;
+            /* FIX 3: Set to auto to prevent sub-pixel snapping jitter */
+            will-change: auto;
         }
 
         #loader {
@@ -395,7 +406,7 @@
                     <div id="daily-container"></div>
                 </div>
                 <div class="tab-pane fade" id="radar">
-                    <div id="radar-container"></div>
+                    <div id="radar-container" style="min-height: 350px;"></div>
                 </div>
             </div>
         </div>
