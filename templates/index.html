@@ -9,76 +9,387 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/weather-icons/2.0.12/css/weather-icons.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --glass: rgba(255, 255, 255, 0.05); --bg-color: #0f111a; --card-bg: #1a1d29; --accent: #70a1ff; }
-        [data-bs-theme="light"] { --glass: rgba(0, 0, 0, 0.05); --bg-color: #f8f9fa; --card-bg: #ffffff; --accent: #0056b3; }
-        
-        body { background-color: var(--bg-color) !important; font-family: system-ui, -apple-system, sans-serif; padding: 0; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        :root {
+            --glass: rgba(255, 255, 255, 0.05);
+            --bg-color: #0f111a;
+            --card-bg: #1a1d29;
+            --accent: #70a1ff;
+        }
+
+        [data-bs-theme="light"] {
+            --glass: rgba(0, 0, 0, 0.05);
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --accent: #0056b3;
+        }
+
+        body {
+            background-color: var(--bg-color) !important;
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 0;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
 
         /* Loader */
-        #loader { position: fixed; inset: 0; background: #0f111a; z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; }
-        .weather-animation { position: relative; width: 80px; height: 80px; margin-bottom: 20px; }
-        .cloud-icon { font-size: 60px; color: #fff; animation: float 3s ease-in-out infinite; position: absolute; z-index: 2; }
-        .sun-behind { font-size: 40px; color: #ffce00; position: absolute; top: -10px; right: 5px; animation: rotateSun 10s linear infinite; z-index: 1; }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        @keyframes rotateSun { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: #0f111a;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .weather-animation {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+        }
+
+        .cloud-icon {
+            font-size: 60px;
+            color: #fff;
+            animation: float 3s ease-in-out infinite;
+            position: absolute;
+            z-index: 2;
+        }
+
+        .sun-behind {
+            font-size: 40px;
+            color: #ffce00;
+            position: absolute;
+            top: -10px;
+            right: 5px;
+            animation: rotateSun 10s linear infinite;
+            z-index: 1;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes rotateSun {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
 
         /* Card & Layout */
-        .main-card { background: var(--card-bg) !important; border-radius: 0 0 32px 32px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); border: 1px solid rgba(128, 128, 128, 0.1); position: relative; max-width: 600px; margin: 0 auto; }
-        
-        .controls { position: absolute; top: 12px; right: 12px; z-index: 1050; display: flex; gap: 8px; }
-        .unit-pill { position: relative; display: flex; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px); padding: 3px; border-radius: 50px; border: 1px solid rgba(255, 255, 255, 0.1); width: 80px; height: 34px; }
-        .unit-pill input { display: none; }
-        .unit-pill label { flex: 1; z-index: 2; text-align: center; line-height: 28px; font-size: 0.75rem; font-weight: 700; cursor: pointer; color: rgba(255, 255, 255, 0.5); }
-        .unit-pill input:checked+label { color: white; }
-        .pill-bg { position: absolute; top: 3px; left: 3px; width: 37px; height: 28px; background: var(--accent); border-radius: 50px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1; }
-        #c-unit:checked~.pill-bg { transform: translateX(37px); }
+        .main-card {
+            background: var(--card-bg) !important;
+            border-radius: 0 0 32px 32px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(128, 128, 128, 0.1);
+            position: relative;
+            max-width: 600px;
+            margin: 0 auto;
+        }
 
-        .btn-circle { width: 34px; height: 34px; border-radius: 50%; border: none; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+        .controls {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 1050;
+            display: flex;
+            gap: 8px;
+        }
+
+        .unit-pill {
+            position: relative;
+            display: flex;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            padding: 3px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 80px;
+            height: 34px;
+        }
+
+        .unit-pill input {
+            display: none;
+        }
+
+        .unit-pill label {
+            flex: 1;
+            z-index: 2;
+            text-align: center;
+            line-height: 28px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .unit-pill input:checked+label {
+            color: white;
+        }
+
+        .pill-bg {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 37px;
+            height: 28px;
+            background: var(--accent);
+            border-radius: 50px;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
+        }
+
+        #c-unit:checked~.pill-bg {
+            transform: translateX(37px);
+        }
+
+        .btn-circle {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
 
         /* Header */
-        .header-bg { position: relative; min-height: 380px; width: 100%; overflow: hidden; display: flex; flex-direction: column; }
-        #dynamic-bg { position: absolute; inset: 0; background-size: cover; background-position: center; transition: background 1s; }
-        .header-content { position: relative; z-index: 5; flex: 1; padding: 20px; display: flex; flex-direction: column; justify-content: flex-end; color: white !important; background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.85) 100%); }
+        .header-bg {
+            position: relative;
+            min-height: 380px;
+            width: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
 
-        .temp-display { font-size: clamp(4rem, 15vw, 5.5rem); font-weight: 800; line-height: 0.85; letter-spacing: -2px; }
-        .sun-card { background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(15px); border-radius: 20px; padding: 12px; margin-top: 15px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-around; }
-        .sun-item i { font-size: 1.2rem; color: #ffce00; display: block; margin-bottom: 2px; }
-        .sun-item span { font-size: 0.6rem; text-transform: uppercase; opacity: 0.6; font-weight: 700; display: block; }
-        .sun-item b { font-size: 1rem; }
+        #dynamic-bg {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            transition: background 1s;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 5;
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            color: white !important;
+            background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.85) 100%);
+        }
+
+        .temp-display {
+            font-size: clamp(4rem, 15vw, 5.5rem);
+            font-weight: 800;
+            line-height: 0.85;
+            letter-spacing: -2px;
+        }
+
+        .sun-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 12px;
+            margin-top: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .sun-item i {
+            font-size: 1.2rem;
+            color: #ffce00;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .sun-item span {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            opacity: 0.6;
+            font-weight: 700;
+            display: block;
+        }
+
+        .sun-item b {
+            font-size: 1rem;
+        }
 
         /* Daily List */
-        .daily-row { display: flex; align-items: center; padding: 14px 8px; border-bottom: 1px solid rgba(128, 128, 128, 0.08); transition: background 0.2s; }
-        .daily-row.clickable:active { background: rgba(255, 255, 255, 0.1); }
-        .day-label { width: 50px; font-weight: 500; font-size: 1rem; }
-        .day-icon-col { width: 40px; text-align: center; font-size: 1.2rem; color: var(--accent); }
-        .day-low-col { width: 35px; text-align: right; opacity: 0.5; font-size: 0.95rem; }
-        .day-high-col { width: 35px; text-align: left; font-weight: 600; font-size: 0.95rem; }
+        .daily-row {
+            display: flex;
+            align-items: center;
+            padding: 14px 8px;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.08);
+            transition: background 0.2s;
+        }
 
-        .temp-bar-container { flex-grow: 1; height: 5px; background: rgba(128, 128, 128, 0.15); border-radius: 10px; margin: 0 12px; position: relative; }
-        .temp-bar-fill { position: absolute; height: 100%; border-radius: 10px; background: linear-gradient(90deg, #4facfe, #00f2fe); }
-        .current-temp-dot { position: absolute; width: 7px; height: 7px; background: white; border: 1.5px solid #1a1d29; border-radius: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 5; }
+        .daily-row.clickable:active {
+            background: rgba(255, 255, 255, 0.1);
+        }
 
-        .env-badge { padding: 4px 10px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); margin: 3px; white-space: nowrap; }
+        .day-label {
+            width: 50px;
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        .day-icon-col {
+            width: 40px;
+            text-align: center;
+            font-size: 1.2rem;
+            color: var(--accent);
+        }
+
+        .day-low-col {
+            width: 35px;
+            text-align: right;
+            opacity: 0.5;
+            font-size: 0.95rem;
+        }
+
+        .day-high-col {
+            width: 35px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .temp-bar-container {
+            flex-grow: 1;
+            height: 5px;
+            background: rgba(128, 128, 128, 0.15);
+            border-radius: 10px;
+            margin: 0 12px;
+            position: relative;
+        }
+
+        .temp-bar-fill {
+            position: absolute;
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+        }
+
+        .current-temp-dot {
+            position: absolute;
+            width: 7px;
+            height: 7px;
+            background: white;
+            border: 1.5px solid #1a1d29;
+            border-radius: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+        }
+
+        .env-badge {
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin: 3px;
+            white-space: nowrap;
+        }
 
         /* Tabs */
-        .nav-pills .nav-link { font-size: 0.85rem; padding: 8px 20px; color: rgba(255,255,255,0.6); border: 1px solid transparent; }
-        .nav-pills .nav-link.active { background-color: var(--accent) !important; color: white; }
+        .nav-pills .nav-link {
+            font-size: 0.85rem;
+            padding: 8px 20px;
+            color: rgba(255, 255, 255, 0.6);
+            border: 1px solid transparent;
+        }
+
+        .nav-pills .nav-link.active {
+            background-color: var(--accent) !important;
+            color: white;
+        }
+
+        /* Footer & Layout Wrapper */
+
+
+        .page-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+
+        .content-body {
+            flex: 1 0 auto;
+        }
+
+
+        .powered-by-footer {
+            flex-shrink: 0;
+            padding: 25px 15px;
+            text-align: center;
+            opacity: 0.7;
+            font-size: 0.85rem;
+            color: var(--accent);
+            font-weight: 500;
+        }
+
 
         /* Modal Customization */
-        .modal-dialog { margin: 10px; }
-        .modal-content { border-radius: 24px; border: none; background: #1a1d29; }
-        .modal-body { padding: 15px 10px; }
+        .modal-dialog {
+            margin: 10px;
+        }
+
+        .modal-content {
+            border-radius: 24px;
+            border: none;
+            background: #1a1d29;
+        }
+
+        .modal-body {
+            padding: 15px 10px;
+        }
 
         @media (max-width: 400px) {
-            .temp-display { font-size: 3.5rem; }
-            .env-badge { font-size: 0.65rem; padding: 3px 8px; }
+            .temp-display {
+                font-size: 3.5rem;
+            }
+
+            .env-badge {
+                font-size: 0.65rem;
+                padding: 3px 8px;
+            }
         }
     </style>
 </head>
 
 <body>
     <div id="loader">
-        <div class="weather-animation"><i class="wi wi-day-sunny sun-behind"></i><i class="wi wi-cloud cloud-icon"></i></div>
+        <div class="weather-animation"><i class="wi wi-day-sunny sun-behind"></i><i class="wi wi-cloud cloud-icon"></i>
+        </div>
         <p class="loading-text" style="font-size: 0.7rem; letter-spacing: 3px;">Syncing Atmosphere</p>
     </div>
 
@@ -87,7 +398,8 @@
             <div class="modal-content">
                 <div class="modal-header border-0 pb-0">
                     <h6 class="modal-title" id="modalDayLabel">Hourly</h6>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div style="height: 280px;"><canvas id="hourlyChart"></canvas></div>
@@ -111,16 +423,19 @@
         <div class="header-bg">
             <div id="dynamic-bg"></div>
             <div class="header-content">
-                <h6 id="loc-name" class="text-uppercase opacity-50 small fw-bold mb-1" style="font-size: 0.65rem;">---</h6>
+                <h6 id="loc-name" class="text-uppercase opacity-50 small fw-bold mb-1" style="font-size: 0.65rem;">---
+                </h6>
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h1 class="temp-display mb-0"><span id="temp">--</span>°</h1>
-                        <p class="opacity-75 mb-0" style="font-size: 0.9rem;">Feels like <span id="windchill">--</span>°</p>
+                        <p class="opacity-75 mb-0" style="font-size: 0.9rem;">Feels like <span id="windchill">--</span>°
+                        </p>
                     </div>
-                    <i id="main-icon" class="wi" style="font-size: 4rem; color: #ffce00; filter: drop-shadow(0 0 10px rgba(255,206,0,0.3));"></i>
+                    <i id="main-icon" class="wi"
+                        style="font-size: 4rem; color: #ffce00; filter: drop-shadow(0 0 10px rgba(255,206,0,0.3));"></i>
                 </div>
                 <p id="main-forecast" class="fw-light mt-2 mb-3">--</p>
-                
+
                 <div class="d-flex flex-wrap">
                     <div class="env-badge">AQI: <span id="aqi-val">--</span></div>
                     <div class="env-badge">UV: <span id="uv-val">--</span></div>
@@ -129,7 +444,8 @@
                 </div>
 
                 <div class="sun-card">
-                    <div class="sun-item"><i class="wi wi-sunrise"></i><span>Sunrise</span><b id="sunrise">--:--</b></div>
+                    <div class="sun-item"><i class="wi wi-sunrise"></i><span>Sunrise</span><b id="sunrise">--:--</b>
+                    </div>
                     <div class="sun-item" style="width: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
                     <div class="sun-item"><i class="wi wi-sunset"></i><span>Sunset</span><b id="sunset">--:--</b></div>
                 </div>
@@ -139,12 +455,18 @@
         <div class="p-3">
             <div id="alert-container" style="display: none;"></div>
             <ul class="nav nav-pills mb-3 gap-2 flex-nowrap overflow-auto" style="scrollbar-width: none;">
-                <li class="nav-item"><button class="nav-link active rounded-pill" data-bs-toggle="pill" data-bs-target="#daily">7-Day</button></li>
-                <li class="nav-item"><button class="nav-link rounded-pill" data-bs-toggle="pill" data-bs-target="#radar">Radar</button></li>
+                <li class="nav-item"><button class="nav-link active rounded-pill" data-bs-toggle="pill"
+                        data-bs-target="#daily">7-Day</button></li>
+                <li class="nav-item"><button class="nav-link rounded-pill" data-bs-toggle="pill"
+                        data-bs-target="#radar">Radar</button></li>
             </ul>
             <div class="tab-content">
-                <div class="tab-pane fade show active" id="daily"><div id="daily-container"></div></div>
-                <div class="tab-pane fade" id="radar"><div id="radar-container"></div></div>
+                <div class="tab-pane fade show active" id="daily">
+                    <div id="daily-container"></div>
+                </div>
+                <div class="tab-pane fade" id="radar">
+                    <div id="radar-container"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -239,7 +561,7 @@
                 const dv = getVisuals(day.icon, true);
                 let high = formatTemp(day.high); let low = formatTemp(day.low);
                 if (low > high) [low, high] = [high, low];
-                
+
                 const hasHourly = data.hourly.some(h => h.startTime.startsWith(day.date));
                 dHtml += `<div class="daily-row ${hasHourly ? 'clickable' : ''}" ${hasHourly ? `onclick="showDayHourly('${day.date}', '${day.name}')"` : ''}>
                     <div class="day-label">${i === 0 ? 'Today' : day.name.substring(0, 3)}</div>
@@ -260,7 +582,7 @@
             const temps = hourlyData.map(h => formatTemp(h.temperature));
             const precip = hourlyData.map(h => h.precipProb);
             const isLight = document.getElementById('main-html').getAttribute('data-bs-theme') === 'light';
-            
+
             const gradient = ctx.createLinearGradient(0, 0, 0, 250);
             gradient.addColorStop(0, '#ff4757'); gradient.addColorStop(1, '#1e90ff');
 
@@ -275,7 +597,7 @@
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    plugins: { 
+                    plugins: {
                         legend: { display: true, position: 'top', labels: { color: isLight ? '#444' : '#aaa', font: { size: 10 }, usePointStyle: true, boxWidth: 6 } },
                         tooltip: { enabled: true, backgroundColor: isLight ? '#fff' : '#1a1d29', titleColor: isLight ? '#000' : '#fff', bodyColor: isLight ? '#000' : '#fff' }
                     },
@@ -299,5 +621,10 @@
             return { icon, url: `https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&w=800&q=80` };
         }
     </script>
+
+    <footer class="powered-by-footer">
+        Powered by National Weather Service, OpenMeteo & Windy
+    </footer>
 </body>
+
 </html>
