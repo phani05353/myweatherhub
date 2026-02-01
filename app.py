@@ -5,7 +5,6 @@ import pytz
 from suntime import Sun
 
 app = Flask(__name__)
-# NWS requires a User-Agent with contact info
 HEADERS = {'User-Agent': '(MyHomeLab, maruthi.phanikumar@yopmail.com)'}
 
 def calculate_feels_like(temp_f, humidity, wind_speed_mph):
@@ -86,7 +85,18 @@ def get_weather_data(lat, lon):
             night = periods[i+1] if i+1 < len(periods) else day
             daily_forecasts.append({
                 "name": day['name'], "icon": day['shortForecast'],
-                "high": day['temperature'], "low": night['temperature']
+                "high": day['temperature'], "low": night['temperature'],
+                "date": day['startTime'][:10] # Added date for filtering
+            })
+
+        processed_hourly = []
+        # Pull 120 hours to cover most of the week
+        for p in hourly_resp['properties']['periods'][:120]:
+            processed_hourly.append({
+                "startTime": p['startTime'],
+                "temperature": p['temperature'],
+                "shortForecast": p['shortForecast'],
+                "precipProb": p.get('probabilityOfPrecipitation', {}).get('value') or 0
             })
 
         city_camel = prop['relativeLocation']['properties']['city'].title()
@@ -101,7 +111,7 @@ def get_weather_data(lat, lon):
             "aqi": env_data.get('us_aqi'),
             "uv": env_data.get('uv_index'),
             "daily": daily_forecasts,
-            "hourly": hourly_resp['properties']['periods'][:24],
+            "hourly": processed_hourly,
             "alerts": active_alerts,
             "sun": {
                 "sunrise": sunrise_local.strftime("%I:%M %p"),

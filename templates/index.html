@@ -4,294 +4,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Weather Hub">
-    <link rel="apple-touch-icon" href="/static/icon.png">
     <title>Weather Hub</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/weather-icons/2.0.12/css/weather-icons.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root {
-            --glass: rgba(255, 255, 255, 0.05);
-            --bg-color: #0f111a;
-            --card-bg: #1a1d29;
-            --accent: #70a1ff;
-        }
+        :root { --glass: rgba(255, 255, 255, 0.05); --bg-color: #0f111a; --card-bg: #1a1d29; --accent: #70a1ff; }
+        [data-bs-theme="light"] { --glass: rgba(0, 0, 0, 0.05); --bg-color: #f8f9fa; --card-bg: #ffffff; --accent: #0056b3; }
+        body { background-color: var(--bg-color) !important; font-family: system-ui, sans-serif; padding: 0; overflow-x: hidden; }
 
-        [data-bs-theme="light"] {
-            --glass: rgba(0, 0, 0, 0.05);
-            --bg-color: #f8f9fa;
-            --card-bg: #ffffff;
-            --accent: #0056b3;
-        }
+        #loader { position: fixed; inset: 0; background: #0f111a; z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; }
+        .weather-animation { position: relative; width: 100px; height: 100px; margin-bottom: 20px; }
+        .cloud-icon { font-size: 80px; color: #fff; animation: float 3s ease-in-out infinite; position: absolute; z-index: 2; }
+        .sun-behind { font-size: 50px; color: #ffce00; position: absolute; top: -10px; right: 5px; animation: rotateSun 10s linear infinite; z-index: 1; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes rotateSun { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loading-text { font-weight: 700; letter-spacing: 2px; text-transform: uppercase; font-size: 0.8rem; opacity: 0.8; animation: pulseText 1.5s ease-in-out infinite; }
+        @keyframes pulseText { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 
-        body {
-            background-color: var(--bg-color) !important;
-            font-family: system-ui, sans-serif;
-            padding: 0;
-            overflow-x: hidden;
-        }
-
-        /* CUSTOM LOADER ANIMATION */
-        #loader {
-            position: fixed;
-            inset: 0;
-            background: #0f111a;
-            z-index: 2000;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-        }
-
-        .weather-animation {
-            position: relative;
-            width: 100px;
-            height: 100px;
-            margin-bottom: 20px;
-        }
-
-        .cloud-icon {
-            font-size: 80px;
-            color: #fff;
-            animation: float 3s ease-in-out infinite;
-            position: absolute;
-            z-index: 2;
-        }
-
-        .sun-behind {
-            font-size: 50px;
-            color: #ffce00;
-            position: absolute;
-            top: -10px;
-            right: 5px;
-            animation: rotateSun 10s linear infinite;
-            z-index: 1;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
-        }
-
-        @keyframes rotateSun {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .loading-text {
-            font-weight: 700;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            opacity: 0.8;
-            animation: pulseText 1.5s ease-in-out infinite;
-        }
-
-        @keyframes pulseText {
-            0%, 100% { opacity: 0.4; }
-            50% { opacity: 1; }
-        }
-
-        /* UI STYLES */
-        .main-card {
-            background: var(--card-bg) !important;
-            border-radius: 0 0 28px 28px;
-            overflow: hidden;
-            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(128, 128, 128, 0.2);
-            position: relative;
-        }
-
-        .controls {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            z-index: 1050;
-            display: flex;
-            gap: 12px;
-        }
-
-        .unit-pill {
-            position: relative;
-            display: flex;
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(10px);
-            padding: 4px;
-            border-radius: 50px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            width: 90px;
-            height: 38px;
-        }
-
+        .main-card { background: var(--card-bg) !important; border-radius: 0 0 28px 28px; overflow: hidden; box-shadow: 0 15px 45px rgba(0, 0, 0, 0.4); border: 1px solid rgba(128, 128, 128, 0.2); position: relative; }
+        .controls { position: absolute; top: 15px; right: 15px; z-index: 1050; display: flex; gap: 12px; }
+        .unit-pill { position: relative; display: flex; background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(10px); padding: 4px; border-radius: 50px; border: 1px solid rgba(255, 255, 255, 0.1); width: 90px; height: 38px; }
         .unit-pill input { display: none; }
-
-        .unit-pill label {
-            flex: 1;
-            z-index: 2;
-            text-align: center;
-            line-height: 30px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            cursor: pointer;
-            color: rgba(255, 255, 255, 0.5);
-            transition: color 0.3s;
-        }
-
+        .unit-pill label { flex: 1; z-index: 2; text-align: center; line-height: 30px; font-size: 0.8rem; font-weight: 700; cursor: pointer; color: rgba(255, 255, 255, 0.5); transition: color 0.3s; }
         .unit-pill input:checked+label { color: white; }
-
-        .pill-bg {
-            position: absolute;
-            top: 4px;
-            left: 4px;
-            width: 41px;
-            height: 30px;
-            background: var(--accent);
-            border-radius: 50px;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 1;
-        }
-
+        .pill-bg { position: absolute; top: 4px; left: 4px; width: 41px; height: 30px; background: var(--accent); border-radius: 50px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1; }
         #c-unit:checked~.pill-bg { transform: translateX(41px); }
 
-        .btn-circle {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            border: none;
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(10px);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        .btn-circle { width: 38px; height: 38px; border-radius: 50%; border: none; background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(10px); color: white; display: flex; align-items: center; justify-content: center; }
+        .header-bg { position: relative; height: 420px; width: 100%; overflow: hidden; }
+        #dynamic-bg { position: absolute; inset: 0; background-size: cover; background-position: center; transition: background 1s; }
+        .header-content { position: relative; z-index: 5; height: 100%; padding: 20px; display: flex; flex-direction: column; justify-content: flex-end; color: white !important; background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.8) 100%); }
 
-        .header-bg {
-            position: relative;
-            height: 420px;
-            width: 100%;
-            overflow: hidden;
-        }
-
-        #dynamic-bg {
-            position: absolute;
-            inset: 0;
-            background-size: cover;
-            background-position: center;
-            transition: background 1s;
-        }
-
-        .header-content {
-            position: relative;
-            z-index: 5;
-            height: 100%;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            color: white !important;
-            background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.8) 100%);
-        }
-
-        .temp-display {
-            font-size: 5.5rem;
-            font-weight: 800;
-            line-height: 0.9;
-        }
-
-        .sun-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(12px);
-            border-radius: 20px;
-            padding: 15px;
-            margin-top: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            justify-content: space-around;
-            text-align: center;
-        }
-
-        .sun-item i {
-            font-size: 1.5rem;
-            color: #ffce00;
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .sun-item span {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            opacity: 0.7;
-            font-weight: 700;
-            display: block;
-        }
-
+        .temp-display { font-size: 5.5rem; font-weight: 800; line-height: 0.9; }
+        .sun-card { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 20px; padding: 15px; margin-top: 20px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-around; text-align: center; }
+        .sun-item i { font-size: 1.5rem; color: #ffce00; display: block; margin-bottom: 5px; }
+        .sun-item span { font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; font-weight: 700; display: block; }
         .sun-item b { font-size: 1.1rem; }
 
-        .daily-row {
-            display: flex;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(128, 128, 128, 0.1);
-        }
-
+        /* DAILY ROW STYLES */
+        .daily-row { display: flex; align-items: center; padding: 15px 10px; border-bottom: 1px solid rgba(128, 128, 128, 0.1); border-radius: 12px; }
+        .daily-row.clickable { cursor: pointer; transition: background 0.2s; }
+        .daily-row.clickable:hover { background: rgba(255, 255, 255, 0.05); }
         .day-label { width: 60px; font-weight: 500; font-size: 1.1rem; }
         .day-icon-col { width: 45px; text-align: center; font-size: 1.3rem; color: var(--accent); }
         .day-low-col { width: 40px; text-align: right; opacity: 0.5; font-size: 1.1rem; }
         .day-high-col { width: 40px; text-align: left; font-weight: 600; font-size: 1.1rem; }
 
-        .temp-bar-container {
-            flex-grow: 1;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            margin: 0 15px;
-            position: relative;
-        }
-
-        .temp-bar-fill {
-            position: absolute;
-            height: 100%;
-            border-radius: 10px;
-            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
-        }
-
-        .current-temp-dot {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            background: white;
-            border: 2px solid #1a1d29;
-            border-radius: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 5;
-            box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
-        }
-
-        .env-badge {
-            padding: 6px 12px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            margin: 4px;
-        }
+        .temp-bar-container { flex-grow: 1; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 10px; margin: 0 15px; position: relative; }
+        .temp-bar-fill { position: absolute; height: 100%; border-radius: 10px; background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%); }
+        .current-temp-dot { position: absolute; width: 8px; height: 8px; background: white; border: 2px solid #1a1d29; border-radius: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 5; box-shadow: 0 0 4px rgba(255, 255, 255, 0.8); }
+        .env-badge { padding: 6px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); margin: 4px; }
+        
+        .modal-content { background: #1a1d29; border-radius: 28px; border: 1px solid rgba(255,255,255,0.1); }
+        .modal-header { border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .modal-title { font-weight: 700; color: #70a1ff; }
     </style>
 </head>
 
 <body>
     <div id="loader">
-        <div class="weather-animation">
-            <i class="wi wi-day-sunny sun-behind"></i>
-            <i class="wi wi-cloud cloud-icon"></i>
-        </div>
+        <div class="weather-animation"><i class="wi wi-day-sunny sun-behind"></i><i class="wi wi-cloud cloud-icon"></i></div>
         <p class="loading-text">Syncing Atmosphere</p>
+    </div>
+
+    <div class="modal fade" id="hourlyModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalDayLabel">Hourly Forecast</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div style="height: 350px;"><canvas id="hourlyChart"></canvas></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="main-card">
@@ -318,26 +106,16 @@
                     </div>
                     <i id="main-icon" class="wi" style="font-size: 5rem; color: #ffce00; filter: drop-shadow(0 0 15px rgba(255,206,0,0.4));"></i>
                 </div>
-
                 <div class="d-flex flex-wrap mb-2">
                     <div class="env-badge">AQI: <span id="aqi-val">--</span></div>
                     <div class="env-badge">UV: <span id="uv-val">--</span></div>
                     <div class="env-badge"><i class="wi wi-strong-wind me-1"></i> <span id="wind">--</span></div>
                     <div class="env-badge"><i class="wi wi-humidity me-1"></i> <span id="humidity">--</span></div>
                 </div>
-
                 <div class="sun-card">
-                    <div class="sun-item">
-                        <i class="wi wi-sunrise"></i>
-                        <span>Sunrise</span>
-                        <b id="sunrise">--:--</b>
-                    </div>
+                    <div class="sun-item"><i class="wi wi-sunrise"></i><span>Sunrise</span><b id="sunrise">--:--</b></div>
                     <div class="sun-item" style="width: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
-                    <div class="sun-item">
-                        <i class="wi wi-sunset"></i>
-                        <span>Sunset</span>
-                        <b id="sunset">--:--</b>
-                    </div>
+                    <div class="sun-item"><i class="wi wi-sunset"></i><span>Sunset</span><b id="sunset">--:--</b></div>
                 </div>
             </div>
         </div>
@@ -346,12 +124,10 @@
             <div id="alert-container" style="display: none;"></div>
             <ul class="nav nav-pills mb-4 gap-2 flex-nowrap overflow-auto">
                 <li class="nav-item"><button class="nav-link active rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#daily">7-Day</button></li>
-                <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#hourly">Hourly</button></li>
                 <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#radar">Radar</button></li>
             </ul>
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="daily"><div id="daily-container"></div></div>
-                <div class="tab-pane fade" id="hourly"><div class="chart-wrapper" style="height:300px"><canvas id="hourlyChart"></canvas></div></div>
                 <div class="tab-pane fade" id="radar"><div id="radar-container"></div></div>
             </div>
         </div>
@@ -361,6 +137,7 @@
     <script>
         let lastData = null; let myChart = null;
         const DEFAULT_LAT = 41.3850, DEFAULT_LON = -105.5860;
+        const hourlyModal = new bootstrap.Modal(document.getElementById('hourlyModal'));
 
         if (localStorage.getItem('theme') === 'light') toggleTheme(true);
         const savedUnit = localStorage.getItem('unit') || 'imperial';
@@ -380,9 +157,7 @@
             document.getElementById('theme-icon').className = newTheme === 'light' ? 'wi wi-night-clear' : 'wi wi-day-sunny';
         }
 
-        function formatTemp(val) {
-            return document.getElementById('c-unit').checked ? Math.round((val - 32) * 5 / 9) : Math.round(val);
-        }
+        function formatTemp(val) { return document.getElementById('c-unit').checked ? Math.round((val - 32) * 5 / 9) : Math.round(val); }
 
         window.onload = function () {
             if (navigator.geolocation) {
@@ -402,10 +177,18 @@
                 });
         }
 
+        function showDayHourly(dateStr, dayName) {
+            document.getElementById('modalDayLabel').innerText = `Hourly for ${dayName}`;
+            const filtered = lastData.hourly.filter(h => h.startTime.startsWith(dateStr));
+            if (filtered.length > 0) {
+                createChart(filtered);
+                hourlyModal.show();
+            }
+        }
+
         function updateUI(data) {
             const isMetric = document.getElementById('c-unit').checked;
             document.getElementById('loc-name').innerText = data.location;
-
             const currentTempActual = formatTemp(data.current.temperature);
             document.getElementById('temp').innerText = currentTempActual;
             document.getElementById('windchill').innerText = formatTemp(data.feels_like);
@@ -429,8 +212,6 @@
             document.getElementById('main-icon').className = `wi ${vis.icon}`;
             document.getElementById('dynamic-bg').style.backgroundImage = `url('${vis.url}')`;
 
-            createChart(data.hourly);
-
             const weekTemps = data.daily.flatMap(d => [formatTemp(d.high), formatTemp(d.low)]);
             const minWeek = Math.min(...weekTemps);
             const maxWeek = Math.max(...weekTemps);
@@ -439,27 +220,23 @@
             let dHtml = '';
             data.daily.forEach((day, i) => {
                 const dv = getVisuals(day.icon, true);
-                let high = formatTemp(day.high);
-                let low = formatTemp(day.low);
+                let high = formatTemp(day.high); let low = formatTemp(day.low);
                 if (low > high) { [low, high] = [high, low]; }
+                
+                // DATA CHECK: Does this day have hourly periods?
+                const hasHourly = data.hourly.some(h => h.startTime.startsWith(day.date));
+                const clickAttr = hasHourly ? `onclick="showDayHourly('${day.date}', '${day.name}')"` : '';
+                const clickableClass = hasHourly ? 'clickable' : '';
+
                 const leftPercent = ((low - minWeek) / rangeTotal) * 100;
                 const widthPercent = ((high - low) / rangeTotal) * 100;
-
-                let dotHtml = '';
-                if (i === 0) {
-                    const dotPos = ((currentTempActual - minWeek) / rangeTotal) * 100;
-                    dotHtml = `<div class="current-temp-dot" style="left:${dotPos}%"></div>`;
-                }
-
-                dHtml += `
-                <div class="daily-row">
+                let dotHtml = i === 0 ? `<div class="current-temp-dot" style="left:${((currentTempActual - minWeek) / rangeTotal) * 100}%"></div>` : '';
+                
+                dHtml += `<div class="daily-row ${clickableClass}" ${clickAttr}>
                     <div class="day-label">${i === 0 ? 'Today' : day.name.substring(0, 3)}</div>
                     <div class="day-icon-col"><i class="wi ${dv.icon}"></i></div>
                     <div class="day-low-col">${low}°</div>
-                    <div class="temp-bar-container">
-                        <div class="temp-bar-fill" style="left:${leftPercent}%; width:${Math.max(widthPercent, 4)}%"></div>
-                        ${dotHtml}
-                    </div>
+                    <div class="temp-bar-container"><div class="temp-bar-fill" style="left:${leftPercent}%; width:${Math.max(widthPercent, 4)}%"></div>${dotHtml}</div>
                     <div class="day-high-col">${high}°</div>
                 </div>`;
             });
@@ -471,70 +248,38 @@
             const ctx = document.getElementById('hourlyChart').getContext('2d');
             const labels = hourlyData.map(h => new Date(h.startTime).toLocaleTimeString([], { hour: '2-digit' }));
             const temps = hourlyData.map(h => formatTemp(h.temperature));
+            const precip = hourlyData.map(h => h.precipProb);
+            
+            const gradient = ctx.createLinearGradient(0, 0, 0, 350);
+            gradient.addColorStop(0, '#ff4757'); gradient.addColorStop(0.5, '#ffa502'); gradient.addColorStop(0.7, '#2ed573'); gradient.addColorStop(1, '#1e90ff');
 
-            const chartHeight = 300;
-            const gradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
-            gradient.addColorStop(0, '#ff4757'); 
-            gradient.addColorStop(0.5, '#ffa502'); 
-            gradient.addColorStop(0.7, '#2ed573'); 
-            gradient.addColorStop(1, '#1e90ff'); 
+            const precipColors = hourlyData.map(h => {
+                const text = h.shortForecast.toLowerCase();
+                if (text.includes('snow')) return 'rgba(255, 255, 255, 0.4)';
+                if (text.includes('sleet') || text.includes('ice')) return 'rgba(155, 89, 182, 0.5)';
+                return 'rgba(112, 161, 255, 0.3)';
+            });
 
             if (myChart) myChart.destroy();
-
             myChart = new Chart(ctx, {
-                type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        label: 'Temp',
-                        data: temps,
-                        borderColor: gradient,
-                        borderWidth: 4,
-                        pointRadius: 0,
-                        pointHoverRadius: 6,
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: gradient,
-                        pointHoverBorderWidth: 3,
-                        fill: true,
-                        tension: 0.45, 
-                        backgroundColor: function (context) {
-                            const chart = context.chart;
-                            const { ctx, chartArea } = chart;
-                            if (!chartArea) return null;
-                            const bgGradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-                            bgGradient.addColorStop(0, 'rgba(255, 71, 87, 0.15)');
-                            bgGradient.addColorStop(1, 'rgba(30, 144, 255, 0.01)');
-                            return bgGradient;
-                        },
-                    }]
+                    datasets: [
+                        { type: 'line', label: 'Temp', data: temps, borderColor: gradient, borderWidth: 4, pointRadius: 0, tension: 0.45, yAxisID: 'y', zIndex: 10 },
+                        { type: 'bar', label: 'Precip Chance', data: precip, backgroundColor: precipColors, borderRadius: 6, yAxisID: 'yPrecip', barPercentage: 0.6, zIndex: 1 }
+                    ]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    responsive: true, maintainAspectRatio: false,
                     interaction: { intersect: false, mode: 'index' },
-                    plugins: {
+                    plugins: { 
                         legend: { display: false },
-                        tooltip: {
-                            enabled: true,
-                            backgroundColor: 'rgba(26, 29, 41, 0.9)',
-                            titleFont: { size: 13, weight: '600' },
-                            bodyFont: { size: 16, weight: 'bold' },
-                            padding: 12,
-                            cornerRadius: 12,
-                            displayColors: false,
-                            callbacks: { label: (context) => ` ${context.parsed.y}°` }
-                        }
+                        tooltip: { enabled: true, backgroundColor: 'rgba(26, 29, 41, 0.9)', padding: 12, cornerRadius: 12 }
                     },
                     scales: {
-                        y: {
-                            beginAtZero: false,
-                            grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false, tickLength: 0 },
-                            ticks: { color: 'rgba(255, 255, 255, 0.4)', font: { size: 11 }, padding: 10 }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: 'rgba(255, 255, 255, 0.4)', font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }
-                        }
+                        y: { type: 'linear', position: 'left', grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false }, ticks: { color: 'rgba(255, 255, 255, 0.4)' } },
+                        yPrecip: { type: 'linear', position: 'right', min: 0, max: 100, grid: { display: false }, ticks: { color: 'rgba(112, 161, 255, 0.6)', callback: (val) => val + '%' } },
+                        x: { grid: { display: false }, ticks: { color: 'rgba(255, 255, 255, 0.4)', maxTicksLimit: 8 } }
                     }
                 }
             });
@@ -552,5 +297,4 @@
         }
     </script>
 </body>
-
 </html>
