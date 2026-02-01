@@ -26,6 +26,7 @@
         body {
             background-color: var(--bg-color) !important;
             font-family: system-ui, -apple-system, sans-serif;
+            font-size: 1.1rem; /* Scaled up from default */
             padding: 0;
             overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
@@ -70,25 +71,13 @@
         }
 
         @keyframes float {
-
-            0%,
-            100% {
-                transform: translateY(0);
-            }
-
-            50% {
-                transform: translateY(-10px);
-            }
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
 
         @keyframes rotateSun {
-            from {
-                transform: rotate(0deg);
-            }
-
-            to {
-                transform: rotate(360deg);
-            }
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
         /* Card & Layout */
@@ -120,8 +109,8 @@
             padding: 3px;
             border-radius: 50px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            width: 80px;
-            height: 34px;
+            width: 90px;
+            height: 38px;
         }
 
         .unit-pill input {
@@ -132,8 +121,8 @@
             flex: 1;
             z-index: 2;
             text-align: center;
-            line-height: 28px;
-            font-size: 0.75rem;
+            line-height: 32px;
+            font-size: 0.9rem; /* Increased */
             font-weight: 700;
             cursor: pointer;
             color: rgba(255, 255, 255, 0.5);
@@ -147,8 +136,8 @@
             position: absolute;
             top: 3px;
             left: 3px;
-            width: 37px;
-            height: 28px;
+            width: 42px;
+            height: 32px;
             background: var(--accent);
             border-radius: 50px;
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -156,12 +145,12 @@
         }
 
         #c-unit:checked~.pill-bg {
-            transform: translateX(37px);
+            transform: translateX(42px);
         }
 
         .btn-circle {
-            width: 34px;
-            height: 34px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             border: none;
             background: rgba(0, 0, 0, 0.4);
@@ -170,13 +159,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.9rem;
+            font-size: 1rem;
         }
 
         /* Header */
         .header-bg {
             position: relative;
-            min-height: 380px;
+            min-height: 400px; /* Slightly taller for larger text */
             width: 100%;
             overflow: hidden;
             display: flex;
@@ -195,7 +184,7 @@
             position: relative;
             z-index: 5;
             flex: 1;
-            padding: 20px;
+            padding: 24px;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
@@ -204,7 +193,7 @@
         }
 
         .temp-display {
-            font-size: clamp(4rem, 15vw, 5.5rem);
+            font-size: clamp(4.5rem, 18vw, 6.5rem); /* Increased scale */
             font-weight: 800;
             line-height: 0.85;
             letter-spacing: -2px;
@@ -214,7 +203,7 @@
             background: rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(15px);
             border-radius: 20px;
-            padding: 12px;
+            padding: 15px;
             margin-top: 15px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
@@ -222,29 +211,29 @@
         }
 
         .sun-item i {
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             color: #ffce00;
             display: block;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
         }
 
         .sun-item span {
-            font-size: 0.6rem;
+            font-size: 0.75rem; /* Increased from 0.6rem */
             text-transform: uppercase;
-            opacity: 0.6;
+            opacity: 0.7;
             font-weight: 700;
             display: block;
         }
 
         .sun-item b {
-            font-size: 1rem;
+            font-size: 1.1rem; /* Increased from 1rem */
         }
 
         /* Daily List */
         .daily-row {
             display: flex;
             align-items: center;
-            padding: 14px 8px;
+            padding: 16px 10px;
             border-bottom: 1px solid rgba(128, 128, 128, 0.08);
             transition: background 0.2s;
         }
@@ -254,35 +243,35 @@
         }
 
         .day-label {
-            width: 50px;
-            font-weight: 500;
-            font-size: 1rem;
+            width: 60px;
+            font-weight: 600;
+            font-size: 1.1rem; /* Increased */
         }
 
         .day-icon-col {
-            width: 40px;
+            width: 45px;
             text-align: center;
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             color: var(--accent);
         }
 
         .day-low-col {
-            width: 35px;
+            width: 45px;
             text-align: right;
-            opacity: 0.5;
-            font-size: 0.95rem;
+            opacity: 0.6;
+            font-size: 1.05rem;
         }
 
         .day-high-col {
-            width: 35px;
+            width: 45px;
             text-align: left;
-            font-weight: 600;
-            font-size: 0.95rem;
+            font-weight: 700;
+            font-size: 1.05rem;
         }
 
         .temp-bar-container {
             flex-grow: 1;
-            height: 5px;
+            height: 6px;
             background: rgba(128, 128, 128, 0.15);
             border-radius: 10px;
             margin: 0 12px;
@@ -298,8 +287,8 @@
 
         .current-temp-dot {
             position: absolute;
-            width: 7px;
-            height: 7px;
+            width: 8px;
+            height: 8px;
             background: white;
             border: 1.5px solid #1a1d29;
             border-radius: 50%;
@@ -309,20 +298,20 @@
         }
 
         .env-badge {
-            padding: 4px 10px;
-            border-radius: 10px;
-            font-size: 0.7rem;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem; /* Increased from 0.7rem */
             font-weight: 600;
             background: rgba(0, 0, 0, 0.35);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            margin: 3px;
+            margin: 4px;
             white-space: nowrap;
         }
 
         /* Tabs */
         .nav-pills .nav-link {
-            font-size: 0.85rem;
-            padding: 8px 20px;
+            font-size: 1rem; /* Increased */
+            padding: 10px 24px;
             color: rgba(255, 255, 255, 0.6);
             border: 1px solid transparent;
         }
@@ -333,30 +322,26 @@
         }
 
         /* Footer & Layout Wrapper */
-
-
         .page-wrapper {
             display: flex;
             flex-direction: column;
             min-height: 100vh;
         }
 
-
         .content-body {
             flex: 1 0 auto;
         }
 
-
         .powered-by-footer {
             flex-shrink: 0;
-            padding: 25px 15px;
+            padding: 30px 15px;
             text-align: center;
-            opacity: 0.7;
-            font-size: 0.85rem;
+            opacity: 0.85;
+            font-size: 1rem; /* Increased from 0.85rem */
             color: var(--accent);
-            font-weight: 500;
+            font-weight: 600;
+            line-height: 1.6;
         }
-
 
         /* Modal Customization */
         .modal-dialog {
@@ -375,12 +360,12 @@
 
         @media (max-width: 400px) {
             .temp-display {
-                font-size: 3.5rem;
+                font-size: 4rem;
             }
 
             .env-badge {
-                font-size: 0.65rem;
-                padding: 3px 8px;
+                font-size: 0.75rem;
+                padding: 4px 10px;
             }
         }
     </style>
@@ -390,14 +375,14 @@
     <div id="loader">
         <div class="weather-animation"><i class="wi wi-day-sunny sun-behind"></i><i class="wi wi-cloud cloud-icon"></i>
         </div>
-        <p class="loading-text" style="font-size: 0.7rem; letter-spacing: 3px;">Syncing Atmosphere</p>
+        <p class="loading-text" style="font-size: 0.85rem; letter-spacing: 3px; font-weight: 600;">Syncing Atmosphere</p>
     </div>
 
     <div class="modal fade" id="hourlyModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header border-0 pb-0">
-                    <h6 class="modal-title" id="modalDayLabel">Hourly</h6>
+                    <h6 class="modal-title fw-bold" id="modalDayLabel">Hourly</h6>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
                 </div>
@@ -423,18 +408,18 @@
         <div class="header-bg">
             <div id="dynamic-bg"></div>
             <div class="header-content">
-                <h6 id="loc-name" class="text-uppercase opacity-50 small fw-bold mb-1" style="font-size: 0.65rem;">---
+                <h6 id="loc-name" class="text-uppercase opacity-50 fw-bold mb-1" style="font-size: 0.8rem; letter-spacing: 1px;">---
                 </h6>
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h1 class="temp-display mb-0"><span id="temp">--</span>°</h1>
-                        <p class="opacity-75 mb-0" style="font-size: 0.9rem;">Feels like <span id="windchill">--</span>°
+                        <p class="opacity-75 mb-0" style="font-size: 1.1rem; margin-top: 5px;">Feels like <span id="windchill">--</span>°
                         </p>
                     </div>
                     <i id="main-icon" class="wi"
-                        style="font-size: 4rem; color: #ffce00; filter: drop-shadow(0 0 10px rgba(255,206,0,0.3));"></i>
+                        style="font-size: 5rem; color: #ffce00; filter: drop-shadow(0 0 10px rgba(255,206,0,0.3));"></i>
                 </div>
-                <p id="main-forecast" class="fw-light mt-2 mb-3">--</p>
+                <p id="main-forecast" class="fw-light mt-3 mb-3" style="font-size: 1.25rem;">--</p>
 
                 <div class="d-flex flex-wrap">
                     <div class="env-badge">AQI: <span id="aqi-val">--</span></div>
@@ -452,7 +437,7 @@
             </div>
         </div>
 
-        <div class="p-3">
+        <div class="p-4">
             <div id="alert-container" style="display: none;"></div>
             <ul class="nav nav-pills mb-3 gap-2 flex-nowrap overflow-auto" style="scrollbar-width: none;">
                 <li class="nav-item"><button class="nav-link active rounded-pill" data-bs-toggle="pill"
@@ -540,7 +525,7 @@
             const alertCont = document.getElementById('alert-container');
             if (data.alerts?.length > 0) {
                 alertCont.style.display = 'block';
-                alertCont.innerHTML = data.alerts.slice(0, 1).map(a => `<div class="alert alert-warning border-0 rounded-4 py-2 px-3 mb-3" style="background: rgba(255, 193, 7, 0.1); color: #ffc107; font-size: 0.75rem;"><b class="d-block">${a.properties.event}</b>${a.properties.headline}</div>`).join('');
+                alertCont.innerHTML = data.alerts.slice(0, 1).map(a => `<div class="alert alert-warning border-0 rounded-4 py-2 px-3 mb-3" style="background: rgba(255, 193, 7, 0.1); color: #ffc107; font-size: 0.85rem;"><b class="d-block">${a.properties.event}</b>${a.properties.headline}</div>`).join('');
             } else { alertCont.style.display = 'none'; }
 
             const aqiEl = document.getElementById('aqi-val'); aqiEl.innerText = data.aqi;
@@ -598,13 +583,13 @@
                 options: {
                     responsive: true, maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: true, position: 'top', labels: { color: isLight ? '#444' : '#aaa', font: { size: 10 }, usePointStyle: true, boxWidth: 6 } },
+                        legend: { display: true, position: 'top', labels: { color: isLight ? '#444' : '#aaa', font: { size: 11 }, usePointStyle: true, boxWidth: 6 } },
                         tooltip: { enabled: true, backgroundColor: isLight ? '#fff' : '#1a1d29', titleColor: isLight ? '#000' : '#fff', bodyColor: isLight ? '#000' : '#fff' }
                     },
                     scales: {
-                        y: { position: 'left', grid: { display: false }, ticks: { color: isLight ? '#666' : '#888', font: { size: 9 } } },
-                        yPrecip: { position: 'right', min: 0, max: 100, grid: { display: false }, ticks: { color: 'rgba(112, 161, 255, 0.8)', font: { size: 9 }, callback: (v) => v + '%' } },
-                        x: { grid: { display: false }, ticks: { color: isLight ? '#666' : '#888', font: { size: 9 }, maxTicksLimit: 6 } }
+                        y: { position: 'left', grid: { display: false }, ticks: { color: isLight ? '#666' : '#888', font: { size: 10 } } },
+                        yPrecip: { position: 'right', min: 0, max: 100, grid: { display: false }, ticks: { color: 'rgba(112, 161, 255, 0.8)', font: { size: 10 }, callback: (v) => v + '%' } },
+                        x: { grid: { display: false }, ticks: { color: isLight ? '#666' : '#888', font: { size: 10 }, maxTicksLimit: 6 } }
                     }
                 }
             });
