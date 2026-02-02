@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 from suntime import Sun
 
@@ -20,6 +20,17 @@ def calculate_feels_like(temp_f, humidity, wind_speed_mph):
                  0.00085282*T*R*R - 0.00000199*T*T*R*R
         return hi
     return temp_f
+
+def get_yesterday_temp(lat, lon):
+    try:
+        yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+        # Using Open-Meteo Archive API for historical comparison
+        url = f"https://archive-api.open-meteo.com/v1/archive?latitude={lat}&longitude={lon}&start_date={yesterday}&end_date={yesterday}&hourly=temperature_2m&temperature_unit=fahrenheit"
+        resp = requests.get(url, timeout=5).json()
+        current_hour = datetime.now().hour
+        return resp['hourly']['temperature_2m'][current_hour]
+    except:
+        return None
 
 def get_env_data(lat, lon):
     try:
@@ -74,6 +85,7 @@ def get_weather_data(lat, lon):
         sunset_local = sun.get_sunset_time().astimezone(eastern_tz)
 
         env_data = get_env_data(lat_f, lon_f)
+        yesterday_val = get_yesterday_temp(lat_f, lon_f)
 
         daily_forecasts = []
         periods = daily_resp['properties']['periods']
@@ -106,6 +118,7 @@ def get_weather_data(lat, lon):
             "pressure": pressure_inhg,
             "aqi": env_data.get('us_aqi'),
             "uv": env_data.get('uv_index'),
+            "yesterday_temp": yesterday_val,
             "daily": daily_forecasts,
             "hourly": processed_hourly,
             "alerts": active_alerts,
