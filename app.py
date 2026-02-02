@@ -62,10 +62,7 @@ def get_weather_data(lat, lon):
         humid = humid_data.get('value') if (humid_data and humid_data.get('value') is not None) else 50
         
         wind_raw = str(current.get('windSpeed', '0')).lower()
-        if 'to' in wind_raw:
-            wind_str = wind_raw.split('to')[-1].strip().split(' ')[0]
-        else:
-            wind_str = wind_raw.split(' ')[0]
+        wind_str = wind_raw.split('to')[-1].strip().split(' ')[0] if 'to' in wind_raw else wind_raw.split(' ')[0]
         wind_val = float(wind_str) if wind_str.replace('.','',1).isdigit() else 0
         
         raw_p = obs_data.get('barometricPressure', {}).get('value')
