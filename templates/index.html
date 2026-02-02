@@ -332,6 +332,15 @@
             background: #1a1d29;
         }
 
+        .weather-alert {
+            transition: transform 0.1s ease, background 0.2s ease;
+        }
+
+        .weather-alert:active {
+            transform: scale(0.96);
+            background: rgba(255, 64, 64, 0.3) !important;
+        }
+
         .powered-by-footer {
             padding: 25px 15px;
             text-align: center;
@@ -412,7 +421,7 @@
         </div>
 
         <div class="p-3">
-            <div id="alert-container" style="display: none;"></div>
+            <div id="alert-container" class="px-3 mb-2" style="display: none;"></div>
             <ul class="nav nav-pills mb-3 gap-2 overflow-auto" style="scrollbar-width: none;">
                 <li class="nav-item"><button class="nav-link active rounded-pill" data-bs-toggle="pill"
                         data-bs-target="#daily">7-Day</button></li>
@@ -477,9 +486,14 @@
 
         function showDayHourly(dateStr, dayName) {
             document.getElementById('modalDayLabel').innerText = `${dayName} Hourly`;
+            const modalBody = document.querySelector('#hourlyModal .modal-body');
+            modalBody.innerHTML = '<div style="height: 300px;"><canvas id="hourlyChart"></canvas></div>';
             const filtered = lastData.hourly.filter(h => h.startTime.startsWith(dateStr));
             const modalEl = document.getElementById('hourlyModal');
-            const onShown = () => { if (filtered.length > 0) createChart(filtered); modalEl.removeEventListener('shown.bs.modal', onShown); };
+            const onShown = () => {
+                if (filtered.length > 0) createChart(filtered);
+                modalEl.removeEventListener('shown.bs.modal', onShown);
+            };
             modalEl.addEventListener('shown.bs.modal', onShown);
             hourlyModal.show();
         }
@@ -505,6 +519,36 @@
                 if (diff > 0) text.innerText = `${diff}° warmer than yesterday`;
                 else if (diff < 0) text.innerText = `${Math.abs(diff)}° colder than yesterday`;
                 else text.innerText = `Same as yesterday`;
+            }
+
+            const alertCont = document.getElementById('alert-container');
+
+            if (data.alerts && data.alerts.length > 0) {
+                alertCont.style.display = 'block';
+                alertCont.innerHTML = data.alerts.map(alert => {
+                    const p = alert.properties; // NWS data is inside properties
+                    return `
+                <div class="weather-alert mb-3" onclick="showAlertDetails('${p.event}', '${p.headline}', \`${p.description.replace(/`/g, "'")}\`)" 
+                     style="background: rgba(255, 64, 64, 0.15); border-left: 4px solid #ff4757; border-radius: 12px; padding: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.05);">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div style="flex: 1;">
+                            <small style="color: #ff4757; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; font-size: 0.65rem;">
+                                ${p.severity} Alert
+                            </small>
+                            <p class="m-0 fw-bold" style="font-size: 0.9rem; line-height: 1.2; color: #fff;">
+                                ${p.event}
+                            </p>
+                            <small class="opacity-75" style="font-size: 0.75rem; display: block; margin-top: 4px;">
+                                ${p.headline}
+                            </small>
+                        </div>
+                        <i class="wi wi-direction-right opacity-50 ms-2"></i>
+                    </div>
+                </div>
+            `;
+                }).join('');
+            } else {
+                alertCont.style.display = 'none';
             }
 
             const aqiEl = document.getElementById('aqi-val'); aqiEl.innerText = data.aqi;
@@ -536,6 +580,23 @@
             });
             document.getElementById('daily-container').innerHTML = dHtml;
             document.getElementById('radar-container').innerHTML = `<iframe class="w-100 rounded-4" style="height:350px;border:none" src="https://embed.windy.com/embed.html?type=radar&lat=${data.lat}&lon=${data.lon}"></iframe>`;
+        }
+
+        function showAlertDetails(title, headline, description) {
+            document.getElementById('modalDayLabel').innerText = title;
+
+            const modalBody = document.querySelector('#hourlyModal .modal-body');
+            // We replace the canvas with a scrollable text area
+            modalBody.innerHTML = `
+        <div style="max-height: 400px; overflow-y: auto; padding-right: 5px;">
+            <p class="fw-bold text-danger mb-2" style="font-size: 1rem;">${headline}</p>
+            <div style="height: 1px; background: rgba(255,255,255,0.1); margin-bottom: 15px;"></div>
+            <p style="white-space: pre-wrap; font-size: 0.85rem; color: rgba(255,255,255,0.8); line-height: 1.6;">
+                ${description}
+            </p>
+        </div>
+    `;
+            hourlyModal.show();
         }
 
         function createChart(hourlyData) {
