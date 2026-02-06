@@ -33,80 +33,339 @@
         }
 
         #loader {
-            position: fixed; inset: 0; background: #0f111a; z-index: 2000;
-            display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;
+            position: fixed;
+            inset: 0;
+            background: #0f111a;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            transition: opacity 0.5s ease;
         }
 
-        .weather-animation { position: relative; width: 80px; height: 80px; margin-bottom: 20px; }
-        .cloud-icon { font-size: 60px; color: #fff; animation: float 3s ease-in-out infinite; position: absolute; z-index: 2; }
-        .sun-behind { font-size: 40px; color: #ffce00; position: absolute; top: -10px; right: 5px; animation: rotateSun 10s linear infinite; z-index: 1; }
+        .weather-animation {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+        }
 
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        @keyframes rotateSun { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .cloud-icon {
+            font-size: 60px;
+            color: #fff;
+            animation: float 3s ease-in-out infinite;
+            position: absolute;
+            z-index: 2;
+        }
+
+        .sun-behind {
+            font-size: 40px;
+            color: #ffce00;
+            position: absolute;
+            top: -10px;
+            right: 5px;
+            animation: rotateSun 10s linear infinite;
+            z-index: 1;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes rotateSun {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
 
         .main-card {
-            background: var(--card-bg) !important; border-radius: 0 0 32px 32px;
-            overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(128, 128, 128, 0.1); position: relative;
-            max-width: 600px; margin: 0 auto;
+            background: var(--card-bg) !important;
+            border-radius: 0 0 32px 32px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(128, 128, 128, 0.1);
+            position: relative;
+            max-width: 600px;
+            margin: 0 auto;
         }
 
-        .controls { position: absolute; top: 12px; right: 12px; z-index: 1050; display: flex; gap: 8px; }
+        .controls {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 1050;
+            display: flex;
+            gap: 8px;
+        }
 
         .unit-pill {
-            position: relative; display: flex; background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(10px); padding: 3px; border-radius: 50px;
-            border: 1px solid rgba(255, 255, 255, 0.1); width: 80px; height: 34px;
+            position: relative;
+            display: flex;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            padding: 3px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 80px;
+            height: 34px;
         }
-        .unit-pill input { display: none; }
-        .unit-pill label { flex: 1; z-index: 2; text-align: center; line-height: 28px; font-size: 0.75rem; font-weight: 700; cursor: pointer; color: rgba(255, 255, 255, 0.5); }
-        .unit-pill input:checked+label { color: white; }
-        .pill-bg { position: absolute; top: 3px; left: 3px; width: 37px; height: 28px; background: var(--accent); border-radius: 50px; transition: transform 0.3s; z-index: 1; }
-        #c-unit:checked~.pill-bg { transform: translateX(37px); }
 
-        .btn-circle { width: 34px; height: 34px; border-radius: 50%; border: none; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px); color: white; display: flex; align-items: center; justify-content: center; }
+        .unit-pill input {
+            display: none;
+        }
 
-        .header-bg { position: relative; min-height: 380px; width: 100%; overflow: hidden; display: flex; flex-direction: column; }
-        #dynamic-bg { position: absolute; inset: 0; background-size: cover; background-position: center; transition: background 1s; }
-        .header-content { position: relative; z-index: 5; flex: 1; padding: 20px; display: flex; flex-direction: column; justify-content: flex-end; color: white !important; background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.85) 100%); }
+        .unit-pill label {
+            flex: 1;
+            z-index: 2;
+            text-align: center;
+            line-height: 28px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.5);
+        }
 
-        .temp-display { font-size: clamp(4rem, 15vw, 5.5rem); font-weight: 800; line-height: 0.85; letter-spacing: -2px; }
+        .unit-pill input:checked+label {
+            color: white;
+        }
 
-        .env-badge { padding: 4px 10px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); margin: 3px; display: inline-flex; align-items: center; }
+        .pill-bg {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 37px;
+            height: 28px;
+            background: var(--accent);
+            border-radius: 50px;
+            transition: transform 0.3s;
+            z-index: 1;
+        }
 
-        .pulse-alert { animation: alertPulse 2s linear 8; }
+        #c-unit:checked~.pill-bg {
+            transform: translateX(37px);
+        }
+
+        .btn-circle {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-bg {
+            position: relative;
+            min-height: 380px;
+            width: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #dynamic-bg {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            transition: background 1s;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 5;
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            color: white !important;
+            background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.85) 100%);
+        }
+
+        .temp-display {
+            font-size: clamp(4rem, 15vw, 5.5rem);
+            font-weight: 800;
+            line-height: 0.85;
+            letter-spacing: -2px;
+        }
+
+        .env-badge {
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin: 3px;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .pulse-alert {
+            animation: alertPulse 2s linear 6;
+        }
+
         @keyframes alertPulse {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4); }
-            50% { transform: scale(1.05); box-shadow: 0 0 12px 4px rgba(255, 71, 87, 0.2); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4);
+            }
+
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 12px 4px rgba(255, 71, 87, 0.2);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 71, 87, 0);
+            }
         }
 
-        .sun-card { background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(15px); border-radius: 20px; padding: 12px; margin-top: 15px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-around; }
-        .sun-item i { font-size: 1.2rem; color: #ffce00; display: block; margin-bottom: 2px; }
-        .sun-item span { font-size: 0.6rem; text-transform: uppercase; opacity: 0.6; font-weight: 700; display: block; }
+        .sun-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 12px;
+            margin-top: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-around;
+        }
 
-        .daily-row { display: flex; align-items: center; padding: 14px 8px; border-bottom: 1px solid rgba(128, 128, 128, 0.08); transition: background 0.2s; }
-        .daily-row.clickable { cursor: pointer; }
-        .daily-row.clickable:active { background: rgba(255, 255, 255, 0.1); }
-        .day-label { width: 50px; font-weight: 500; }
-        .day-icon-col { width: 40px; text-align: center; color: var(--accent); }
-        .day-low-col { width: 35px; text-align: right; opacity: 0.5; }
-        .day-high-col { width: 35px; text-align: left; font-weight: 600; }
-        .temp-bar-container { flex-grow: 1; height: 5px; background: rgba(128, 128, 128, 0.15); border-radius: 10px; margin: 0 12px; position: relative; }
-        .temp-bar-fill { position: absolute; height: 100%; border-radius: 10px; background: linear-gradient(90deg, #4facfe, #00f2fe); }
-        .current-temp-dot { position: absolute; width: 7px; height: 7px; background: white; border: 1.5px solid #1a1d29; border-radius: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 5; }
+        .sun-item i {
+            font-size: 1.2rem;
+            color: #ffce00;
+            display: block;
+            margin-bottom: 2px;
+        }
 
-        .nav-pills .nav-link { font-size: 0.85rem; padding: 8px 20px; color: rgba(255, 255, 255, 0.6); }
-        .nav-pills .nav-link.active { background-color: var(--accent) !important; color: white; }
-        .modal-content { border-radius: 24px; border: none; background: #1a1d29; }
-        .powered-by-footer { padding: 25px 15px; text-align: center; opacity: 0.7; font-size: 0.85rem; color: var(--accent); }
+        .sun-item span {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            opacity: 0.6;
+            font-weight: 700;
+            display: block;
+        }
+
+        .daily-row {
+            display: flex;
+            align-items: center;
+            padding: 14px 8px;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.08);
+            transition: background 0.2s;
+        }
+
+        .daily-row.clickable {
+            cursor: pointer;
+        }
+
+        .daily-row.clickable:active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .day-label {
+            width: 50px;
+            font-weight: 500;
+        }
+
+        .day-icon-col {
+            width: 40px;
+            text-align: center;
+            color: var(--accent);
+        }
+
+        .day-low-col {
+            width: 35px;
+            text-align: right;
+            opacity: 0.5;
+        }
+
+        .day-high-col {
+            width: 35px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .temp-bar-container {
+            flex-grow: 1;
+            height: 5px;
+            background: rgba(128, 128, 128, 0.15);
+            border-radius: 10px;
+            margin: 0 12px;
+            position: relative;
+        }
+
+        .temp-bar-fill {
+            position: absolute;
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+        }
+
+        .current-temp-dot {
+            position: absolute;
+            width: 7px;
+            height: 7px;
+            background: white;
+            border: 1.5px solid #1a1d29;
+            border-radius: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+        }
+
+        .nav-pills .nav-link {
+            font-size: 0.85rem;
+            padding: 8px 20px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .nav-pills .nav-link.active {
+            background-color: var(--accent) !important;
+            color: white;
+        }
+
+        .modal-content {
+            border-radius: 24px;
+            border: none;
+            background: #1a1d29;
+        }
+
+        .powered-by-footer {
+            padding: 25px 15px;
+            text-align: center;
+            opacity: 0.7;
+            font-size: 0.85rem;
+            color: var(--accent);
+        }
     </style>
 </head>
 
 <body>
     <div id="loader">
-        <div class="weather-animation"><i class="wi wi-day-sunny sun-behind"></i><i class="wi wi-cloud cloud-icon"></i></div>
-        <p class="loading-text" style="font-size: 0.7rem; letter-spacing: 3px;">Syncing Atmosphere</p>
+        <div class="weather-animation"><i class="wi wi-day-sunny sun-behind"></i><i class="wi wi-cloud cloud-icon"></i>
+        </div>
+        <p class="loading-text" style="font-size: 0.7rem; letter-spacing: 3px;">CONSULTING THE SKY</p>
     </div>
 
     <div class="modal fade" id="hourlyModal" tabindex="-1" aria-hidden="true">
@@ -138,13 +397,16 @@
         <div class="header-bg">
             <div id="dynamic-bg"></div>
             <div class="header-content">
-                <h6 id="loc-name" class="text-uppercase opacity-50 small fw-bold mb-1" style="font-size: 0.65rem;">---</h6>
+                <h6 id="loc-name" class="text-uppercase opacity-50 small fw-bold mb-1" style="font-size: 0.65rem;">---
+                </h6>
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h1 class="temp-display mb-0"><span id="temp">--</span>°</h1>
-                        <p class="opacity-75 mb-0" style="font-size: 0.9rem;">Feels like <span id="windchill">--</span>°</p>
+                        <p class="opacity-75 mb-0" style="font-size: 0.9rem;">Feels like <span id="windchill">--</span>°
+                        </p>
                         <div id="hindsight-wrap" style="display:none; margin-top: 5px;">
-                            <span class="badge rounded-pill" style="background: rgba(255,255,255,0.1); font-weight: 400; font-size: 0.75rem;">
+                            <span class="badge rounded-pill"
+                                style="background: rgba(255,255,255,0.1); font-weight: 400; font-size: 0.75rem;">
                                 <i class="wi wi-refresh me-1"></i><span id="hindsight-text"></span>
                             </span>
                         </div>
@@ -152,7 +414,7 @@
                     <i id="main-icon" class="wi" style="font-size: 4rem; color: #ffce00;"></i>
                 </div>
                 <p id="main-forecast" class="fw-light mt-2 mb-3">--</p>
-                
+
                 <div class="d-flex flex-wrap" id="badge-container">
                     <div class="env-badge">AQI: <span id="aqi-val">--</span></div>
                     <div class="env-badge">UV: <span id="uv-val">--</span></div>
@@ -161,7 +423,8 @@
                 </div>
 
                 <div class="sun-card">
-                    <div class="sun-item"><i class="wi wi-sunrise"></i><span>Sunrise</span><b id="sunrise">--:--</b></div>
+                    <div class="sun-item"><i class="wi wi-sunrise"></i><span>Sunrise</span><b id="sunrise">--:--</b>
+                    </div>
                     <div style="width: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
                     <div class="sun-item"><i class="wi wi-sunset"></i><span>Sunset</span><b id="sunset">--:--</b></div>
                 </div>
@@ -170,12 +433,18 @@
 
         <div class="p-3">
             <ul class="nav nav-pills mb-3 gap-2 overflow-auto" style="scrollbar-width: none;">
-                <li class="nav-item"><button class="nav-link active rounded-pill" data-bs-toggle="pill" data-bs-target="#daily">7-Day</button></li>
-                <li class="nav-item"><button class="nav-link rounded-pill" data-bs-toggle="pill" data-bs-target="#radar">Radar</button></li>
+                <li class="nav-item"><button class="nav-link active rounded-pill" data-bs-toggle="pill"
+                        data-bs-target="#daily">7-Day</button></li>
+                <li class="nav-item"><button class="nav-link rounded-pill" data-bs-toggle="pill"
+                        data-bs-target="#radar">Radar</button></li>
             </ul>
             <div class="tab-content">
-                <div class="tab-pane fade show active" id="daily"><div id="daily-container"></div></div>
-                <div class="tab-pane fade" id="radar"><div id="radar-container"></div></div>
+                <div class="tab-pane fade show active" id="daily">
+                    <div id="daily-container"></div>
+                </div>
+                <div class="tab-pane fade" id="radar">
+                    <div id="radar-container"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -192,11 +461,11 @@
             html.setAttribute('data-bs-theme', newTheme);
             localStorage.setItem('theme', newTheme);
             document.getElementById('theme-icon').className = newTheme === 'light' ? 'wi wi-night-clear' : 'wi wi-day-sunny';
-            if (myChart && lastData) { 
+            if (myChart && lastData) {
                 const currentModalLabel = document.getElementById('modalDayLabel').innerText;
-                const datePart = currentModalLabel.split(' ')[0]; 
+                const datePart = currentModalLabel.split(' ')[0];
                 const filtered = lastData.hourly.filter(h => h.startTime.startsWith(datePart));
-                if(filtered.length > 0) createChart(filtered);
+                if (filtered.length > 0) createChart(filtered);
             }
         }
 
@@ -205,7 +474,7 @@
             if (lastData) updateUI(lastData);
         }
 
-        function formatTemp(val) { return document.getElementById('c-unit').checked ? Math.round((val - 32) * 5/9) : Math.round(val); }
+        function formatTemp(val) { return document.getElementById('c-unit').checked ? Math.round((val - 32) * 5 / 9) : Math.round(val); }
 
         window.onload = function () {
             const savedUnit = localStorage.getItem('unit') || 'imperial';
@@ -217,20 +486,40 @@
         };
 
         function fetchWeather(lat, lon) {
-            fetch('/weather_data', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ lat, lon }) })
+            const ldr = document.querySelector('.loading-text');
+            ldr.innerText = "Reading Atmosphere..";
+
+            fetch('/weather_data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lat, lon }) })
                 .then(res => res.json()).then(data => {
-                    lastData = data; updateUI(data);
+                    lastData = data;
+                    updateUI(data);
+
+                    const city = data.location.split(',')[0];
+                    ldr.innerText = `Hello, ${city}`;
+
                     setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 800);
                 });
+        }
+
+        function capitalizeFirstLetter(str) {
+            const firstLetter = str.charAt(0).toUpperCase();
+            const restOfString = str.slice(1).toLowerCase();
+            return firstLetter + restOfString;
         }
 
         function updateUI(data) {
             const isMetric = document.getElementById('c-unit').checked;
             const curT = formatTemp(data.current.temperature);
-            document.getElementById('loc-name').innerText = data.location;
+
+            const city = data.location.split(',')[0];
+            const state = data.location.split(',')[1] || "";
+            document.getElementById('loc-name').innerText = `${city}, ${state}`;
+
+            const condition = data.current.shortForecast;
+            document.getElementById('main-forecast').innerText = capitalizeFirstLetter(condition);
+
             document.getElementById('temp').innerText = curT;
             document.getElementById('windchill').innerText = formatTemp(data.feels_like);
-            document.getElementById('main-forecast').innerText = data.current.shortForecast;
             document.getElementById('humidity').innerText = (data.current.relativeHumidity?.value || 0) + '%';
             document.getElementById('wind').innerText = isMetric ? Math.round(data.wind.speed * 1.609) + ' km/h' : data.wind.speed + ' mph';
             document.getElementById('sunrise').innerText = data.sun.sunrise;
@@ -246,14 +535,14 @@
 
             const badgeCont = document.getElementById('badge-container');
             const oldPill = document.getElementById('alert-pill');
-            if(oldPill) oldPill.remove();
+            if (oldPill) oldPill.remove();
 
             if (data.alerts && data.alerts.length > 0) {
                 const p = data.alerts[0].properties;
                 const sev = p.severity.toLowerCase();
                 let color = "#ffc107";
-                if(sev === "extreme") color = "#ff4757";
-                else if(sev === "severe") color = "#fd9644";
+                if (sev === "extreme") color = "#ff4757";
+                else if (sev === "severe") color = "#fd9644";
 
                 const pill = document.createElement('div');
                 pill.id = 'alert-pill';
@@ -280,10 +569,9 @@
                 const dv = getVisuals(day.icon, true);
                 let high = formatTemp(day.high), low = formatTemp(day.low);
                 if (low > high) [low, high] = [high, low];
-                
-                // RESTRICT FUTURE GRAPHS: Only add 'clickable' if hourly data exists for this day
+
                 const hasHourly = data.hourly.some(h => h.startTime.startsWith(day.date));
-                
+
                 dHtml += `<div class="daily-row ${hasHourly ? 'clickable' : ''}" ${hasHourly ? `onclick="showDayHourly('${day.date}', '${day.name}')"` : ''}>
                     <div class="day-label">${i === 0 ? 'Today' : day.name.substring(0, 3)}</div>
                     <div class="day-icon-col"><i class="wi ${dv.icon}"></i></div>
@@ -371,4 +659,5 @@
     </script>
     <footer class="powered-by-footer">Powered by NWS, OpenMeteo & Windy</footer>
 </body>
+
 </html>
