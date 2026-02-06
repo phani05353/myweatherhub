@@ -24,21 +24,29 @@ def calculate_feels_like(temp_f, humidity, wind_speed_mph):
 def get_yesterday_temp(lat, lon):
     try:
         yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-        # Using Open-Meteo Archive API for historical comparison
         url = f"https://archive-api.open-meteo.com/v1/archive?latitude={lat}&longitude={lon}&start_date={yesterday}&end_date={yesterday}&hourly=temperature_2m&temperature_unit=fahrenheit"
         resp = requests.get(url, timeout=5).json()
         current_hour = datetime.now().hour
         return resp['hourly']['temperature_2m'][current_hour]
-    except:
-        return None
+    except: return None
 
 def get_env_data(lat, lon):
     try:
         url = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&current=us_aqi,uv_index&timezone=auto"
         resp = requests.get(url, timeout=5).json()
         return resp.get('current', {})
-    except:
-        return {"us_aqi": "N/A", "uv_index": "N/A"}
+    except: return {"us_aqi": "N/A", "uv_index": "N/A"}
+
+def get_rain_pulse(lat, lon):
+    try:
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&minutely_15=precipitation&timezone=auto"
+        resp = requests.get(url, timeout=3).json()
+        raw_values = resp.get('minutely_15', {}).get('precipitation', [0,0,0,0])
+        pulse = []
+        for val in raw_values:
+            pulse.extend([val] * 3) 
+        return pulse[:12]
+    except: return [0]*12
 
 def get_weather_data(lat, lon):
     try:
@@ -68,7 +76,6 @@ def get_weather_data(lat, lon):
 
         current = hourly_resp['properties']['periods'][0]
         temp = current['temperature']
-        
         humid_data = current.get('relativeHumidity', {})
         humid = humid_data.get('value') if (humid_data and humid_data.get('value') is not None) else 50
         
@@ -86,6 +93,11 @@ def get_weather_data(lat, lon):
 
         env_data = get_env_data(lat_f, lon_f)
         yesterday_val = get_yesterday_temp(lat_f, lon_f)
+        rain_pulse = get_rain_pulse(lat_f, lon_f)
+
+        # Determine if it's snow vs rain for UI logic
+        condition_text = current['shortForecast'].lower()
+        is_snow = "snow" in condition_text or "flurries" in condition_text
 
         daily_forecasts = []
         periods = daily_resp['properties']['periods']
@@ -110,8 +122,6 @@ def get_weather_data(lat, lon):
         city_camel = prop['relativeLocation']['properties']['city'].title()
         state = prop['relativeLocation']['properties']['state']
 
-        print(f"Fetching Weather For: {city_camel}, {state}", flush=True)
-
         return {
             "location": f"{city_camel}, {state}",
             "current": current,
@@ -124,6 +134,9 @@ def get_weather_data(lat, lon):
             "daily": daily_forecasts,
             "hourly": processed_hourly,
             "alerts": active_alerts,
+            "rain_pulse": rain_pulse,
+            "is_snow": is_snow,
+            "precip_alert": any(v > 0 for v in rain_pulse[:3]), 
             "sun": {
                 "sunrise": sunrise_local.strftime("%I:%M %p"),
                 "sunset": sunset_local.strftime("%I:%M %p")
