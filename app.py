@@ -108,7 +108,6 @@ def get_weather_data(lat, lon):
             })
 
         city_camel = prop['relativeLocation']['properties']['city'].title()
-        app.logger.info(f"City requested: {city_camel}")
         state = prop['relativeLocation']['properties']['state']
 
         return {
