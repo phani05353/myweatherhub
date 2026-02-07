@@ -471,9 +471,10 @@
         .powered-by-footer {
             padding: 25px 15px;
             text-align: center;
-            opacity: 0.7;
+            opacity: 0.9; /* Increased slightly for better readability on yellow */
             font-size: 0.85rem;
-            color: var(--accent);
+            color: #ffce00; /* Sun-themed yellow */
+            text-shadow: 0 0 8px rgba(255, 206, 0, 0.2);
         }
     </style>
 </head>
@@ -829,7 +830,12 @@
             return { icon, url: `https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&w=800&q=80` };
         }
     </script>
-    <footer class="powered-by-footer">Powered by NWS, OpenMeteo & Windy</footer>
+    <footer class="powered-by-footer">
+        Powered by NWS, OpenMeteo & Windy
+        © Maruthi Phani Kumar
+    </footer>
+</body>
+</html>
 </body>
 
 </html>
