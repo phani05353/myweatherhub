@@ -71,13 +71,25 @@
         }
 
         @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
         }
 
         @keyframes rotateSun {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .main-card {
@@ -112,7 +124,9 @@
             height: 34px;
         }
 
-        .unit-pill input { display: none; }
+        .unit-pill input {
+            display: none;
+        }
 
         .unit-pill label {
             flex: 1;
@@ -125,7 +139,9 @@
             color: rgba(255, 255, 255, 0.5);
         }
 
-        .unit-pill input:checked+label { color: white; }
+        .unit-pill input:checked+label {
+            color: white;
+        }
 
         .pill-bg {
             position: absolute;
@@ -139,7 +155,9 @@
             z-index: 1;
         }
 
-        #c-unit:checked~.pill-bg { transform: translateX(37px); }
+        #c-unit:checked~.pill-bg {
+            transform: translateX(37px);
+        }
 
         .btn-circle {
             width: 34px;
@@ -207,9 +225,20 @@
         }
 
         @keyframes alertPulse {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4); }
-            50% { transform: scale(1.05); box-shadow: 0 0 12px 4px rgba(255, 71, 87, 0.2); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4);
+            }
+
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 12px 4px rgba(255, 71, 87, 0.2);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 71, 87, 0);
+            }
         }
 
         .rain-pulse-container {
@@ -234,11 +263,29 @@
             transition: all 0.5s ease;
         }
 
-        .pulse-segment.active-rain { background: #4facfe; box-shadow: 0 0 8px rgba(79, 172, 254, 0.6); }
-        .pulse-segment.active-snow { background: #ffffff; box-shadow: 0 0 8px rgba(255, 255, 255, 0.6); }
+        .pulse-segment.active-rain {
+            background: #4facfe;
+            box-shadow: 0 0 8px rgba(79, 172, 254, 0.6);
+        }
 
-        .precip-badge-rain { background: #00d2ff !important; color: #000 !important; font-weight: 800; animation: blink 1.5s infinite; }
-        .precip-badge-snow { background: #ffffff !important; color: #000 !important; font-weight: 800; animation: blink 1.5s infinite; }
+        .pulse-segment.active-snow {
+            background: #ffffff;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+        }
+
+        .precip-badge-rain {
+            background: #00d2ff !important;
+            color: #000 !important;
+            font-weight: 800;
+            animation: blink 1.5s infinite;
+        }
+
+        .precip-badge-snow {
+            background: #ffffff !important;
+            color: #000 !important;
+            font-weight: 800;
+            animation: blink 1.5s infinite;
+        }
 
         .h-precip {
             font-size: 0.65rem;
@@ -252,8 +299,15 @@
         }
 
         @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
         }
 
         .hour-item.sun-event {
@@ -262,8 +316,15 @@
             min-width: 80px;
         }
 
-        .sun-event .h-time { color: #ffce00; opacity: 1; }
-        .sun-event .h-icon { color: #ffce00; animation: rotateSun 20s linear infinite; }
+        .sun-event .h-time {
+            color: #ffce00;
+            opacity: 1;
+        }
+
+        .sun-event .h-icon {
+            color: #ffce00;
+            animation: rotateSun 20s linear infinite;
+        }
 
         .daily-row {
             display: flex;
@@ -273,13 +334,36 @@
             transition: background 0.2s;
         }
 
-        .daily-row.clickable { cursor: pointer; }
-        .daily-row.clickable:active { background: rgba(255, 255, 255, 0.1); }
+        .daily-row.clickable {
+            cursor: pointer;
+        }
 
-        .day-label { width: 50px; font-weight: 500; }
-        .day-icon-col { width: 40px; text-align: center; color: var(--accent); }
-        .day-low-col { width: 35px; text-align: right; opacity: 0.5; }
-        .day-high-col { width: 35px; text-align: left; font-weight: 600; }
+        .daily-row.clickable:active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .day-label {
+            width: 50px;
+            font-weight: 500;
+        }
+
+        .day-icon-col {
+            width: 40px;
+            text-align: center;
+            color: var(--accent);
+        }
+
+        .day-low-col {
+            width: 35px;
+            text-align: right;
+            opacity: 0.5;
+        }
+
+        .day-high-col {
+            width: 35px;
+            text-align: left;
+            font-weight: 600;
+        }
 
         .temp-bar-container {
             flex-grow: 1;
@@ -335,7 +419,9 @@
             -ms-overflow-style: none;
         }
 
-        .hourly-scroll-container::-webkit-scrollbar { display: none; }
+        .hourly-scroll-container::-webkit-scrollbar {
+            display: none;
+        }
 
         .hour-item {
             min-width: 70px;
@@ -354,11 +440,28 @@
             background: rgba(112, 161, 255, 0.1);
         }
 
-        .hour-item .h-time { font-size: 0.65rem; opacity: 0.6; text-transform: uppercase; font-weight: 700; }
-        .hour-item .h-icon { font-size: 1.2rem; margin: 8px 0; display: block; color: var(--accent); }
-        .hour-item .h-temp { font-size: 0.9rem; font-weight: 700; }
+        .hour-item .h-time {
+            font-size: 0.65rem;
+            opacity: 0.6;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
 
-        #loc-name { margin-top: 10px; }
+        .hour-item .h-icon {
+            font-size: 1.2rem;
+            margin: 8px 0;
+            display: block;
+            color: var(--accent);
+        }
+
+        .hour-item .h-temp {
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        #loc-name {
+            margin-top: 10px;
+        }
 
         .powered-by-footer {
             padding: 25px 15px;
@@ -373,7 +476,8 @@
 
 <body>
     <div id="loader">
-        <div class="weather-animation"><i class="wi wi-day-sunny sun-behind"></i><i class="wi wi-cloud cloud-icon"></i></div>
+        <div class="weather-animation"><i class="wi wi-day-sunny sun-behind"></i><i class="wi wi-cloud cloud-icon"></i>
+        </div>
         <p class="loading-text" style="font-size: 0.7rem; letter-spacing: 3px;">CONSULTING THE SKY</p>
     </div>
 
@@ -381,7 +485,8 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header border-0 pb-0">
-                    <h6 class="modal-title" id="modalDayLabel">Details</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <h6 class="modal-title" id="modalDayLabel">Details</h6><button type="button"
+                        class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" id="modalContent">
                     <div style="height: 300px;"><canvas id="hourlyChart"></canvas></div>
@@ -393,8 +498,10 @@
     <div class="main-card">
         <div class="controls">
             <div class="unit-pill">
-                <input type="radio" id="f-unit" name="unit" value="imperial" onchange="saveAndRefresh()"><label for="f-unit">°F</label>
-                <input type="radio" id="c-unit" name="unit" value="metric" onchange="saveAndRefresh()"><label for="c-unit">°C</label>
+                <input type="radio" id="f-unit" name="unit" value="imperial" onchange="saveAndRefresh()"><label
+                    for="f-unit">°F</label>
+                <input type="radio" id="c-unit" name="unit" value="metric" onchange="saveAndRefresh()"><label
+                    for="c-unit">°C</label>
                 <span class="pill-bg"></span>
             </div>
             <button class="btn-circle" onclick="toggleTheme()"><i class="wi wi-day-sunny" id="theme-icon"></i></button>
@@ -403,13 +510,17 @@
         <div class="header-bg">
             <div id="dynamic-bg"></div>
             <div class="header-content">
-                <h6 id="loc-name" class="text-uppercase opacity-50 small fw-bold mb-1" style="font-size: 0.65rem;">---</h6>
+                <h6 id="loc-name" class="text-uppercase opacity-50 small fw-bold mb-1" style="font-size: 0.65rem;">---
+                </h6>
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h1 class="temp-display mb-0"><span id="temp">--</span>°</h1>
-                        <p class="opacity-75 mb-0" style="font-size: 0.9rem;">Feels like <span id="windchill">--</span>°</p>
+                        <p class="opacity-75 mb-0" style="font-size: 0.9rem;">Feels like <span id="windchill">--</span>°
+                        </p>
                         <div id="hindsight-wrap" style="display:none; margin-top: 5px;">
-                            <span class="badge rounded-pill" style="background: rgba(255,255,255,0.1); font-weight: 400; font-size: 0.75rem;"><i class="wi wi-refresh me-1"></i><span id="hindsight-text"></span></span>
+                            <span class="badge rounded-pill"
+                                style="background: rgba(255,255,255,0.1); font-weight: 400; font-size: 0.75rem;"><i
+                                    class="wi wi-refresh me-1"></i><span id="hindsight-text"></span></span>
                         </div>
                     </div>
                     <i id="main-icon" class="wi" style="font-size: 4rem; color: #ffce00;"></i>
@@ -419,7 +530,9 @@
                 <div id="rain-pulse-wrap" style="display:none;">
                     <div class="rain-pulse-container">
                         <div class="d-flex justify-content-between align-items-center">
-                            <span id="pulse-label" style="font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8;">Next Hour Pulse</span>
+                            <span id="pulse-label"
+                                style="font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8;">Next
+                                Hour Pulse</span>
                             <span id="rain-status" style="font-size: 0.6rem; opacity: 0.6;">Scanning...</span>
                         </div>
                         <div class="pulse-grid" id="pulse-segments"></div>
@@ -443,8 +556,10 @@
 
         <div class="p-3">
             <ul class="nav nav-pills mb-3 gap-2 overflow-auto" style="scrollbar-width: none;">
-                <li class="nav-item"><button class="nav-link active rounded-pill" data-bs-toggle="pill" data-bs-target="#daily">7-Day</button></li>
-                <li class="nav-item"><button class="nav-link rounded-pill" data-bs-toggle="pill" data-bs-target="#radar">Radar</button></li>
+                <li class="nav-item"><button class="nav-link active rounded-pill" data-bs-toggle="pill"
+                        data-bs-target="#daily">7-Day</button></li>
+                <li class="nav-item"><button class="nav-link rounded-pill" data-bs-toggle="pill"
+                        data-bs-target="#radar">Radar</button></li>
             </ul>
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="daily">
@@ -525,6 +640,15 @@
                 wrap.style.display = 'block';
                 document.getElementById('hindsight-text').innerText = diff > 0 ? `${diff}° warmer than yesterday` : (diff < 0 ? `${Math.abs(diff)}° colder than yesterday` : `Same as yesterday`);
             }
+
+            const aqiWrapper = document.getElementById('aqi-val').parentElement;
+            aqiWrapper.style.cursor = 'pointer';
+            aqiWrapper.onclick = () => showAqiHourly();
+
+            // Use the ID directly or a unique name
+            const aqiDisplay = document.getElementById('aqi-val');
+            aqiDisplay.innerText = data.aqi;
+            aqiDisplay.style.color = data.aqi <= 50 ? "#00e400" : (data.aqi <= 100 ? "#ffff00" : "#ff7e00");
 
             const hourlyCont = document.getElementById('hourly-quick-view');
             let hHtml = '';
@@ -652,7 +776,7 @@
             const isMetric = document.getElementById('c-unit').checked;
             const unit = isMetric ? 'km/h' : 'mph';
             const speeds = hourlyData.map(h => isMetric ? Math.round(h.windSpeed * 1.609) : h.windSpeed);
-            
+
             // Dynamic Gradient based on Speed
             const speedGradient = ctx.createLinearGradient(0, 0, 0, 300);
             speedGradient.addColorStop(0, '#ff4757'); // High speed color (red)
@@ -680,11 +804,11 @@
                         pointHitRadius: 20
                     }]
                 },
-                options: { 
-                    responsive: true, 
+                options: {
+                    responsive: true,
                     maintainAspectRatio: false,
                     animation: { duration: 1500, easing: 'easeInOutQuart' },
-                    plugins: { 
+                    plugins: {
                         legend: { display: false },
                         tooltip: {
                             backgroundColor: theme.tooltipBg,
@@ -695,17 +819,17 @@
                             callbacks: { label: (ctx) => ` Wind: ${ctx.parsed.y} ${unit}` }
                         }
                     },
-                    scales: { 
-                        y: { 
-                            beginAtZero: true, 
-                            grid: { color: theme.gridColor }, 
-                            ticks: { color: theme.textColor, font: { size: 10 } } 
-                        }, 
-                        x: { 
-                            grid: { display: false }, 
-                            ticks: { color: theme.textColor, font: { size: 10 }, maxTicksLimit: 6 } 
-                        } 
-                    } 
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: theme.gridColor },
+                            ticks: { color: theme.textColor, font: { size: 10 } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: theme.textColor, font: { size: 10 }, maxTicksLimit: 6 }
+                        }
+                    }
                 }
             });
         }
@@ -730,7 +854,7 @@
             const ctx = document.getElementById('hourlyChart').getContext('2d');
             const theme = getChartTheme();
             const temps = hourlyData.map(h => formatTemp(h.temperature));
-            
+
             const lineGradient = ctx.createLinearGradient(0, 0, 0, 300);
             lineGradient.addColorStop(0, '#ff4757');
             lineGradient.addColorStop(1, '#70a1ff');
@@ -745,32 +869,32 @@
                 data: {
                     labels: hourlyData.map(h => new Date(h.startTime).toLocaleTimeString([], { hour: 'numeric' })),
                     datasets: [
-                        { 
-                            label: 'Temp', 
-                            data: temps, 
-                            borderColor: lineGradient, 
+                        {
+                            label: 'Temp',
+                            data: temps,
+                            borderColor: lineGradient,
                             backgroundColor: areaGradient,
-                            borderWidth: 3, 
-                            fill: true, 
-                            tension: 0.4, 
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
                             pointRadius: 0,
                             pointHitRadius: 20
                         },
-                        { 
-                            type: 'bar', 
-                            label: 'Precipitation %', 
-                            data: hourlyData.map(h => h.precipProb), 
-                            backgroundColor: 'rgba(79, 172, 254, 0.2)', 
+                        {
+                            type: 'bar',
+                            label: 'Precipitation %',
+                            data: hourlyData.map(h => h.precipProb),
+                            backgroundColor: 'rgba(79, 172, 254, 0.2)',
                             yAxisID: 'yP',
                             borderRadius: 4
                         }
                     ]
                 },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
                     animation: { duration: 1000 },
-                    plugins: { 
+                    plugins: {
                         legend: { display: false },
                         tooltip: {
                             backgroundColor: theme.tooltipBg,
@@ -778,12 +902,65 @@
                             displayColors: false,
                             callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y}${ctx.datasetIndex === 0 ? '°' : '%'}` }
                         }
-                    }, 
-                    scales: { 
-                        y: { grid: { color: theme.gridColor }, ticks: { color: theme.textColor, font: { size: 10 }, maxTicksLimit: 5 } }, 
-                        yP: { display: false, min: 0, max: 100 }, 
-                        x: { grid: { display: false }, ticks: { color: theme.textColor, font: { size: 10 }, maxTicksLimit: 6 } } 
-                    } 
+                    },
+                    scales: {
+                        y: { grid: { color: theme.gridColor }, ticks: { color: theme.textColor, font: { size: 10 }, maxTicksLimit: 5 } },
+                        yP: { display: false, min: 0, max: 100 },
+                        x: { grid: { display: false }, ticks: { color: theme.textColor, font: { size: 10 }, maxTicksLimit: 6 } }
+                    }
+                }
+            });
+        }
+
+        function showAqiHourly() {
+            if (!lastData || !lastData.hourly_aqi) return;
+            document.getElementById('modalDayLabel').innerText = "Air Quality Forecast (24h)";
+            document.getElementById('modalContent').innerHTML = '<div style="height: 300px;"><canvas id="aqiChart"></canvas></div>';
+            
+            const modalEl = document.getElementById('hourlyModal');
+            const onShown = () => { createAqiChart(lastData.hourly_aqi); modalEl.removeEventListener('shown.bs.modal', onShown); };
+            modalEl.addEventListener('shown.bs.modal', onShown);
+            hourlyModal.show();
+        }
+
+        function createAqiChart(aqiData) {
+            const ctx = document.getElementById('aqiChart').getContext('2d');
+            const theme = getChartTheme();
+            
+            // Create a label array for the next 24 hours
+            const labels = [];
+            let currentH = new Date().getHours();
+            for(let i=0; i<aqiData.length; i++) {
+                let h = (currentH + i) % 24;
+                labels.push(`${h == 0 ? 12 : (h > 12 ? h-12 : h)} ${h >= 12 ? 'PM' : 'AM'}`);
+            }
+
+            if (window.myAqiChart) window.myAqiChart.destroy();
+            window.myAqiChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'US AQI',
+                        data: aqiData,
+                        borderColor: '#00e400',
+                        backgroundColor: 'rgba(0, 228, 0, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 1
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: (ctx) => ` AQI: ${ctx.parsed.y}` } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: theme.gridColor }, ticks: { color: theme.textColor } },
+                        x: { grid: { display: false }, ticks: { color: theme.textColor, maxTicksLimit: 6 } }
+                    }
                 }
             });
         }

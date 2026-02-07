@@ -9,12 +9,10 @@ app = Flask(__name__)
 
 # Constants
 HEADERS = {'User-Agent': '(MyHomeLab, maruthi.phanikumar@yopmail.com)'}
-TIMEOUT = 5  # Seconds for individual API calls
+TIMEOUT = 5 
 
-# Initialize Session and Global Executor
 session = requests.Session()
 session.headers.update(HEADERS)
-# Global pool prevents spawning/destroying threads on every request
 executor = ThreadPoolExecutor(max_workers=15)
 
 def calculate_feels_like(temp_f, humidity, wind_speed_mph):
@@ -53,16 +51,14 @@ def get_weather_data(lat, lon):
             "hourly": prop['forecastHourly'],
             "stations": prop['observationStations'],
             "alerts": f"https://api.weather.gov/alerts/active?point={lat_f},{lon_f}",
-            "env": f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat_f}&longitude={lon_f}&current=us_aqi,uv_index&timezone=auto",
+            # UPDATED: Added hourly=us_aqi to fetch graph data
+            "env": f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat_f}&longitude={lon_f}&current=us_aqi,uv_index&hourly=us_aqi&timezone=auto",
             "yesterday": f"https://archive-api.open-meteo.com/v1/archive?latitude={lat_f}&longitude={lon_f}&start_date={yesterday}&end_date={yesterday}&hourly=temperature_2m&temperature_unit=fahrenheit",
             "rain": f"https://api.open-meteo.com/v1/forecast?latitude={lat_f}&longitude={lon_f}&minutely_15=precipitation&timezone=auto"
         }
 
-        # Submit tasks to the global executor
         future_to_key = {executor.submit(fetch_json, url): key for key, url in urls.items()}
         results = {}
-        
-        # Wait for results with a collective timeout
         for future in as_completed(future_to_key, timeout=12):
             key = future_to_key[future]
             try:
@@ -70,18 +66,15 @@ def get_weather_data(lat, lon):
             except Exception:
                 results[key] = {}
 
-        # Ensure all keys exist to prevent KeyErrors
         for key in urls.keys():
             if key not in results: results[key] = {}
 
-        # Fetch latest observation separately (depends on stations result)
         obs_data = {}
         stations = results['stations'].get('features', [])
         if stations:
             st_id = stations[0]['properties']['stationIdentifier']
             obs_data = fetch_json(f"https://api.weather.gov/stations/{st_id}/observations/latest").get('properties', {})
 
-        # Parsing Current Weather
         hourly_periods = results['hourly'].get('properties', {}).get('periods', [])
         if not hourly_periods: return None
         
@@ -89,22 +82,18 @@ def get_weather_data(lat, lon):
         temp = current['temperature']
         humid = current.get('relativeHumidity', {}).get('value', 50) or 50
         
-        # Wind Parsing
         wind_raw = str(current.get('windSpeed', '0')).lower()
         wind_str = wind_raw.split('to')[-1].strip().split(' ')[0] if 'to' in wind_raw else wind_raw.split(' ')[0]
         wind_val = float(wind_str) if wind_str.replace('.','',1).isdigit() else 0
         
-        # Pressure (convert Pascals to inHg)
         pressure_val = obs_data.get('barometricPressure', {}).get('value')
         pressure_inhg = round(pressure_val * 0.0002953, 2) if pressure_val else "N/A"
 
-        # Sun Times
         sun = Sun(lat_f, lon_f)
         eastern_tz = pytz.timezone('US/Eastern')
         sunrise_local = sun.get_sunrise_time().astimezone(eastern_tz)
         sunset_local = sun.get_sunset_time().astimezone(eastern_tz)
 
-        # Comparisons and Rain
         current_hour = datetime.now().hour
         yesterday_temps = results['yesterday'].get('hourly', {}).get('temperature_2m', [None]*24)
         yesterday_val = yesterday_temps[current_hour] if current_hour < len(yesterday_temps) else None
@@ -112,7 +101,6 @@ def get_weather_data(lat, lon):
         raw_rain = results['rain'].get('minutely_15', {}).get('precipitation', [0]*4)
         rain_pulse = [val for val in raw_rain for _ in range(3)][:12]
 
-        # Forecast Processing
         daily_periods = results['daily'].get('properties', {}).get('periods', [])
         daily_forecasts = [
             {
@@ -130,10 +118,13 @@ def get_weather_data(lat, lon):
                 "temperature": p['temperature'],
                 "shortForecast": p['shortForecast'], 
                 "precipProb": p.get('probabilityOfPrecipitation', {}).get('value') or 0,
-                "windSpeed": float(str(p.get('windSpeed', '0')).split(' ')[0]) if str(p.get('windSpeed', '0')).split(' ')[0].replace('.','',1).isdigit() else 0,
-                "windGust": float(str(p.get('windGust', '0') or '0').split(' ')[0]) if str(p.get('windGust', '0') or '0').split(' ')[0].replace('.','',1).isdigit() else 0
+                "windSpeed": float(str(p.get('windSpeed', '0')).split(' ')[0]) if str(p.get('windSpeed', '0')).split(' ')[0].replace('.','',1).isdigit() else 0
             } for p in hourly_periods[:120]
         ]
+
+        # Process Hourly AQI alignment
+        env_hourly_raw = results['env'].get('hourly', {}).get('us_aqi', [])
+        aqi_24h = env_hourly_raw[current_hour : current_hour + 24] if len(env_hourly_raw) > current_hour else []
 
         return {
             "location": f"{prop['relativeLocation']['properties']['city'].title()}, {prop['relativeLocation']['properties']['state']}",
@@ -142,6 +133,7 @@ def get_weather_data(lat, lon):
             "wind": {"speed": wind_val, "direction": current.get('windDirection')},
             "pressure": pressure_inhg,
             "aqi": results['env'].get('current', {}).get('us_aqi'),
+            "hourly_aqi": aqi_24h, # New field for AQI Graph
             "uv": results['env'].get('current', {}).get('uv_index'),
             "yesterday_temp": yesterday_val,
             "daily": daily_forecasts,
@@ -158,7 +150,7 @@ def get_weather_data(lat, lon):
             "lat": lat_f, "lon": lon_f
         }
     except Exception as e:
-        print(f"Error in get_weather_data: {e}")
+        print(f"Error: {e}")
         return None
 
 @app.route('/')
@@ -167,16 +159,9 @@ def home():
 
 @app.route('/weather_data', methods=['POST'])
 def weather_data():
-    try:
-        coords = request.get_json()
-        if not coords or 'lat' not in coords or 'lon' not in coords:
-            return "Invalid Coordinates", 400
-            
-        data = get_weather_data(coords['lat'], coords['lon'])
-        return jsonify(data) if data else ("API Error", 500)
-    except Exception as e:
-        print(f"Route Error: {e}")
-        return "Server Error", 500
+    coords = request.get_json()
+    data = get_weather_data(coords['lat'], coords['lon'])
+    return jsonify(data) if data else ("API Error", 500)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    app.run(host='0.0.0.0', port=5000)
