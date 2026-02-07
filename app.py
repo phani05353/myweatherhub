@@ -7,7 +7,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
 HEADERS = {'User-Agent': '(MyHomeLab, maruthi.phanikumar@yopmail.com)'}
-# Global session for connection pooling
 session = requests.Session()
 session.headers.update(HEADERS)
 
@@ -35,13 +34,10 @@ def fetch_json(url, timeout=5):
 def get_weather_data(lat, lon):
     try:
         lat_f, lon_f = round(float(lat), 4), round(float(lon), 4)
-        
-        # Step 1: Initial Point Metadata (Synchronous because others depend on it)
         meta = fetch_json(f"https://api.weather.gov/points/{lat_f},{lon_f}")
         if not meta: return None
         prop = meta['properties']
 
-        # URLs for parallel fetching
         yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
         urls = {
             "daily": prop['forecast'],
@@ -53,45 +49,37 @@ def get_weather_data(lat, lon):
             "rain": f"https://api.open-meteo.com/v1/forecast?latitude={lat_f}&longitude={lon_f}&minutely_15=precipitation&timezone=auto"
         }
 
-        # Step 2: Fetch all other data concurrently
         with ThreadPoolExecutor(max_workers=7) as executor:
             future_to_key = {executor.submit(fetch_json, url): key for key, url in urls.items()}
             results = {future_to_key[f]: f.result() for f in future_to_key}
 
-        # Step 3: Latest Observation (Requires station ID from step 2)
         obs_data = {}
         stations = results['stations'].get('features', [])
         if stations:
             st_id = stations[0]['properties']['stationIdentifier']
             obs_data = fetch_json(f"https://api.weather.gov/stations/{st_id}/observations/latest").get('properties', {})
 
-        # --- Data Processing ---
         current = results['hourly']['properties']['periods'][0]
         temp = current['temperature']
         humid = current.get('relativeHumidity', {}).get('value', 50) or 50
         
-        # Parse wind
         wind_raw = str(current.get('windSpeed', '0')).lower()
         wind_str = wind_raw.split('to')[-1].strip().split(' ')[0] if 'to' in wind_raw else wind_raw.split(' ')[0]
         wind_val = float(wind_str) if wind_str.replace('.','',1).isdigit() else 0
         
         pressure_inhg = round(obs_data.get('barometricPressure', {}).get('value', 0) * 0.0002953, 2) or "N/A"
 
-        # Sun times
         sun = Sun(lat_f, lon_f)
         eastern_tz = pytz.timezone('US/Eastern')
         sunrise_local = sun.get_sunrise_time().astimezone(eastern_tz)
         sunset_local = sun.get_sunset_time().astimezone(eastern_tz)
 
-        # Yesterday Temp Logic
         current_hour = datetime.now().hour
         yesterday_val = results['yesterday'].get('hourly', {}).get('temperature_2m', [None]*24)[current_hour]
 
-        # Rain Pulse logic
         raw_rain = results['rain'].get('minutely_15', {}).get('precipitation', [0]*4)
         rain_pulse = [val for val in raw_rain for _ in range(3)][:12]
 
-        # Daily Forecasts
         periods = results['daily'].get('properties', {}).get('periods', [])
         daily_forecasts = [
             {
@@ -101,11 +89,13 @@ def get_weather_data(lat, lon):
             } for i in range(0, min(len(periods), 14), 2)
         ]
 
-        # Hourly Forecasts
         processed_hourly = [
             {
                 "startTime": p['startTime'], "temperature": p['temperature'],
-                "shortForecast": p['shortForecast'], "precipProb": p.get('probabilityOfPrecipitation', {}).get('value') or 0
+                "shortForecast": p['shortForecast'], "precipProb": p.get('probabilityOfPrecipitation', {}).get('value') or 0,
+                "windSpeed": float(str(p.get('windSpeed', '0')).split(' ')[0]) if str(p.get('windSpeed', '0')).split(' ')[0].replace('.','',1).isdigit() else 0,
+                # NEW: Extract Wind Gust
+                "windGust": float(str(p.get('windGust', '0') or '0').split(' ')[0]) if str(p.get('windGust', '0') or '0').split(' ')[0].replace('.','',1).isdigit() else 0
             } for p in results['hourly']['properties']['periods'][:120]
         ]
 
