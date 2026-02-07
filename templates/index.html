@@ -82,6 +82,12 @@
             }
         }
 
+        @media (max-height: 700px) {
+            .header-bg {
+                min-height: 280px;
+            }
+        }
+
         @keyframes rotateSun {
             from {
                 transform: rotate(0deg);
@@ -174,7 +180,7 @@
 
         .header-bg {
             position: relative;
-            min-height: 380px;
+            min-height: 320px;
             width: 100%;
             overflow: hidden;
             display: flex;
@@ -193,7 +199,7 @@
             position: relative;
             z-index: 5;
             flex: 1;
-            padding: 20px;
+            padding: 15px 20px 20px 20px;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
@@ -220,7 +226,6 @@
             align-items: center;
         }
 
-        /* PULSE ALERT ANIMATION */
         .pulse-alert {
             animation: alertPulse 2s linear 6;
         }
@@ -242,7 +247,6 @@
             }
         }
 
-        /* Rain/Snow Pulse UI */
         .rain-pulse-container {
             background: rgba(0, 0, 0, 0.2);
             padding: 10px;
@@ -303,7 +307,6 @@
 
         .hour-item.sun-event {
             background: rgba(255, 206, 0, 0.15);
-            /* Subtle golden glow */
             border: 1px solid rgba(255, 206, 0, 0.3);
             min-width: 80px;
         }
@@ -402,23 +405,18 @@
             background: #1a1d29;
         }
 
-        /* New Hourly Scroll Styling */
         .hourly-scroll-container {
             display: flex;
             overflow-x: auto;
             gap: 12px;
             padding: 15px 5px;
             scrollbar-width: none;
-            /* Firefox */
             -ms-overflow-style: none;
-            /* IE/Edge */
         }
 
         .hourly-scroll-container::-webkit-scrollbar {
             display: none;
         }
-
-        /* Chrome/Safari */
 
         .hour-item {
             min-width: 65px;
@@ -450,7 +448,6 @@
 
         .hour-item {
             min-width: 70px;
-            /* Base glass effect */
             background: var(--glass);
             backdrop-filter: blur(var(--blur-level, 4px));
             -webkit-backdrop-filter: blur(var(--blur-level, 4px));
@@ -462,10 +459,13 @@
             transition: all 0.5s ease;
         }
 
-        /* Subtle highlight for the 'Current' hour if you're looking at it */
         .hour-item:first-child {
             border-color: var(--accent);
             background: rgba(112, 161, 255, 0.1);
+        }
+
+        #loc-name {
+            margin-top: 10px;
         }
 
         .powered-by-footer {
