@@ -10,91 +10,502 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1"></script>
     <style>
-        :root { --glass: rgba(255, 255, 255, 0.05); --bg-color: #0f111a; --card-bg: #1a1d29; --accent: #70a1ff; }
-        [data-bs-theme="light"] { --glass: rgba(0, 0, 0, 0.05); --bg-color: #f8f9fa; --card-bg: #ffffff; --accent: #0056b3; }
+        :root {
+            --glass: rgba(255, 255, 255, 0.05);
+            --bg-color: #0f111a;
+            --card-bg: #1a1d29;
+            --accent: #70a1ff;
+        }
 
-        body { background-color: var(--bg-color) !important; font-family: system-ui, -apple-system, sans-serif; padding: 0; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        [data-bs-theme="light"] {
+            --glass: rgba(0, 0, 0, 0.05);
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --accent: #0056b3;
+        }
 
-        #loader { position: fixed; inset: 0; background: #0f111a; z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; transition: opacity 0.5s ease; }
-        .weather-animation { position: relative; width: 80px; height: 80px; margin-bottom: 20px; }
-        .cloud-icon { font-size: 60px; color: #fff; animation: float 3s ease-in-out infinite; position: absolute; z-index: 2; }
-        .sun-behind { font-size: 40px; color: #ffce00; position: absolute; top: -10px; right: 5px; animation: rotateSun 10s linear infinite; z-index: 1; }
+        body {
+            background-color: var(--bg-color) !important;
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 0;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        @keyframes rotateSun { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: #0f111a;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            transition: opacity 0.5s ease;
+        }
 
-        .main-card { background: var(--card-bg) !important; border-radius: 0 0 32px 32px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); border: 1px solid rgba(128, 128, 128, 0.1); position: relative; max-width: 600px; margin: 0 auto; }
-        .controls { position: absolute; top: 12px; right: 12px; z-index: 1050; display: flex; gap: 8px; }
-        .unit-pill { position: relative; display: flex; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px); padding: 3px; border-radius: 50px; border: 1px solid rgba(255, 255, 255, 0.1); width: 80px; height: 34px; }
-        .unit-pill input { display: none; }
-        .unit-pill label { flex: 1; z-index: 2; text-align: center; line-height: 28px; font-size: 0.75rem; font-weight: 700; cursor: pointer; color: rgba(255, 255, 255, 0.5); }
-        .unit-pill input:checked+label { color: white; }
-        .pill-bg { position: absolute; top: 3px; left: 3px; width: 37px; height: 28px; background: var(--accent); border-radius: 50px; transition: transform 0.3s; z-index: 1; }
-        #c-unit:checked~.pill-bg { transform: translateX(37px); }
-        .btn-circle { width: 34px; height: 34px; border-radius: 50%; border: none; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px); color: white; display: flex; align-items: center; justify-content: center; }
+        .weather-animation {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+        }
 
-        .header-bg { position: relative; min-height: 380px; width: 100%; overflow: hidden; display: flex; flex-direction: column; }
-        #dynamic-bg { position: absolute; inset: 0; background-size: cover; background-position: center; transition: background 1s; }
-        .header-content { position: relative; z-index: 5; flex: 1; padding: 20px; display: flex; flex-direction: column; justify-content: flex-end; color: white !important; background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.85) 100%); }
+        .cloud-icon {
+            font-size: 60px;
+            color: #fff;
+            animation: float 3s ease-in-out infinite;
+            position: absolute;
+            z-index: 2;
+        }
 
-        .temp-display { font-size: clamp(4rem, 15vw, 5.5rem); font-weight: 800; line-height: 0.85; letter-spacing: -2px; }
-        .env-badge { padding: 4px 10px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); margin: 3px; display: inline-flex; align-items: center; }
+        .sun-behind {
+            font-size: 40px;
+            color: #ffce00;
+            position: absolute;
+            top: -10px;
+            right: 5px;
+            animation: rotateSun 10s linear infinite;
+            z-index: 1;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes rotateSun {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .main-card {
+            background: var(--card-bg) !important;
+            border-radius: 0 0 32px 32px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(128, 128, 128, 0.1);
+            position: relative;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .controls {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 1050;
+            display: flex;
+            gap: 8px;
+        }
+
+        .unit-pill {
+            position: relative;
+            display: flex;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            padding: 3px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 80px;
+            height: 34px;
+        }
+
+        .unit-pill input {
+            display: none;
+        }
+
+        .unit-pill label {
+            flex: 1;
+            z-index: 2;
+            text-align: center;
+            line-height: 28px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .unit-pill input:checked+label {
+            color: white;
+        }
+
+        .pill-bg {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 37px;
+            height: 28px;
+            background: var(--accent);
+            border-radius: 50px;
+            transition: transform 0.3s;
+            z-index: 1;
+        }
+
+        #c-unit:checked~.pill-bg {
+            transform: translateX(37px);
+        }
+
+        .btn-circle {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-bg {
+            position: relative;
+            min-height: 380px;
+            width: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #dynamic-bg {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            transition: background 1s;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 5;
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            color: white !important;
+            background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.85) 100%);
+        }
+
+        .temp-display {
+            font-size: clamp(4rem, 15vw, 5.5rem);
+            font-weight: 800;
+            line-height: 0.85;
+            letter-spacing: -2px;
+        }
+
+        .env-badge {
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin: 3px;
+            display: inline-flex;
+            align-items: center;
+        }
 
         /* PULSE ALERT ANIMATION */
-        .pulse-alert { animation: alertPulse 2s linear 6; }
-        @keyframes alertPulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4); } 50% { transform: scale(1.05); box-shadow: 0 0 12px 4px rgba(255, 71, 87, 0.2); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); } }
+        .pulse-alert {
+            animation: alertPulse 2s linear 6;
+        }
+
+        @keyframes alertPulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4);
+            }
+
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 12px 4px rgba(255, 71, 87, 0.2);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 71, 87, 0);
+            }
+        }
 
         /* Rain/Snow Pulse UI */
-        .rain-pulse-container { background: rgba(0, 0, 0, 0.2); padding: 10px; border-radius: 15px; margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.05); }
-        .pulse-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; height: 8px; margin-top: 8px; }
-        .pulse-segment { background: rgba(255, 255, 255, 0.1); border-radius: 2px; transition: all 0.5s ease; }
-        .pulse-segment.active-rain { background: #4facfe; box-shadow: 0 0 8px rgba(79, 172, 254, 0.6); }
-        .pulse-segment.active-snow { background: #ffffff; box-shadow: 0 0 8px rgba(255, 255, 255, 0.6); }
-        
-        .precip-badge-rain { background: #00d2ff !important; color: #000 !important; font-weight: 800; animation: blink 1.5s infinite; }
-        .precip-badge-snow { background: #ffffff !important; color: #000 !important; font-weight: 800; animation: blink 1.5s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .rain-pulse-container {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 15px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
 
-        .sun-card { background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(15px); border-radius: 20px; padding: 12px; margin-top: 15px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; text-align: center; justify-content: space-around; }
-        .sun-item i { font-size: 1.2rem; color: #ffce00; display: block; margin-bottom: 2px; }
-        .sun-item span { font-size: 0.6rem; text-transform: uppercase; opacity: 0.6; font-weight: 700; display: block; }
+        .pulse-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 4px;
+            height: 8px;
+            margin-top: 8px;
+        }
 
-        .daily-row { display: flex; align-items: center; padding: 14px 8px; border-bottom: 1px solid rgba(128, 128, 128, 0.08); transition: background 0.2s; }
-        .daily-row.clickable { cursor: pointer; }
-        .daily-row.clickable:active { background: rgba(255, 255, 255, 0.1); }
-        .day-label { width: 50px; font-weight: 500; }
-        .day-icon-col { width: 40px; text-align: center; color: var(--accent); }
-        .day-low-col { width: 35px; text-align: right; opacity: 0.5; }
-        .day-high-col { width: 35px; text-align: left; font-weight: 600; }
-        .temp-bar-container { flex-grow: 1; height: 5px; background: rgba(128, 128, 128, 0.15); border-radius: 10px; margin: 0 12px; position: relative; }
-        .temp-bar-fill { position: absolute; height: 100%; border-radius: 10px; background: linear-gradient(90deg, #4facfe, #00f2fe); }
-        .current-temp-dot { position: absolute; width: 7px; height: 7px; background: white; border: 1.5px solid #1a1d29; border-radius: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 5; }
+        .pulse-segment {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            transition: all 0.5s ease;
+        }
 
-        .nav-pills .nav-link { font-size: 0.85rem; padding: 8px 20px; color: rgba(255, 255, 255, 0.6); }
-        .nav-pills .nav-link.active { background-color: var(--accent) !important; color: white; }
-        .modal-content { border-radius: 24px; border: none; background: #1a1d29; }
-        .powered-by-footer { padding: 25px 15px; text-align: center; opacity: 0.7; font-size: 0.85rem; color: var(--accent); }
+        .pulse-segment.active-rain {
+            background: #4facfe;
+            box-shadow: 0 0 8px rgba(79, 172, 254, 0.6);
+        }
+
+        .pulse-segment.active-snow {
+            background: #ffffff;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+        }
+
+        .precip-badge-rain {
+            background: #00d2ff !important;
+            color: #000 !important;
+            font-weight: 800;
+            animation: blink 1.5s infinite;
+        }
+
+        .precip-badge-snow {
+            background: #ffffff !important;
+            color: #000 !important;
+            font-weight: 800;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .hour-item.sun-event {
+            background: rgba(255, 206, 0, 0.15);
+            /* Subtle golden glow */
+            border: 1px solid rgba(255, 206, 0, 0.3);
+            min-width: 80px;
+        }
+
+        .sun-event .h-time {
+            color: #ffce00;
+            opacity: 1;
+        }
+
+        .sun-event .h-icon {
+            color: #ffce00;
+            animation: rotateSun 20s linear infinite;
+        }
+
+        .daily-row {
+            display: flex;
+            align-items: center;
+            padding: 14px 8px;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.08);
+            transition: background 0.2s;
+        }
+
+        .daily-row.clickable {
+            cursor: pointer;
+        }
+
+        .daily-row.clickable:active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .day-label {
+            width: 50px;
+            font-weight: 500;
+        }
+
+        .day-icon-col {
+            width: 40px;
+            text-align: center;
+            color: var(--accent);
+        }
+
+        .day-low-col {
+            width: 35px;
+            text-align: right;
+            opacity: 0.5;
+        }
+
+        .day-high-col {
+            width: 35px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .temp-bar-container {
+            flex-grow: 1;
+            height: 5px;
+            background: rgba(128, 128, 128, 0.15);
+            border-radius: 10px;
+            margin: 0 12px;
+            position: relative;
+        }
+
+        .temp-bar-fill {
+            position: absolute;
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+        }
+
+        .current-temp-dot {
+            position: absolute;
+            width: 7px;
+            height: 7px;
+            background: white;
+            border: 1.5px solid #1a1d29;
+            border-radius: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+        }
+
+        .nav-pills .nav-link {
+            font-size: 0.85rem;
+            padding: 8px 20px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .nav-pills .nav-link.active {
+            background-color: var(--accent) !important;
+            color: white;
+        }
+
+        .modal-content {
+            border-radius: 24px;
+            border: none;
+            background: #1a1d29;
+        }
+
+        /* New Hourly Scroll Styling */
+        .hourly-scroll-container {
+            display: flex;
+            overflow-x: auto;
+            gap: 12px;
+            padding: 15px 5px;
+            scrollbar-width: none;
+            /* Firefox */
+            -ms-overflow-style: none;
+            /* IE/Edge */
+        }
+
+        .hourly-scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Chrome/Safari */
+
+        .hour-item {
+            min-width: 65px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 10px 5px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .hour-item .h-time {
+            font-size: 0.65rem;
+            opacity: 0.6;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .hour-item .h-icon {
+            font-size: 1.2rem;
+            margin: 8px 0;
+            display: block;
+            color: var(--accent);
+        }
+
+        .hour-item .h-temp {
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .hour-item {
+            min-width: 70px;
+            /* Base glass effect */
+            background: var(--glass);
+            backdrop-filter: blur(var(--blur-level, 4px));
+            -webkit-backdrop-filter: blur(var(--blur-level, 4px));
+
+            border-radius: 18px;
+            padding: 12px 5px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.5s ease;
+        }
+
+        /* Subtle highlight for the 'Current' hour if you're looking at it */
+        .hour-item:first-child {
+            border-color: var(--accent);
+            background: rgba(112, 161, 255, 0.1);
+        }
+
+        .powered-by-footer {
+            padding: 25px 15px;
+            text-align: center;
+            opacity: 0.7;
+            font-size: 0.85rem;
+            color: var(--accent);
+        }
     </style>
 </head>
 
 <body>
     <div id="loader">
-        <div class="weather-animation"><i class="wi wi-day-sunny sun-behind"></i><i class="wi wi-cloud cloud-icon"></i></div>
+        <div class="weather-animation"><i class="wi wi-day-sunny sun-behind"></i><i class="wi wi-cloud cloud-icon"></i>
+        </div>
         <p class="loading-text" style="font-size: 0.7rem; letter-spacing: 3px;">CONSULTING THE SKY</p>
     </div>
 
     <div class="modal fade" id="hourlyModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
-            <div class="modal-header border-0 pb-0"><h6 class="modal-title" id="modalDayLabel">Details</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body" id="modalContent"><div style="height: 300px;"><canvas id="hourlyChart"></canvas></div></div>
-        </div></div>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h6 class="modal-title" id="modalDayLabel">Details</h6><button type="button"
+                        class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="modalContent">
+                    <div style="height: 300px;"><canvas id="hourlyChart"></canvas></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="main-card">
         <div class="controls">
             <div class="unit-pill">
-                <input type="radio" id="f-unit" name="unit" value="imperial" onchange="saveAndRefresh()"><label for="f-unit">°F</label>
-                <input type="radio" id="c-unit" name="unit" value="metric" onchange="saveAndRefresh()"><label for="c-unit">°C</label>
+                <input type="radio" id="f-unit" name="unit" value="imperial" onchange="saveAndRefresh()"><label
+                    for="f-unit">°F</label>
+                <input type="radio" id="c-unit" name="unit" value="metric" onchange="saveAndRefresh()"><label
+                    for="c-unit">°C</label>
                 <span class="pill-bg"></span>
             </div>
             <button class="btn-circle" onclick="toggleTheme()"><i class="wi wi-day-sunny" id="theme-icon"></i></button>
@@ -103,13 +514,17 @@
         <div class="header-bg">
             <div id="dynamic-bg"></div>
             <div class="header-content">
-                <h6 id="loc-name" class="text-uppercase opacity-50 small fw-bold mb-1" style="font-size: 0.65rem;">---</h6>
+                <h6 id="loc-name" class="text-uppercase opacity-50 small fw-bold mb-1" style="font-size: 0.65rem;">---
+                </h6>
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h1 class="temp-display mb-0"><span id="temp">--</span>°</h1>
-                        <p class="opacity-75 mb-0" style="font-size: 0.9rem;">Feels like <span id="windchill">--</span>°</p>
+                        <p class="opacity-75 mb-0" style="font-size: 0.9rem;">Feels like <span id="windchill">--</span>°
+                        </p>
                         <div id="hindsight-wrap" style="display:none; margin-top: 5px;">
-                            <span class="badge rounded-pill" style="background: rgba(255,255,255,0.1); font-weight: 400; font-size: 0.75rem;"><i class="wi wi-refresh me-1"></i><span id="hindsight-text"></span></span>
+                            <span class="badge rounded-pill"
+                                style="background: rgba(255,255,255,0.1); font-weight: 400; font-size: 0.75rem;"><i
+                                    class="wi wi-refresh me-1"></i><span id="hindsight-text"></span></span>
                         </div>
                     </div>
                     <i id="main-icon" class="wi" style="font-size: 4rem; color: #ffce00;"></i>
@@ -119,7 +534,9 @@
                 <div id="rain-pulse-wrap" style="display:none;">
                     <div class="rain-pulse-container">
                         <div class="d-flex justify-content-between align-items-center">
-                            <span id="pulse-label" style="font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8;">Next Hour Pulse</span>
+                            <span id="pulse-label"
+                                style="font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8;">Next
+                                Hour Pulse</span>
                             <span id="rain-status" style="font-size: 0.6rem; opacity: 0.6;">Scanning...</span>
                         </div>
                         <div class="pulse-grid" id="pulse-segments"></div>
@@ -132,23 +549,28 @@
                     <div class="env-badge"><i class="wi wi-strong-wind me-1"></i> <span id="wind">--</span></div>
                     <div class="env-badge"><i class="wi wi-humidity me-1"></i> <span id="humidity">--</span></div>
                 </div>
+            </div>
+        </div>
 
-                <div class="sun-card">
-                    <div class="sun-item"><i class="wi wi-sunrise"></i><span>Sunrise</span><b id="sunrise">--:--</b></div>
-                    <div style="width: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
-                    <div class="sun-item"><i class="wi wi-sunset"></i><span>Sunset</span><b id="sunset">--:--</b></div>
-                </div>
+        <div class="px-3 mt-3">
+            <div class="hourly-scroll-container" id="hourly-quick-view">
             </div>
         </div>
 
         <div class="p-3">
             <ul class="nav nav-pills mb-3 gap-2 overflow-auto" style="scrollbar-width: none;">
-                <li class="nav-item"><button class="nav-link active rounded-pill" data-bs-toggle="pill" data-bs-target="#daily">7-Day</button></li>
-                <li class="nav-item"><button class="nav-link rounded-pill" data-bs-toggle="pill" data-bs-target="#radar">Radar</button></li>
+                <li class="nav-item"><button class="nav-link active rounded-pill" data-bs-toggle="pill"
+                        data-bs-target="#daily">7-Day</button></li>
+                <li class="nav-item"><button class="nav-link rounded-pill" data-bs-toggle="pill"
+                        data-bs-target="#radar">Radar</button></li>
             </ul>
             <div class="tab-content">
-                <div class="tab-pane fade show active" id="daily"><div id="daily-container"></div></div>
-                <div class="tab-pane fade" id="radar"><div id="radar-container"></div></div>
+                <div class="tab-pane fade show active" id="daily">
+                    <div id="daily-container"></div>
+                </div>
+                <div class="tab-pane fade" id="radar">
+                    <div id="radar-container"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -209,8 +631,6 @@
             document.getElementById('windchill').innerText = formatTemp(data.feels_like);
             document.getElementById('humidity').innerText = (data.current.relativeHumidity?.value || 0) + '%';
             document.getElementById('wind').innerText = isMetric ? Math.round(data.wind.speed * 1.609) + ' km/h' : data.wind.speed + ' mph';
-            document.getElementById('sunrise').innerText = data.sun.sunrise;
-            document.getElementById('sunset').innerText = data.sun.sunset;
 
             if (data.yesterday_temp !== null) {
                 const diff = Math.round(data.current.temperature - data.yesterday_temp);
@@ -218,6 +638,64 @@
                 wrap.style.display = 'block';
                 document.getElementById('hindsight-text').innerText = diff > 0 ? `${diff}° warmer than yesterday` : (diff < 0 ? `${Math.abs(diff)}° colder than yesterday` : `Same as yesterday`);
             }
+
+            const hourlyCont = document.getElementById('hourly-quick-view');
+            let hHtml = '';
+
+            // Parse sun times into comparable formats (HH:MM)
+            const sunriseTime = data.sun.sunrise; // e.g., "07:12 AM"
+            const sunsetTime = data.sun.sunset;   // e.g., "05:45 PM"
+
+            data.hourly.slice(0, 24).forEach((hour, index) => {
+                const hDate = new Date(hour.startTime);
+                const hTimeStr = hDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+                const hHourOnly = hDate.getHours();
+
+                // Check if Sunrise or Sunset happens in the NEXT hour
+                // (This places the sun event card between the relevant hours)
+                const nextHour = data.hourly[index + 1] ? new Date(data.hourly[index + 1].startTime).getHours() : -1;
+
+                // Helper to check if event is between current and next hour
+                const isEventHere = (eventStr) => {
+                    const [time, period] = eventStr.split(' ');
+                    let [h, m] = time.split(':').map(Number);
+                    if (period === 'PM' && h !== 12) h += 12;
+                    if (period === 'AM' && h === 12) h = 0;
+                    return h === hHourOnly;
+                };
+
+                // Add the standard Weather Card
+                const hv = getVisuals(hour.shortForecast, true);
+                hHtml += `
+        <div class="hour-item" style="--blur-level: 4px;">
+            <div class="h-time">${hDate.toLocaleTimeString([], { hour: 'numeric' })}</div>
+            <i class="wi ${hv.icon} h-icon"></i>
+            <div class="h-temp">${formatTemp(hour.temperature)}°</div>
+        </div>
+    `;
+
+                // Inject Sun Event Card if it matches this hour block
+                if (isEventHere(sunriseTime)) {
+                    hHtml += `
+            <div class="hour-item sun-event">
+                <div class="h-time">${sunriseTime}</div>
+                <i class="wi wi-sunrise h-icon"></i>
+                <div class="h-temp" style="font-size: 0.6rem; text-transform: uppercase;">Sunrise</div>
+            </div>
+        `;
+                }
+                if (isEventHere(sunsetTime)) {
+                    hHtml += `
+            <div class="hour-item sun-event">
+                <div class="h-time">${sunsetTime}</div>
+                <i class="wi wi-sunset h-icon"></i>
+                <div class="h-temp" style="font-size: 0.6rem; text-transform: uppercase;">Sunset</div>
+            </div>
+        `;
+                }
+            });
+
+            hourlyCont.innerHTML = hHtml;
 
             // Pulse Logic
             const pulseWrap = document.getElementById('rain-pulse-wrap');
@@ -321,7 +799,7 @@
             const ctx = document.getElementById('hourlyChart').getContext('2d');
             const isLight = document.getElementById('main-html').getAttribute('data-bs-theme') === 'light';
             const temps = hourlyData.map(h => formatTemp(h.temperature));
-            
+
             // GRADIENT RESTORED
             const lineGradient = ctx.createLinearGradient(0, 0, 0, 250);
             lineGradient.addColorStop(0, '#ff4757'); // Hot (Red)

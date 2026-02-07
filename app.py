@@ -121,6 +121,7 @@ def get_weather_data(lat, lon):
 
         city_camel = prop['relativeLocation']['properties']['city'].title()
         state = prop['relativeLocation']['properties']['state']
+        print(f"Fetching Weather For: {city_camel}, {state}", flush=True)
 
         return {
             "location": f"{city_camel}, {state}",
