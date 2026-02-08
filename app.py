@@ -34,77 +34,85 @@ def fetch_json(url):
         return resp.json() if resp.status_code == 200 else {}
     except Exception:
         return {}
-
+    
 def get_weather_data(lat, lon):
     try:
         lat_f, lon_f = round(float(lat), 4), round(float(lon), 4)
+        
+        # 1. Get Metadata (Required for NWS URLs)
         meta = fetch_json(f"https://api.weather.gov/points/{lat_f},{lon_f}")
         if not meta or 'properties' not in meta:
+            print(f"Error: Could not retrieve NWS metadata for {lat_f},{lon_f}")
             return None
             
         prop = meta['properties']
         yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-
-        city = prop['relativeLocation']['properties']['city'].title()
-        state = prop['relativeLocation']['properties']['state']
         
-        print(f">>> [CITY_LOAD] Location: {city}, {state} | Coords: {lat_f}, {lon_f}", flush=True)
+        # Safe location extraction
+        loc_props = prop.get('relativeLocation', {}).get('properties', {})
+        city = loc_props.get('city', 'Unknown').title()
+        state = loc_props.get('state', '??')
         
-        urls = {
-            "daily": prop['forecast'],
-            "hourly": prop['forecastHourly'],
-            "stations": prop['observationStations'],
-            "alerts": f"https://api.weather.gov/alerts/active?point={lat_f},{lon_f}",
-            "env": f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat_f}&longitude={lon_f}&current=us_aqi,uv_index&hourly=us_aqi&timezone=auto",
-            "yesterday": f"https://archive-api.open-meteo.com/v1/archive?latitude={lat_f}&longitude={lon_f}&start_date={yesterday}&end_date={yesterday}&hourly=temperature_2m&temperature_unit=fahrenheit",
-            "rain": f"https://api.open-meteo.com/v1/forecast?latitude={lat_f}&longitude={lon_f}&minutely_15=precipitation&timezone=auto"
-        }
+        print(f">>> [CITY_LOAD] Location: {city}, {state}", flush=True)
+        
+        # 2. Sequential Fetches
+        # We fetch these one by one now. 
+        daily_data = fetch_json(prop['forecast'])
+        hourly_data = fetch_json(prop['forecastHourly'])
+        stations_data = fetch_json(prop['observationStations'])
+        alerts_data = fetch_json(f"https://api.weather.gov/alerts/active?point={lat_f},{lon_f}")
+        
+        env_url = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat_f}&longitude={lon_f}&current=us_aqi,uv_index&hourly=us_aqi&timezone=auto"
+        env_data = fetch_json(env_url)
+        
+        yesterday_url = f"https://archive-api.open-meteo.com/v1/archive?latitude={lat_f}&longitude={lon_f}&start_date={yesterday}&end_date={yesterday}&hourly=temperature_2m&temperature_unit=fahrenheit"
+        yesterday_data = fetch_json(yesterday_url)
+        
+        rain_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat_f}&longitude={lon_f}&minutely_15=precipitation&timezone=auto"
+        rain_data = fetch_json(rain_url)
 
-        future_to_key = {executor.submit(fetch_json, url): key for key, url in urls.items()}
-        results = {}
-        for future in as_completed(future_to_key, timeout=12):
-            key = future_to_key[future]
-            try:
-                results[key] = future.result()
-            except Exception:
-                results[key] = {}
-
-        for key in urls.keys():
-            if key not in results: results[key] = {}
-
+        # 3. Get Station Observation (Latest)
         obs_data = {}
-        stations = results['stations'].get('features', [])
+        stations = stations_data.get('features', [])
         if stations:
             st_id = stations[0]['properties']['stationIdentifier']
             obs_data = fetch_json(f"https://api.weather.gov/stations/{st_id}/observations/latest").get('properties', {})
 
-        hourly_periods = results['hourly'].get('properties', {}).get('periods', [])
-        if not hourly_periods: return None
+        # 4. Process Hourly
+        hourly_periods = hourly_data.get('properties', {}).get('periods', [])
+        if not hourly_periods: 
+            return None
         
         current = hourly_periods[0]
         temp = current['temperature']
         humid = current.get('relativeHumidity', {}).get('value', 50) or 50
         
+        # Wind Parsing
         wind_raw = str(current.get('windSpeed', '0')).lower()
         wind_str = wind_raw.split('to')[-1].strip().split(' ')[0] if 'to' in wind_raw else wind_raw.split(' ')[0]
         wind_val = float(wind_str) if wind_str.replace('.','',1).isdigit() else 0
         
+        # Pressure
         pressure_val = obs_data.get('barometricPressure', {}).get('value')
         pressure_inhg = round(pressure_val * 0.0002953, 2) if pressure_val else "N/A"
 
+        # Sun Times
         sun = Sun(lat_f, lon_f)
         eastern_tz = pytz.timezone('US/Eastern')
         sunrise_local = sun.get_sunrise_time().astimezone(eastern_tz)
         sunset_local = sun.get_sunset_time().astimezone(eastern_tz)
 
+        # Yesterday Comparison
         current_hour = datetime.now().hour
-        yesterday_temps = results['yesterday'].get('hourly', {}).get('temperature_2m', [None]*24)
+        yesterday_temps = yesterday_data.get('hourly', {}).get('temperature_2m', [None]*24)
         yesterday_val = yesterday_temps[current_hour] if current_hour < len(yesterday_temps) else None
 
-        raw_rain = results['rain'].get('minutely_15', {}).get('precipitation', [0]*4)
+        # Rain Pulse
+        raw_rain = rain_data.get('minutely_15', {}).get('precipitation', [0]*4)
         rain_pulse = [val for val in raw_rain for _ in range(3)][:12]
 
-        daily_periods = results['daily'].get('properties', {}).get('periods', [])
+        # Forecasts
+        daily_periods = daily_data.get('properties', {}).get('periods', [])
         daily_forecasts = [
             {
                 "name": daily_periods[i]['name'], 
@@ -125,22 +133,22 @@ def get_weather_data(lat, lon):
             } for p in hourly_periods[:120]
         ]
 
-        env_hourly_raw = results['env'].get('hourly', {}).get('us_aqi', [])
+        env_hourly_raw = env_data.get('hourly', {}).get('us_aqi', [])
         aqi_24h = env_hourly_raw[current_hour : current_hour + 24] if len(env_hourly_raw) > current_hour else []
 
         return {
-            "location": f"{prop['relativeLocation']['properties']['city'].title()}, {prop['relativeLocation']['properties']['state']}",
+            "location": f"{city}, {state}",
             "current": current,
             "feels_like": round(calculate_feels_like(temp, humid, wind_val)),
             "wind": {"speed": wind_val, "direction": current.get('windDirection')},
             "pressure": pressure_inhg,
-            "aqi": results['env'].get('current', {}).get('us_aqi'),
+            "aqi": env_data.get('current', {}).get('us_aqi'),
             "hourly_aqi": aqi_24h,
-            "uv": results['env'].get('current', {}).get('uv_index'),
+            "uv": env_data.get('current', {}).get('uv_index'),
             "yesterday_temp": yesterday_val,
             "daily": daily_forecasts,
             "hourly": processed_hourly,
-            "alerts": results['alerts'].get('features', []),
+            "alerts": alerts_data.get('features', []),
             "rain_pulse": rain_pulse,
             "is_snow": any(x in current['shortForecast'].lower() for x in ["snow", "flurries"]),
             "precip_alert": any(v > 0 for v in rain_pulse[:3]), 
@@ -152,7 +160,9 @@ def get_weather_data(lat, lon):
             "lat": lat_f, "lon": lon_f
         }
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error in get_weather_data: {e}")
+        import traceback
+        traceback.print_exc() # This will print the exact line causing the crash
         return None
 
 @app.route('/')
