@@ -463,6 +463,42 @@
             margin-top: 10px;
         }
 
+        .env-badge.interactive {
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .env-badge.interactive:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .env-badge.interactive:active {
+            transform: scale(0.95);
+            background: var(--accent);
+        }
+
+        .click-hint {
+            font-size: 0.5rem;
+            margin-left: 5px;
+            opacity: 0.6;
+            vertical-align: middle;
+        }
+        
+        #wind-pill {
+            border-left: 3px solid #70a1ff !important;
+        }
+
+        /* Specific styling for the AQI pill */
+        #aqi-pill {
+            border-left: 3px solid #00e400 !important;
+            /* This will be updated by JS based on AQI level */
+        }
+
         .powered-by-footer {
             padding: 25px 15px;
             text-align: center;
@@ -540,11 +576,18 @@
                 </div>
 
                 <div class="d-flex flex-wrap" id="badge-container">
-                    <div class="env-badge">AQI: <span id="aqi-val">--</span></div>
-                    <div class="env-badge">UV: <span id="uv-val">--</span></div>
-                    <div class="env-badge" style="cursor: pointer;" onclick="showWindHourly()">
-                        <i class="wi wi-strong-wind me-1"></i> <span id="wind">--</span>
+                    <div class="env-badge interactive" id="aqi-pill" onclick="showAqiHourly()">
+                        AQI: <span id="aqi-val" class="ms-1">--</span>
+                        <i class="wi wi-stats-bars click-hint"></i>
                     </div>
+
+                    <div class="env-badge interactive" id="wind-pill" onclick="showWindHourly()">
+                        <i class="wi wi-strong-wind me-1"></i>
+                        <span id="wind">--</span>
+                        <i class="wi wi-stats-bars click-hint"></i>
+                    </div>
+
+                    <div class="env-badge">UV: <span id="uv-val">--</span></div>
                     <div class="env-badge"><i class="wi wi-humidity me-1"></i> <span id="humidity">--</span></div>
                 </div>
             </div>
@@ -589,14 +632,11 @@
 
         document.addEventListener("visibilitychange", () => {
             if (document.visibilityState === 'visible') {
-                // App just came back to foreground; refresh data
                 refreshWeather();
             }
         });
 
-        // 2. Wrap your initial logic into a refresh function
         function refreshWeather() {
-            // Show loader again if you want a fresh feel
             const loader = document.getElementById('loader');
             loader.style.display = 'flex';
             loader.style.opacity = '1';
@@ -605,7 +645,7 @@
                 navigator.geolocation.getCurrentPosition(
                     p => fetchWeather(p.coords.latitude, p.coords.longitude),
                     () => fetchWeather(41.38, -105.58),
-                    { timeout: 10000 } // Add a timeout to geolocation
+                    { timeout: 10000 }
                 );
             } else {
                 fetchWeather(41.38, -105.58);
@@ -670,15 +710,24 @@
             aqiWrapper.style.cursor = 'pointer';
             aqiWrapper.onclick = () => showAqiHourly();
 
-            // Use the ID directly or a unique name
-            const aqiDisplay = document.getElementById('aqi-val');
-            aqiDisplay.innerText = data.aqi;
-            aqiDisplay.style.color = data.aqi <= 50 ? "#00e400" : (data.aqi <= 100 ? "#ffff00" : "#ff7e00");
-
             const hourlyCont = document.getElementById('hourly-quick-view');
             let hHtml = '';
             const sunriseTime = data.sun.sunrise;
             const sunsetTime = data.sun.sunset;
+
+            const aqiVal = data.aqi;
+            const aqiPill = document.getElementById('aqi-pill');
+            const aqiDisplay = document.getElementById('aqi-val');
+
+            aqiDisplay.innerText = aqiVal;
+
+            let aqiColor = "#00e400";
+            if (aqiVal > 50) aqiColor = "#ffff00";
+            if (aqiVal > 100) aqiColor = "#ff7e00";
+            if (aqiVal > 150) aqiColor = "#ff0000";
+
+            aqiDisplay.style.color = aqiColor;
+            aqiPill.style.borderLeftColor = aqiColor;
 
             data.hourly.slice(0, 24).forEach((hour, index) => {
                 const hDate = new Date(hour.startTime);
@@ -783,7 +832,6 @@
             document.getElementById('radar-container').innerHTML = `<iframe class="w-100 rounded-4" style="height:350px;border:none" src="https://embed.windy.com/embed.html?type=radar&lat=${data.lat}&lon=${data.lon}"></iframe>`;
         }
 
-        // UPDATED: Wind Chart now has gradient coloring and no gusts
         function showWindHourly() {
             if (!lastData) return;
             document.getElementById('modalDayLabel').innerText = "Wind Forecast (24h)";
@@ -802,11 +850,10 @@
             const unit = isMetric ? 'km/h' : 'mph';
             const speeds = hourlyData.map(h => isMetric ? Math.round(h.windSpeed * 1.609) : h.windSpeed);
 
-            // Dynamic Gradient based on Speed
             const speedGradient = ctx.createLinearGradient(0, 0, 0, 300);
-            speedGradient.addColorStop(0, '#ff4757'); // High speed color (red)
-            speedGradient.addColorStop(0.4, '#ffa502'); // Medium speed color (orange)
-            speedGradient.addColorStop(1, '#70a1ff'); // Calm speed color (blue)
+            speedGradient.addColorStop(0, '#ff4757');
+            speedGradient.addColorStop(0.4, '#ffa502');
+            speedGradient.addColorStop(1, '#70a1ff');
 
             const areaGradient = ctx.createLinearGradient(0, 0, 0, 300);
             areaGradient.addColorStop(0, 'rgba(255, 71, 87, 0.2)');
@@ -938,6 +985,9 @@
         }
 
         function showAqiHourly() {
+            if (window.navigator.vibrate) {
+                window.navigator.vibrate(10);
+            }
             if (!lastData || !lastData.hourly_aqi) return;
             document.getElementById('modalDayLabel').innerText = "Air Quality Forecast (24h)";
             document.getElementById('modalContent').innerHTML = '<div style="height: 300px;"><canvas id="aqiChart"></canvas></div>';
@@ -952,7 +1002,13 @@
             const ctx = document.getElementById('aqiChart').getContext('2d');
             const theme = getChartTheme();
 
-            // Create a label array for the next 24 hours
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(126, 0, 35, 0.4)');
+            gradient.addColorStop(0.2, 'rgba(255, 0, 0, 0.4)');
+            gradient.addColorStop(0.4, 'rgba(255, 126, 0, 0.4)');
+            gradient.addColorStop(0.6, 'rgba(255, 255, 0, 0.4)');
+            gradient.addColorStop(0.8, 'rgba(0, 228, 0, 0.4)');
+
             const labels = [];
             let currentH = new Date().getHours();
             for (let i = 0; i < aqiData.length; i++) {
@@ -968,23 +1024,48 @@
                     datasets: [{
                         label: 'US AQI',
                         data: aqiData,
-                        borderColor: '#00e400',
-                        backgroundColor: 'rgba(0, 228, 0, 0.1)',
+                        borderColor: '#fff', // White line to pop against the colors
+                        backgroundColor: gradient,
                         fill: true,
                         tension: 0.4,
                         borderWidth: 2,
-                        pointRadius: 1
+                        pointRadius: 2,
+                        pointBackgroundColor: '#fff'
                     }]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
+                    responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         legend: { display: false },
-                        tooltip: { callbacks: { label: (ctx) => ` AQI: ${ctx.parsed.y}` } }
+                        annotation: {
+                            annotations: {
+                                moderateLine: {
+                                    type: 'line', yMin: 50, yMax: 50,
+                                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                                    borderWidth: 1, borderDash: [5, 5],
+                                    label: { content: 'Moderate', enabled: true, position: 'start', font: { size: 8 } }
+                                },
+                                unhealthyLine: {
+                                    type: 'line', yMin: 100, yMax: 100,
+                                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                                    borderWidth: 1, borderDash: [5, 5],
+                                    label: { content: 'Unhealthy', enabled: true, position: 'start', font: { size: 8 } }
+                                }
+                            }
+                        }
                     },
                     scales: {
-                        y: { beginAtZero: true, grid: { color: theme.gridColor }, ticks: { color: theme.textColor } },
-                        x: { grid: { display: false }, ticks: { color: theme.textColor, maxTicksLimit: 6 } }
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: 150,
+                            grid: { color: theme.gridColor },
+                            ticks: { color: theme.textColor }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: theme.textColor, maxTicksLimit: 6 }
+                        }
                     }
                 }
             });
