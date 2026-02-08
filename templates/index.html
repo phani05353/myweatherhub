@@ -587,6 +587,31 @@
             };
         };
 
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === 'visible') {
+                // App just came back to foreground; refresh data
+                refreshWeather();
+            }
+        });
+
+        // 2. Wrap your initial logic into a refresh function
+        function refreshWeather() {
+            // Show loader again if you want a fresh feel
+            const loader = document.getElementById('loader');
+            loader.style.display = 'flex';
+            loader.style.opacity = '1';
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    p => fetchWeather(p.coords.latitude, p.coords.longitude),
+                    () => fetchWeather(41.38, -105.58),
+                    { timeout: 10000 } // Add a timeout to geolocation
+                );
+            } else {
+                fetchWeather(41.38, -105.58);
+            }
+        }
+
         function toggleTheme(init = false) {
             const html = document.getElementById('main-html');
             const isLight = html.getAttribute('data-bs-theme') === 'light';
@@ -916,7 +941,7 @@
             if (!lastData || !lastData.hourly_aqi) return;
             document.getElementById('modalDayLabel').innerText = "Air Quality Forecast (24h)";
             document.getElementById('modalContent').innerHTML = '<div style="height: 300px;"><canvas id="aqiChart"></canvas></div>';
-            
+
             const modalEl = document.getElementById('hourlyModal');
             const onShown = () => { createAqiChart(lastData.hourly_aqi); modalEl.removeEventListener('shown.bs.modal', onShown); };
             modalEl.addEventListener('shown.bs.modal', onShown);
@@ -926,13 +951,13 @@
         function createAqiChart(aqiData) {
             const ctx = document.getElementById('aqiChart').getContext('2d');
             const theme = getChartTheme();
-            
+
             // Create a label array for the next 24 hours
             const labels = [];
             let currentH = new Date().getHours();
-            for(let i=0; i<aqiData.length; i++) {
+            for (let i = 0; i < aqiData.length; i++) {
                 let h = (currentH + i) % 24;
-                labels.push(`${h == 0 ? 12 : (h > 12 ? h-12 : h)} ${h >= 12 ? 'PM' : 'AM'}`);
+                labels.push(`${h == 0 ? 12 : (h > 12 ? h - 12 : h)} ${h >= 12 ? 'PM' : 'AM'}`);
             }
 
             if (window.myAqiChart) window.myAqiChart.destroy();
@@ -953,7 +978,7 @@
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    plugins: { 
+                    plugins: {
                         legend: { display: false },
                         tooltip: { callbacks: { label: (ctx) => ` AQI: ${ctx.parsed.y}` } }
                     },
@@ -980,4 +1005,5 @@
         © Maruthi Phani Kumar
     </footer>
 </body>
+
 </html>
