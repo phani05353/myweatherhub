@@ -642,13 +642,25 @@
             loader.style.display = 'flex';
             loader.style.opacity = '1';
 
+            const fallbackTimer = setTimeout(() => {
+                console.warn("Geolocation timed out, using default.");
+                fetchWeather(41.38, -105.58); // Your default coords
+            }, 6000); // 6 seconds max for GPS
+
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    p => fetchWeather(p.coords.latitude, p.coords.longitude),
-                    () => fetchWeather(41.38, -105.58),
-                    { timeout: 10000 }
+                    p => {
+                        clearTimeout(fallbackTimer);
+                        fetchWeather(p.coords.latitude, p.coords.longitude);
+                    },
+                    () => {
+                        clearTimeout(fallbackTimer);
+                        fetchWeather(41.38, -105.58);
+                    },
+                    { timeout: 5000, enableHighAccuracy: false } // Force browser-level timeout
                 );
             } else {
+                clearTimeout(fallbackTimer);
                 fetchWeather(41.38, -105.58);
             }
         }
@@ -681,12 +693,30 @@
         function fetchWeather(lat, lon) {
             const ldr = document.querySelector('.loading-text');
             ldr.innerText = "Reading Atmosphere..";
-            fetch('/weather_data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lat, lon }) })
-                .then(res => res.json()).then(data => {
+
+            fetch('/weather_data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lat, lon })
+            })
+                .then(res => {
+                    if (!res.ok) throw new Error("Backend Error");
+                    return res.json();
+                })
+                .then(data => {
                     lastData = data;
                     updateUI(data);
                     ldr.innerText = `Hello, ${data.location.split(',')[0]}`;
                     setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 800);
+                })
+                .catch(err => {
+                    console.error(err);
+                    ldr.innerText = "Connection Failed. Retrying...";
+                    // Force hide loader after 3 seconds so user isn't stuck
+                    setTimeout(() => {
+                        document.getElementById('loader').style.display = 'none';
+                        alert("Weather service temporarily unavailable.");
+                    }, 3000);
                 });
         }
 
