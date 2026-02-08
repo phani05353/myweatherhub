@@ -165,16 +165,5 @@ def weather_data():
     data = get_weather_data(coords['lat'], coords['lon'])
     return jsonify(data) if data else ("API Error", 500)
 
-@app.route('/submit_suggestion', methods=['POST'])
-def submit_suggestion():
-    data = request.get_json()
-    suggestion = data.get('suggestion', '')
-    loc = data.get('location', 'Unknown')
-    
-    # Format the log so it's easy to grep/search in Render
-    print(f"\n*** [USER_SUGGESTION] ***\nFrom: {loc}\nMessage: {suggestion}\n************************\n", flush=True)
-    
-    return jsonify({"status": "success"}), 200
-
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

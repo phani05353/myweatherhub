@@ -500,32 +500,12 @@
         }
 
         .powered-by-footer {
+            padding: 25px 15px;
             text-align: center;
-            width: 100%;
-            padding: 0 15px;
-            /* Prevents edge-to-edge bleed on mobile */
-        }
-
-        .powered-by-footer .input-group {
-            border-radius: 12px;
-            overflow: hidden;
-            /* Ensures the sharp corners of the internal elements don't peek out */
-        }
-
-        .powered-by-footer .form-control {
-            background-color: rgba(255, 255, 255, 0.05) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        }
-
-        .powered-by-footer .form-control:focus {
-            box-shadow: none;
-            border-color: var(--accent) !important;
-        }
-
-        /* Make the button match your blue accent color */
-        .powered-by-footer .btn-primary {
-            background-color: #70a1ff !important;
-            border: none !important;
+            opacity: 0.9;
+            font-size: 0.85rem;
+            color: #ffce00;
+            text-shadow: 0 0 8px rgba(255, 206, 0, 0.2);
         }
     </style>
 </head>
@@ -707,29 +687,6 @@
                     updateUI(data);
                     ldr.innerText = `Hello, ${data.location.split(',')[0]}`;
                     setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 800);
-                });
-        }
-
-        function sendSuggestion() {
-            const input = document.getElementById('suggestion-input');
-            const status = document.getElementById('suggestion-status');
-            const text = input.value.trim();
-
-            if (!text) return;
-
-            fetch('/submit_suggestion', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ suggestion: text, location: lastData ? lastData.location : 'Unknown' })
-            })
-                .then(res => {
-                    if (res.ok) {
-                        input.value = '';
-                        status.innerText = "✓ Received! Transmitting...";
-                        status.style.color = "#00e400";
-                        status.style.display = "block";
-                        setTimeout(() => { status.style.display = "none"; }, 3000);
-                    }
                 });
         }
 
@@ -1149,29 +1106,9 @@
             return { icon, url: `https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&w=800&q=80` };
         }
     </script>
-    <footer class="powered-by-footer mt-5 pb-5">
-        <div class="container">
-            <div class="mx-auto mb-4" style="max-width: 380px;">
-                <p class="small opacity-50 mb-2 text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 1px;">
-                    Feature Suggestion?
-                </p>
-                <div class="input-group input-group-sm shadow-sm">
-                    <input type="text" id="suggestion-input" class="form-control bg-dark border-secondary text-white py-2" 
-                        placeholder="What should I add next?" 
-                        style="border-radius: 12px 0 0 12px; border-right: none;">
-                    <button class="btn btn-primary px-3" type="button" onclick="sendSuggestion()" 
-                        style="border-radius: 0 12px 12px 0; font-weight: 600;">
-                        Send
-                    </button>
-                </div>
-                <div id="suggestion-status" class="small mt-2" style="font-size: 0.7rem; display: none;"></div>
-            </div>
-    
-            <div class="footer-bottom opacity-50 small">
-                <p class="mb-1">Powered by NWS, OpenMeteo & Windy</p>
-                <p class="mb-0">© Maruthi Phani Kumar</p>
-            </div>
-        </div>
+    <footer class="powered-by-footer">
+        Powered by NWS, OpenMeteo & Windy
+        © Maruthi Phani Kumar
     </footer>
 </body>
 
