@@ -488,7 +488,7 @@
             opacity: 0.6;
             vertical-align: middle;
         }
-        
+
         #wind-pill {
             border-left: 3px solid #70a1ff !important;
         }
@@ -562,7 +562,8 @@
                     <i id="main-icon" class="wi" style="font-size: 4rem; color: #ffce00;"></i>
                 </div>
                 <p id="main-forecast" class="fw-light mt-2 mb-3">--</p>
-
+                <p id="clothing-hint" class="opacity-75 small italic"
+                    style="font-size: 0.8rem; margin-top: -10px; color: var(--accent);"></p>
                 <div id="rain-pulse-wrap" style="display:none;">
                     <div class="rain-pulse-container">
                         <div class="d-flex justify-content-between align-items-center">
@@ -689,6 +690,27 @@
                 });
         }
 
+        function getClothingAdvice(temp, precip, wind, uv) {
+            // Rain/Snow check first (Priority 1)
+            if (precip > 40) {
+                return lastData.is_snow ? "Heavy Boots & Parka ❄️" : "Rain Jacket & Umbrella ☂️";
+            }
+
+            // Wind check (Priority 2)
+            if (wind > 20) return "Windbreaker Needed 🌬️";
+
+            // Temperature-based logic (Priority 3)
+            if (temp <= 32) return "Extreme Cold: Layer Up! 🧣";
+            if (temp <= 50) return "Heavy Jacket & Gloves 🧥";
+            if (temp <= 65) return "Light Jacket or Hoodie 🧥";
+            if (temp <= 75) return "Comfortable: Long Sleeves 👕";
+
+            // Sun check (Priority 4)
+            if (uv > 7) return "T-Shirt & Sunscreen 🧴";
+
+            return "Perfect T-Shirt Weather 😎";
+        }
+
         function updateUI(data) {
             const isMetric = document.getElementById('c-unit').checked;
             const curT = formatTemp(data.current.temperature);
@@ -705,6 +727,9 @@
                 wrap.style.display = 'block';
                 document.getElementById('hindsight-text').innerText = diff > 0 ? `${diff}° warmer than yesterday` : (diff < 0 ? `${Math.abs(diff)}° colder than yesterday` : `Same as yesterday`);
             }
+
+            const advice = getClothingAdvice(data.current.temperature, data.hourly[0].precipProb, data.wind.speed, data.uv);
+            document.getElementById('clothing-hint').innerText = `${advice}`;
 
             const aqiWrapper = document.getElementById('aqi-val').parentElement;
             aqiWrapper.style.cursor = 'pointer';

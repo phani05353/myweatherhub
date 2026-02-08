@@ -7,7 +7,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 app = Flask(__name__)
 
-# Constants
 HEADERS = {'User-Agent': '(MyHomeLab, maruthi.phanikumar@yopmail.com)'}
 TIMEOUT = 5 
 
@@ -56,7 +55,6 @@ def get_weather_data(lat, lon):
             "hourly": prop['forecastHourly'],
             "stations": prop['observationStations'],
             "alerts": f"https://api.weather.gov/alerts/active?point={lat_f},{lon_f}",
-            # UPDATED: Added hourly=us_aqi to fetch graph data
             "env": f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat_f}&longitude={lon_f}&current=us_aqi,uv_index&hourly=us_aqi&timezone=auto",
             "yesterday": f"https://archive-api.open-meteo.com/v1/archive?latitude={lat_f}&longitude={lon_f}&start_date={yesterday}&end_date={yesterday}&hourly=temperature_2m&temperature_unit=fahrenheit",
             "rain": f"https://api.open-meteo.com/v1/forecast?latitude={lat_f}&longitude={lon_f}&minutely_15=precipitation&timezone=auto"
@@ -127,7 +125,6 @@ def get_weather_data(lat, lon):
             } for p in hourly_periods[:120]
         ]
 
-        # Process Hourly AQI alignment
         env_hourly_raw = results['env'].get('hourly', {}).get('us_aqi', [])
         aqi_24h = env_hourly_raw[current_hour : current_hour + 24] if len(env_hourly_raw) > current_hour else []
 
@@ -138,7 +135,7 @@ def get_weather_data(lat, lon):
             "wind": {"speed": wind_val, "direction": current.get('windDirection')},
             "pressure": pressure_inhg,
             "aqi": results['env'].get('current', {}).get('us_aqi'),
-            "hourly_aqi": aqi_24h, # New field for AQI Graph
+            "hourly_aqi": aqi_24h,
             "uv": results['env'].get('current', {}).get('uv_index'),
             "yesterday_temp": yesterday_val,
             "daily": daily_forecasts,
