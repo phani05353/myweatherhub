@@ -45,6 +45,11 @@ def get_weather_data(lat, lon):
             
         prop = meta['properties']
         yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+
+        city = prop['relativeLocation']['properties']['city'].title()
+        state = prop['relativeLocation']['properties']['state']
+        
+        print(f">>> [CITY_LOAD] Location: {city}, {state} | Coords: {lat_f}, {lon_f}", flush=True)
         
         urls = {
             "daily": prop['forecast'],
