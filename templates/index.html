@@ -631,12 +631,6 @@
             };
         };
 
-        document.addEventListener("visibilitychange", () => {
-            if (document.visibilityState === 'visible') {
-                refreshWeather();
-            }
-        });
-
         function refreshWeather() {
             const loader = document.getElementById('loader');
             loader.style.display = 'flex';
