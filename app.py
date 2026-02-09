@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 import requests
 from datetime import datetime, timedelta
 import pytz
+import time
 from suntime import Sun
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -29,11 +30,19 @@ def calculate_feels_like(temp_f, humidity, wind_speed_mph):
     return temp_f
 
 def fetch_json(url):
-    try:
-        resp = session.get(url, timeout=TIMEOUT)
-        return resp.json() if resp.status_code == 200 else {}
-    except Exception:
-        return {}
+    for attempt in range(3):  # Try up to 3 times
+        try:
+            resp = session.get(url, timeout=TIMEOUT)
+            if resp.status_code == 200:
+                return resp.json()
+            if resp.status_code == 500:
+                print(f"NWS 500 Error on {url}. Retrying {attempt+1}/3...")
+                time.sleep(1)  # Wait 1 second before retrying
+                continue
+        except Exception as e:
+            print(f"Request failed: {e}")
+        time.sleep(1)
+    return {}
     
 def get_weather_data(lat, lon):
     try:
