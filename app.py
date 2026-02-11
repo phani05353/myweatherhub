@@ -121,16 +121,33 @@ def get_weather_data(lat, lon):
         rain_pulse = [val for val in raw_rain for _ in range(3)][:12]
 
         # Forecasts
+        current_temp = hourly_periods[0]['temperature']
         daily_periods = daily_data.get('properties', {}).get('periods', [])
-        daily_forecasts = [
-            {
-                "name": daily_periods[i]['name'], 
-                "icon": daily_periods[i]['shortForecast'],
-                "high": daily_periods[i]['temperature'], 
-                "low": daily_periods[i+1]['temperature'] if i+1 < len(daily_periods) else daily_periods[i]['temperature'],
-                "date": daily_periods[i]['startTime'][:10]
-            } for i in range(0, min(len(daily_periods), 14), 2)
-        ]
+        daily_forecasts = []
+        seen_dates = set()
+
+        for i in range(len(daily_periods)):
+            p = daily_periods[i]
+            date_str = p['startTime'][:10]
+        
+            if date_str not in seen_dates:
+                if p['isDaytime']:
+                    high_val = p['temperature']
+                    low_val = daily_periods[i+1]['temperature'] if i+1 < len(daily_periods) else p['temperature']
+                else:
+                    high_val = current_temp
+                    low_val = p['temperature']
+
+                daily_forecasts.append({
+                    "name": p['name'], # Keep full name for JS to handle
+                    "icon": p['shortForecast'],
+                    "high": high_val,
+                    "low": low_val,
+                    "date": date_str
+                })
+                seen_dates.add(date_str)
+
+            if len(daily_forecasts) >= 7: break
 
         processed_hourly = [
             {

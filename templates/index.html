@@ -764,6 +764,22 @@
             const sunriseTime = data.sun.sunrise;
             const sunsetTime = data.sun.sunset;
 
+            const now = new Date();
+
+            const isEventUpcoming = (eventStr) => {
+                const [time, period] = eventStr.split(' ');
+                let [h, m] = time.split(':').map(Number);
+                if (period === 'PM' && h !== 12) h += 12;
+                if (period === 'AM' && h === 12) h = 0;
+
+                const eventDate = new Date();
+                eventDate.setHours(h, m, 0, 0);
+
+                // Only return true if the event is in the current hour 
+                // AND has not happened yet
+                return h === hDate.getHours() && eventDate > now;
+            };
+
             const aqiVal = data.aqi;
             const aqiPill = document.getElementById('aqi-pill');
             const aqiDisplay = document.getElementById('aqi-val');
@@ -862,21 +878,38 @@
 
             const weekTemps = data.daily.flatMap(d => [formatTemp(d.high), formatTemp(d.low)]);
             const minW = Math.min(...weekTemps), maxW = Math.max(...weekTemps), range = (maxW - minW) || 1;
+            const dayMap = { 'Monday': 'Mon', 'Tuesday': 'Tue', 'Wednesday': 'Wed', 'Thursday': 'Thu', 'Friday': 'Fri', 'Saturday': 'Sat', 'Sunday': 'Sun' };
+
             let dHtml = '';
             data.daily.forEach((day, i) => {
                 const dv = getVisuals(day.icon, true);
                 let high = formatTemp(day.high), low = formatTemp(day.low);
                 if (low > high) [low, high] = [high, low];
+
+                // 1. Fix the "Was" / Labeling
+                let label = i === 0 ? 'Today' : (dayMap[day.name.split(' ')[0]] || day.name.substring(0, 3));
+
+                // 2. Fix the Clickable Preview (matching the date string exactly)
                 const hasHourly = data.hourly.some(h => h.startTime.startsWith(day.date));
-                dHtml += `<div class="daily-row ${hasHourly ? 'clickable' : ''}" ${hasHourly ? `onclick="showDayHourly('${day.date}', '${day.name}')"` : ''}>
-                    <div class="day-label">${i === 0 ? 'Today' : day.name.substring(0, 3)}</div>
-                    <div class="day-icon-col"><i class="wi ${dv.icon}"></i></div>
-                    <div class="day-low-col">${low}°</div>
-                    <div class="temp-bar-container"><div class="temp-bar-fill" style="left:${((low - minW) / range) * 100}%; width:${Math.max(((high - low) / range) * 100, 5)}%"></div>
-                    ${i === 0 ? `<div class="current-temp-dot" style="left:${((curT - minW) / range) * 100}%"></div>` : ''}</div>
-                    <div class="day-high-col">${high}°</div>
-                </div>`;
+
+                // 3. Fix the Layout (ensure width calculation is capped at 100%)
+                const leftPos = Math.max(0, Math.min(100, ((low - minW) / range) * 100));
+                const widthBar = Math.max(5, Math.min(100 - leftPos, ((high - low) / range) * 100));
+
+                dHtml += `
+        <div class="daily-row ${hasHourly ? 'clickable' : ''}" 
+             ${hasHourly ? `onclick="showDayHourly('${day.date}', '${label}')"` : ''}>
+            <div class="day-label">${label}</div>
+            <div class="day-icon-col"><i class="wi ${dv.icon}"></i></div>
+            <div class="day-low-col">${low}°</div>
+            <div class="temp-bar-container">
+                <div class="temp-bar-fill" style="left:${leftPos}%; width:${widthBar}%"></div>
+                ${i === 0 ? `<div class="current-temp-dot" style="left:${Math.max(0, Math.min(100, ((curT - minW) / range) * 100))}%"></div>` : ''}
+            </div>
+            <div class="day-high-col">${high}°</div>
+        </div>`;
             });
+            document.getElementById('daily-container').innerHTML = dHtml;
             document.getElementById('daily-container').innerHTML = dHtml;
             document.getElementById('radar-container').innerHTML = `<iframe class="w-100 rounded-4" style="height:350px;border:none" src="https://embed.windy.com/embed.html?type=radar&lat=${data.lat}&lon=${data.lon}"></iframe>`;
         }
