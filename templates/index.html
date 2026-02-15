@@ -638,8 +638,8 @@
 
             const fallbackTimer = setTimeout(() => {
                 console.warn("Geolocation timed out, using default.");
-                fetchWeather(41.38, -105.58); // Your default coords
-            }, 6000); // 6 seconds max for GPS
+                fetchWeather(41.38, -105.58);
+            }, 6000);
 
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
@@ -651,7 +651,7 @@
                         clearTimeout(fallbackTimer);
                         fetchWeather(41.38, -105.58);
                     },
-                    { timeout: 5000, enableHighAccuracy: false } // Force browser-level timeout
+                    { timeout: 5000, enableHighAccuracy: false }
                 );
             } else {
                 clearTimeout(fallbackTimer);
@@ -706,7 +706,6 @@
                 .catch(err => {
                     console.error(err);
                     ldr.innerText = "Connection Failed. Retrying...";
-                    // Force hide loader after 3 seconds so user isn't stuck
                     setTimeout(() => {
                         document.getElementById('loader').style.display = 'none';
                         alert("Weather service temporarily unavailable.");
@@ -715,21 +714,17 @@
         }
 
         function getClothingAdvice(temp, precip, wind, uv) {
-            // Rain/Snow check first (Priority 1)
             if (precip > 40) {
                 return lastData.is_snow ? "Heavy Boots & Parka ❄️" : "Rain Jacket & Umbrella ☂️";
             }
 
-            // Wind check (Priority 2)
             if (wind > 20) return "Windbreaker Needed 🌬️";
 
-            // Temperature-based logic (Priority 3)
-            if (temp <= 32) return "Extreme Cold: Layer Up! 🧣";
-            if (temp <= 50) return "Heavy Jacket & Gloves 🧥";
-            if (temp <= 65) return "Light Jacket or Hoodie 🧥";
-            if (temp <= 75) return "Comfortable: Long Sleeves 👕";
+            if (temp <= 30) return "Extreme Cold: Layer Up! 🧣";
+            if (temp <= 45) return "Heavy Jacket & Gloves 🧥";
+            if (temp <= 55) return "Light Jacket or Hoodie 🧥";
+            if (temp <= 60) return "Comfortable: Long Sleeves 👕";
 
-            // Sun check (Priority 4)
             if (uv > 7) return "T-Shirt & Sunscreen 🧴";
 
             return "Perfect T-Shirt Weather 😎";
@@ -767,17 +762,15 @@
             const now = new Date();
 
             const isEventUpcoming = (eventStr) => {
+                const now = new Date();
+                const currentHour = now.getHours();
                 const [time, period] = eventStr.split(' ');
                 let [h, m] = time.split(':').map(Number);
                 if (period === 'PM' && h !== 12) h += 12;
                 if (period === 'AM' && h === 12) h = 0;
-
-                const eventDate = new Date();
+                const eventDate = new Date(now);
                 eventDate.setHours(h, m, 0, 0);
-
-                // Only return true if the event is in the current hour 
-                // AND has not happened yet
-                return h === hDate.getHours() && eventDate > now;
+                return h === currentHour && eventDate > now;
             };
 
             const aqiVal = data.aqi;
@@ -886,13 +879,8 @@
                 let high = formatTemp(day.high), low = formatTemp(day.low);
                 if (low > high) [low, high] = [high, low];
 
-                // 1. Fix the "Was" / Labeling
-                let label = i === 0 ? 'Today' : (dayMap[day.name.split(' ')[0]] || day.name.substring(0, 3));
-
-                // 2. Fix the Clickable Preview (matching the date string exactly)
+                let label = i === 0 ? 'Today' : new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(new Date(day.date));
                 const hasHourly = data.hourly.some(h => h.startTime.startsWith(day.date));
-
-                // 3. Fix the Layout (ensure width calculation is capped at 100%)
                 const leftPos = Math.max(0, Math.min(100, ((low - minW) / range) * 100));
                 const widthBar = Math.max(5, Math.min(100 - leftPos, ((high - low) / range) * 100));
 
@@ -1106,7 +1094,7 @@
                     datasets: [{
                         label: 'US AQI',
                         data: aqiData,
-                        borderColor: '#fff', // White line to pop against the colors
+                        borderColor: '#fff',
                         backgroundColor: gradient,
                         fill: true,
                         tension: 0.4,
