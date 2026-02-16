@@ -493,10 +493,8 @@
             border-left: 3px solid #70a1ff !important;
         }
 
-        /* Specific styling for the AQI pill */
         #aqi-pill {
             border-left: 3px solid #00e400 !important;
-            /* This will be updated by JS based on AQI level */
         }
 
         .powered-by-footer {
@@ -780,13 +778,19 @@
 
             aqiDisplay.innerText = aqiVal;
 
-            let aqiColor = "#00e400";
-            if (aqiVal > 50) aqiColor = "#ffff00";
-            if (aqiVal > 100) aqiColor = "#ff7e00";
-            if (aqiVal > 150) aqiColor = "#ff0000";
+            function getAqiColor(val) {
+                if (val <= 50) return "#00e400";  // Good
+                if (val <= 100) return "#ffff00"; // Moderate
+                if (val <= 150) return "#ff7e00"; // Unhealthy for Sensitive Groups
+                if (val <= 200) return "#ff0000"; // Unhealthy
+                if (val <= 300) return "#8f3f97"; // Very Unhealthy
+                return "#7e0023";                // Hazardous
+            }
+
+            const aqiColor = getAqiColor(aqiVal);
 
             aqiDisplay.style.color = aqiColor;
-            aqiPill.style.borderLeftColor = aqiColor;
+            aqiPill.style.setProperty('border-left-color', aqiColor, 'important');
 
             data.hourly.slice(0, 24).forEach((hour, index) => {
                 const hDate = new Date(hour.startTime);
@@ -1071,15 +1075,22 @@
         }
 
         function createAqiChart(aqiData) {
-            const ctx = document.getElementById('aqiChart').getContext('2d');
+            const canvas = document.getElementById('aqiChart');
+            const ctx = canvas.getContext('2d');
             const theme = getChartTheme();
 
-            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-            gradient.addColorStop(0, 'rgba(126, 0, 35, 0.4)');
-            gradient.addColorStop(0.2, 'rgba(255, 0, 0, 0.4)');
-            gradient.addColorStop(0.4, 'rgba(255, 126, 0, 0.4)');
-            gradient.addColorStop(0.6, 'rgba(255, 255, 0, 0.4)');
-            gradient.addColorStop(0.8, 'rgba(0, 228, 0, 0.4)');
+            // Create a vertical gradient for the line and area fill
+            // This starts at the top (0) and goes to the bottom of the chart area
+            const chartHeight = 300; // Matches your modal height
+            const gradientLine = ctx.createLinearGradient(0, 0, 0, chartHeight);
+
+            // Official AQI Color mapping (Windy-style)
+            // We map these to approximate pixel positions on a 0-200+ scale
+            gradientLine.addColorStop(0, '#7e0023');   // Hazardous (Very Top)
+            gradientLine.addColorStop(0.2, '#ff0000'); // Unhealthy
+            gradientLine.addColorStop(0.4, '#ff7e00'); // Sensitive Groups
+            gradientLine.addColorStop(0.6, '#ffff00'); // Moderate
+            gradientLine.addColorStop(0.9, '#00e400'); // Good (Bottom)
 
             const labels = [];
             let currentH = new Date().getHours();
@@ -1096,13 +1107,13 @@
                     datasets: [{
                         label: 'US AQI',
                         data: aqiData,
-                        borderColor: '#fff',
-                        backgroundColor: gradient,
+                        borderColor: gradientLine, // The line itself now changes color
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)', // Very subtle fill
                         fill: true,
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 2,
-                        pointBackgroundColor: '#fff'
+                        tension: 0.45, // Smoother Windy-style curves
+                        borderWidth: 4,
+                        pointRadius: 0, // Hides points for a cleaner look
+                        pointHitRadius: 25
                     }]
                 },
                 options: {
@@ -1112,17 +1123,11 @@
                         legend: { display: false },
                         annotation: {
                             annotations: {
-                                moderateLine: {
+                                // Helpful reference lines
+                                safeLine: {
                                     type: 'line', yMin: 50, yMax: 50,
-                                    borderColor: 'rgba(255, 255, 255, 0.1)',
-                                    borderWidth: 1, borderDash: [5, 5],
-                                    label: { content: 'Moderate', enabled: true, position: 'start', font: { size: 8 } }
-                                },
-                                unhealthyLine: {
-                                    type: 'line', yMin: 100, yMax: 100,
-                                    borderColor: 'rgba(255, 255, 255, 0.1)',
-                                    borderWidth: 1, borderDash: [5, 5],
-                                    label: { content: 'Unhealthy', enabled: true, position: 'start', font: { size: 8 } }
+                                    borderColor: 'rgba(0, 228, 0, 0.2)',
+                                    borderWidth: 1, borderDash: [5, 5]
                                 }
                             }
                         }
@@ -1131,12 +1136,12 @@
                         y: {
                             beginAtZero: true,
                             suggestedMax: 150,
-                            grid: { color: theme.gridColor },
-                            ticks: { color: theme.textColor }
+                            grid: { color: theme.gridColor, drawBorder: false },
+                            ticks: { color: theme.textColor, font: { size: 10 } }
                         },
                         x: {
                             grid: { display: false },
-                            ticks: { color: theme.textColor, maxTicksLimit: 6 }
+                            ticks: { color: theme.textColor, font: { size: 10 }, maxTicksLimit: 6 }
                         }
                     }
                 }
