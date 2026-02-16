@@ -660,6 +660,7 @@
         }
 
         function toggleTheme(init = false) {
+            if (!init && window.navigator.vibrate) window.navigator.vibrate(5);
             const html = document.getElementById('main-html');
             const isLight = html.getAttribute('data-bs-theme') === 'light';
             const newTheme = init ? (localStorage.getItem('theme') || 'dark') : (isLight ? 'dark' : 'light');
@@ -879,7 +880,8 @@
                 let high = formatTemp(day.high), low = formatTemp(day.low);
                 if (low > high) [low, high] = [high, low];
 
-                let label = i === 0 ? 'Today' : new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(new Date(day.date));
+                const dateObj = new Date(day.date + 'T00:00:00');
+                let label = i === 0 ? 'Today' : new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(dateObj);
                 const hasHourly = data.hourly.some(h => h.startTime.startsWith(day.date));
                 const leftPos = Math.max(0, Math.min(100, ((low - minW) / range) * 100));
                 const widthBar = Math.max(5, Math.min(100 - leftPos, ((high - low) / range) * 100));
