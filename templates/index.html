@@ -586,8 +586,17 @@
                         <i class="wi wi-stats-bars click-hint"></i>
                     </div>
 
-                    <div class="env-badge">UV: <span id="uv-val">--</span></div>
-                    <div class="env-badge"><i class="wi wi-humidity me-1"></i> <span id="humidity">--</span></div>
+                    <div class="env-badge interactive" onclick="showHumidityHourly()">
+                        <i class="wi wi-humidity me-1"></i>
+                        <span id="humidity">--</span>
+                        <i class="wi wi-stats-bars click-hint"></i>
+                    </div>
+
+                    <div class="env-badge interactive" id="activity-pill" onclick="showActivityDetails()">
+                        <i id="activity-icon" class="wi wi-direction-up-right me-1"></i>
+                        Score: <span id="score-val" class="ms-1">--</span>
+                        <i class="wi wi-stats-bars click-hint"></i>
+                    </div>
                 </div>
             </div>
         </div>
@@ -670,6 +679,31 @@
         function saveAndRefresh() {
             localStorage.setItem('unit', document.getElementById('c-unit').checked ? 'metric' : 'imperial');
             if (lastData) updateUI(lastData);
+        }
+
+        function showActivityDetails() {
+            if (!lastData) return;
+            const score = lastData.activity_score;
+            let details = "";
+
+            if (score < 50) {
+                details = "Conditions are challenging. ";
+                if (lastData.current.temperature > 90) details += "Extreme heat detected. ";
+                if (lastData.current.temperature < 40) details += "Too Cold. ";
+                if (lastData.wind.speed > 20) details += "High winds may be bothersome. ";
+                if (lastData.aqi > 90) details += "Air quality is poor. ";
+            } else {
+                details = "Conditions are generally favorable for being outside.";
+            }
+
+            document.getElementById('modalDayLabel').innerText = "Outdoor Activity Verdict";
+            document.getElementById('modalContent').innerHTML = `
+        <div class="text-center p-3">
+            <h1 style="font-size: 3rem; color: ${document.getElementById('score-val').style.color}">${score}</h1>
+            <p class="mt-2">${details}</p>
+        </div>
+    `;
+            hourlyModal.show();
         }
 
         function formatTemp(val) { return document.getElementById('c-unit').checked ? Math.round((val - 32) * 5 / 9) : Math.round(val); }
@@ -792,6 +826,39 @@
             aqiDisplay.style.color = aqiColor;
             aqiPill.style.setProperty('border-left-color', aqiColor, 'important');
 
+            // --- Activity Pill Logic ---
+            const score = data.activity_score;
+            const pill = document.getElementById('activity-pill');
+            const valSpan = document.getElementById('score-val');
+            const icon = document.getElementById('activity-icon');
+
+            valSpan.innerText = score;
+
+            let color, iconClass, label;
+            if (score >= 85) {
+                color = "#00e400"; // Green
+                iconClass = "wi-day-sunny";
+                label = "Perfect";
+            } else if (score >= 65) {
+                color = "#ffff00"; // Yellow
+                iconClass = "wi-day-cloudy";
+                label = "Good";
+            } else if (score >= 40) {
+                color = "#ff7e00"; // Orange
+                iconClass = "wi-day-windy";
+                label = "Fair";
+            } else {
+                color = "#ff4757"; // Red
+                iconClass = "wi-alien";
+                label = "Poor";
+            }
+
+            // Apply Styles
+            pill.style.borderLeft = `3px solid ${color}`;
+            valSpan.style.color = color;
+            icon.className = `wi ${iconClass} me-1`;
+            icon.style.color = color;
+
             data.hourly.slice(0, 24).forEach((hour, index) => {
                 const hDate = new Date(hour.startTime);
                 const hHourOnly = hDate.getHours();
@@ -868,7 +935,6 @@
 
             const aqiEl = document.getElementById('aqi-val'); aqiEl.innerText = data.aqi;
             aqiEl.style.color = data.aqi <= 50 ? "#00e400" : (data.aqi <= 100 ? "#ffff00" : "#ff7e00");
-            document.getElementById('uv-val').innerText = data.uv;
 
             const vis = getVisuals(data.current.shortForecast, data.current.isDaytime);
             document.getElementById('main-icon').className = `wi ${vis.icon}`;
@@ -905,7 +971,7 @@
             });
             document.getElementById('daily-container').innerHTML = dHtml;
             document.getElementById('daily-container').innerHTML = dHtml;
-            document.getElementById('radar-container').innerHTML = `<iframe class="w-100 rounded-4" style="height:350px;border:none" src="https://embed.windy.com/embed.html?type=radar&lat=${data.lat}&lon=${data.lon}"></iframe>`;
+            document.getElementById('radar-container').innerHTML = `<iframe class="w-100 rounded-4" style="height:350px;border:none" src="https://embed.windy.com/embed.html?type=radar&lat=${data.lat}&lon=${data.lon}&overlay=rain&product=radar&play=true"></iframe>`;
         }
 
         function showWindHourly() {
@@ -1072,6 +1138,152 @@
             const onShown = () => { createAqiChart(lastData.hourly_aqi); modalEl.removeEventListener('shown.bs.modal', onShown); };
             modalEl.addEventListener('shown.bs.modal', onShown);
             hourlyModal.show();
+        }
+
+        function showHumidityHourly() {
+            if (!lastData) return;
+            document.getElementById('modalDayLabel').innerText = "Humidity Forecast (24h)";
+            document.getElementById('modalContent').innerHTML = '<div style="height: 300px;"><canvas id="humidityChart"></canvas></div>';
+
+            const next24 = lastData.hourly.slice(0, 24);
+            const modalEl = document.getElementById('hourlyModal');
+            const onShown = () => {
+                createHumidityChart(next24);
+                modalEl.removeEventListener('shown.bs.modal', onShown);
+            };
+            modalEl.addEventListener('shown.bs.modal', onShown);
+            hourlyModal.show();
+        }
+
+        function showUvHourly() {
+            if (!lastData || !lastData.hourly_uv) return;
+            document.getElementById('modalDayLabel').innerText = "UV Index Forecast (24h)";
+            document.getElementById('modalContent').innerHTML = '<div style="height: 300px;"><canvas id="uvChart"></canvas></div>';
+
+            const modalEl = document.getElementById('hourlyModal');
+            const onShown = () => {
+                createUvChart(lastData.hourly_uv);
+                modalEl.removeEventListener('shown.bs.modal', onShown);
+            };
+            modalEl.addEventListener('shown.bs.modal', onShown);
+            hourlyModal.show();
+        }
+
+        function createUvChart(uvData) {
+            const ctx = document.getElementById('uvChart').getContext('2d');
+            const theme = getChartTheme();
+
+            // UV Spectrum Gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(170, 0, 255, 0.6)');   // Extreme (Violet)
+            gradient.addColorStop(0.2, 'rgba(255, 0, 0, 0.5)');   // Very High (Red)
+            gradient.addColorStop(0.4, 'rgba(255, 170, 0, 0.4)'); // High (Orange)
+            gradient.addColorStop(0.6, 'rgba(255, 255, 0, 0.3)'); // Moderate (Yellow)
+            gradient.addColorStop(0.9, 'rgba(0, 255, 0, 0.1)');   // Low (Green)
+
+            const labels = [];
+            let currentH = new Date().getHours();
+            for (let i = 0; i < uvData.length; i++) {
+                let h = (currentH + i) % 24;
+                labels.push(`${h == 0 ? 12 : (h > 12 ? h - 12 : h)} ${h >= 12 ? 'PM' : 'AM'}`);
+            }
+
+            if (window.myUvChart) window.myUvChart.destroy();
+            window.myUvChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'UV Index',
+                        data: uvData,
+                        borderColor: '#ffce00', // Sun yellow line
+                        borderWidth: 3,
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHitRadius: 20
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: { label: (ctx) => ` UV Index: ${ctx.parsed.y}` }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: 11, // Standard UV scale tops at 11+
+                            grid: { color: theme.gridColor },
+                            ticks: { color: theme.textColor }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: theme.textColor, maxTicksLimit: 6 }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createHumidityChart(hourlyData) {
+            const ctx = document.getElementById('humidityChart').getContext('2d');
+            const theme = getChartTheme();
+
+            // Windy-style Water Gradient
+            const gradientLine = ctx.createLinearGradient(0, 0, 0, 300);
+            gradientLine.addColorStop(0, '#0077b2');   // Deep Blue (High Humidity)
+            gradientLine.addColorStop(1, '#00b4d8');   // Cyan (Low Humidity)
+
+            const gradientFill = ctx.createLinearGradient(0, 0, 0, 300);
+            gradientFill.addColorStop(0, 'rgba(0, 119, 178, 0.3)');
+            gradientFill.addColorStop(1, 'rgba(0, 180, 216, 0)');
+
+            if (window.myHumidityChart) window.myHumidityChart.destroy();
+            window.myHumidityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: hourlyData.map(h => new Date(h.startTime).toLocaleTimeString([], { hour: 'numeric' })),
+                    datasets: [{
+                        label: 'Humidity',
+                        data: hourlyData.map(h => h.humidity),
+                        borderColor: gradientLine,
+                        backgroundColor: gradientFill,
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 4,
+                        pointRadius: 0,
+                        pointHitRadius: 20
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: theme.tooltipBg,
+                            callbacks: { label: (ctx) => ` Humidity: ${ctx.parsed.y}%` }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100, // Humidity is always %
+                            grid: { color: theme.gridColor },
+                            ticks: { color: theme.textColor, font: { size: 10 } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: theme.textColor, font: { size: 10 }, maxTicksLimit: 6 }
+                        }
+                    }
+                }
+            });
         }
 
         function createAqiChart(aqiData) {

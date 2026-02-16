@@ -29,6 +29,28 @@ def calculate_feels_like(temp_f, humidity, wind_speed_mph):
         return hi
     return temp_f
 
+def calculate_activity_score(temp, aqi, uv, wind, humid):
+    score = 100
+
+    if temp < 65:
+        # Deduct for cold (approx 2 points for every degree below 65)
+        score -= (65 - temp) * 2.5
+    elif temp > 80:
+        # Deduct for heat (approx 3 points for every degree above 80)
+        score -= (temp - 80) * 3.5
+        
+    # Deduct for bad air
+    if aqi > 50: score -= (aqi - 50) * 0.5
+    # Deduct for extreme wind
+    if wind > 15: score -= (wind - 15) * 2
+    # Deduct for high UV
+    if uv > 7: score -= (uv - 7) * 5
+    # Deduct for humidity discomfort (too dry or too muggy)
+    if humid > 70: score -= (humid - 70) * 0.5
+    if humid < 20: score -= (20 - humid) * 0.5
+    
+    return max(0, min(100, round(score)))
+
 def fetch_json(url):
     for attempt in range(3):  # Try up to 3 times
         try:
@@ -155,12 +177,16 @@ def get_weather_data(lat, lon):
                 "temperature": p['temperature'],
                 "shortForecast": p['shortForecast'], 
                 "precipProb": p.get('probabilityOfPrecipitation', {}).get('value') or 0,
+                "humidity": p.get('relativeHumidity', {}).get('value') or 0,
                 "windSpeed": float(str(p.get('windSpeed', '0')).split(' ')[0]) if str(p.get('windSpeed', '0')).split(' ')[0].replace('.','',1).isdigit() else 0
             } for p in hourly_periods[:120]
         ]
 
         env_hourly_raw = env_data.get('hourly', {}).get('us_aqi', [])
         aqi_24h = env_hourly_raw[current_hour : current_hour + 24] if len(env_hourly_raw) > current_hour else []
+
+        env_hourly_uv = env_data.get('hourly', {}).get('uv_index', [])
+        uv_24h = env_hourly_uv[current_hour : current_hour + 24] if len(env_hourly_uv) > current_hour else []
 
         return {
             "location": f"{city}, {state}",
@@ -171,11 +197,13 @@ def get_weather_data(lat, lon):
             "aqi": env_data.get('current', {}).get('us_aqi'),
             "hourly_aqi": aqi_24h,
             "uv": env_data.get('current', {}).get('uv_index'),
+            "hourly_uv": uv_24h,
             "yesterday_temp": yesterday_val,
             "daily": daily_forecasts,
             "hourly": processed_hourly,
             "alerts": alerts_data.get('features', []),
             "rain_pulse": rain_pulse,
+            "activity_score": calculate_activity_score(temp, env_data.get('current', {}).get('us_aqi'), env_data.get('current', {}).get('uv_index'), wind_val, humid),
             "is_snow": any(x in current['shortForecast'].lower() for x in ["snow", "flurries"]),
             "precip_alert": any(v > 0 for v in rain_pulse[:3]), 
             "sun": {
