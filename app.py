@@ -30,24 +30,36 @@ def calculate_feels_like(temp_f, humidity, wind_speed_mph):
     return temp_f
 
 def calculate_activity_score(temp, aqi, uv, wind, humid):
+    # Fallback for None values to prevent crashes
+    temp = temp if temp is not None else 70
+    aqi = aqi if aqi is not None else 0
+    uv = uv if uv is not None else 0
+    wind = wind if wind is not None else 0
+    humid = humid if humid is not None else 50
+    
     score = 100
-
+    
+    # 1. Temperature Penalty
     if temp < 65:
-        # Deduct for cold (approx 2 points for every degree below 65)
         score -= (65 - temp) * 2.5
     elif temp > 80:
-        # Deduct for heat (approx 3 points for every degree above 80)
         score -= (temp - 80) * 3.5
-        
-    # Deduct for bad air
-    if aqi > 50: score -= (aqi - 50) * 0.5
-    # Deduct for extreme wind
-    if wind > 15: score -= (wind - 15) * 2
-    # Deduct for high UV
-    if uv > 7: score -= (uv - 7) * 5
-    # Deduct for humidity discomfort (too dry or too muggy)
-    if humid > 70: score -= (humid - 70) * 0.5
-    if humid < 20: score -= (20 - humid) * 0.5
+
+    # 2. AQI Penalty
+    if aqi > 50: 
+        score -= (aqi - 50) * 0.5
+    
+    # 3. Wind Penalty
+    if wind > 15: 
+        score -= (wind - 15) * 2
+    
+    # 4. UV Penalty
+    if uv > 7: 
+        score -= (uv - 7) * 5
+    
+    # 5. Humidity Penalty
+    if humid > 70: 
+        score -= (humid - 70) * 0.5
     
     return max(0, min(100, round(score)))
 
