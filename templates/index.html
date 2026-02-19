@@ -901,7 +901,8 @@
 
             const pulseWrap = document.getElementById('rain-pulse-wrap');
             const pulseGrid = document.getElementById('pulse-segments');
-            const rainFound = data.rain_pulse?.some(v => v > 0);
+            const rainFound = data.rain_pulse?.some(v => v > 0.1);
+
             if (rainFound) {
                 pulseGrid.innerHTML = '';
                 data.rain_pulse.forEach(val => {
@@ -912,7 +913,9 @@
                 pulseWrap.style.display = 'block';
                 document.getElementById('pulse-label').innerText = `Next Hour ${data.is_snow ? 'Snow' : 'Rain'} Pulse`;
                 document.getElementById('rain-status').innerText = `${data.is_snow ? 'Snow' : 'Rain'} in 60m`;
-            } else { pulseWrap.style.display = 'none'; }
+            } else {
+                pulseWrap.style.display = 'none';
+            }
 
             const badgeCont = document.getElementById('badge-container');
             badgeCont.querySelectorAll('.precip-badge-rain, .precip-badge-snow, .pulse-alert').forEach(a => a.remove());
