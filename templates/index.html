@@ -859,45 +859,69 @@
             icon.className = `wi ${iconClass} me-1`;
             icon.style.color = color;
 
+            // 1. Re-declare now right here to be absolutely sure
+            const currentTimestamp = new Date();
+
             data.hourly.slice(0, 24).forEach((hour, index) => {
                 const hDate = new Date(hour.startTime);
                 const hHourOnly = hDate.getHours();
-                const isEventHere = (eventStr) => {
-                    const [time, period] = eventStr.split(' ');
-                    let [h, m] = time.split(':').map(Number);
-                    if (period === 'PM' && h !== 12) h += 12;
-                    if (period === 'AM' && h === 12) h = 0;
-                    return h === hHourOnly;
+
+                // Fail-safe helper function
+                const isEventUpcoming = (eventStr) => {
+                    if (!eventStr || typeof eventStr !== 'string') return false;
+
+                    try {
+                        const [time, period] = eventStr.split(' ');
+                        let [h, m] = time.split(':').map(Number);
+                        if (period === 'PM' && h !== 12) h += 12;
+                        if (period === 'AM' && h === 12) h = 0;
+
+                        const eventDate = new Date(hDate);
+                        eventDate.setHours(h, m, 0, 0);
+
+                        // Check: Is this event in THIS specific hour AND is it still in the future?
+                        return h === hHourOnly && eventDate > currentTimestamp;
+                    } catch (e) {
+                        return false;
+                    }
                 };
+
                 const hv = getVisuals(hour.shortForecast, true);
                 const precipProb = hour.precipProb || 0;
+
+                // Standard Hourly Card
                 hHtml += `
-                    <div class="hour-item">
-                        <div class="h-time">${hDate.toLocaleTimeString([], { hour: 'numeric' })}</div>
-                        <i class="wi ${hv.icon} h-icon"></i>
-                        <div class="h-temp">${formatTemp(hour.temperature)}°</div>
-                        <div class="h-precip" style="${precipProb > 0 ? 'opacity: 1' : 'opacity: 0'}">
-                            <i class="wi wi-raindrop"></i>${precipProb}%
-                        </div>
-                    </div>`;
-                if (isEventHere(sunriseTime)) {
+        <div class="hour-item">
+            <div class="h-time">${hDate.toLocaleTimeString([], { hour: 'numeric' })}</div>
+            <i class="wi ${hv.icon} h-icon"></i>
+            <div class="h-temp">${formatTemp(hour.temperature)}°</div>
+            <div class="h-precip" style="${precipProb > 0 ? 'opacity: 1' : 'opacity: 0'}">
+                <i class="wi wi-raindrop"></i>${precipProb}%
+            </div>
+        </div>`;
+
+                // Use data.sun.sunrise and data.sun.sunset directly to avoid scope errors
+                if (data.sun && isEventUpcoming(data.sun.sunrise)) {
                     hHtml += `
-                        <div class="hour-item sun-event">
-                            <div class="h-time">${sunriseTime}</div>
-                            <i class="wi wi-sunrise h-icon"></i>
-                            <div class="h-temp" style="font-size: 0.6rem; text-transform: uppercase;">Sunrise</div>
-                        </div>`;
+            <div class="hour-item sun-event">
+                <div class="h-time">${data.sun.sunrise}</div>
+                <i class="wi wi-sunrise h-icon"></i>
+                <div class="h-temp" style="font-size: 0.6rem; text-transform: uppercase;">Sunrise</div>
+            </div>`;
                 }
-                if (isEventHere(sunsetTime)) {
+
+                if (data.sun && isEventUpcoming(data.sun.sunset)) {
                     hHtml += `
-                        <div class="hour-item sun-event">
-                            <div class="h-time">${sunsetTime}</div>
-                            <i class="wi wi-sunset h-icon"></i>
-                            <div class="h-temp" style="font-size: 0.6rem; text-transform: uppercase;">Sunset</div>
-                        </div>`;
+            <div class="hour-item sun-event">
+                <div class="h-time">${data.sun.sunset}</div>
+                <i class="wi wi-sunset h-icon"></i>
+                <div class="h-temp" style="font-size: 0.6rem; text-transform: uppercase;">Sunset</div>
+            </div>`;
                 }
             });
-            hourlyCont.innerHTML = hHtml;
+
+            // Final step to actually push the HTML to the page
+            document.getElementById('hourly-quick-view').innerHTML = hHtml;
 
             const pulseWrap = document.getElementById('rain-pulse-wrap');
             const pulseGrid = document.getElementById('pulse-segments');
@@ -1294,13 +1318,9 @@
             const ctx = canvas.getContext('2d');
             const theme = getChartTheme();
 
-            // Create a vertical gradient for the line and area fill
-            // This starts at the top (0) and goes to the bottom of the chart area
-            const chartHeight = 300; // Matches your modal height
+            const chartHeight = 300;
             const gradientLine = ctx.createLinearGradient(0, 0, 0, chartHeight);
 
-            // Official AQI Color mapping (Windy-style)
-            // We map these to approximate pixel positions on a 0-200+ scale
             gradientLine.addColorStop(0, '#7e0023');   // Hazardous (Very Top)
             gradientLine.addColorStop(0.2, '#ff0000'); // Unhealthy
             gradientLine.addColorStop(0.4, '#ff7e00'); // Sensitive Groups
