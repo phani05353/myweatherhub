@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from datetime import datetime, timedelta
 import pytz
 import time
@@ -64,23 +66,18 @@ def calculate_activity_score(temp, aqi, uv, wind, humid):
     return max(0, min(100, round(score)))
 
 def fetch_json(url):
-    # Increasing total attempts and using a slightly longer timeout
-    for attempt in range(3): 
-        try:
-            # Connect timeout = 3.05s, Read timeout = 15s
-            resp = session.get(url, timeout=(3.05, 15)) 
-            if resp.status_code == 200:
-                return resp.json()
-            elif resp.status_code == 429: # Rate limited
-                time.sleep(2)
-            elif resp.status_code >= 500: # Server Error
-                time.sleep(1)
-        except requests.exceptions.Timeout:
-            print(f"Timeout on {url}. Attempt {attempt + 1}/3...")
-            time.sleep(1) # Short pause before trying again
-        except Exception as e:
-            print(f"Request failed: {e}")
-            break 
+    session = requests.Session()
+    # Retry 3 times on specific errors (timeout, 429 too many requests, 500 server error)
+    retries = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
+    session.mount('https://', HTTPAdapter(max_retries=retries))
+    
+    try:
+        # Increase timeout to 10 seconds for Render's slower outbound network
+        resp = session.get(url, timeout=10) 
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception as e:
+        print(f"Render API Timeout for {url}: {e}")
     return {}
     
 def get_weather_data(lat, lon):
