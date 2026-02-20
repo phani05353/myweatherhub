@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 import requests
+import os
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from datetime import datetime, timedelta
@@ -32,7 +33,6 @@ def calculate_feels_like(temp_f, humidity, wind_speed_mph):
     return temp_f
 
 def calculate_activity_score(temp, aqi, uv, wind, humid):
-    # Fallback for None values to prevent crashes
     temp = temp if temp is not None else 70
     aqi = aqi if aqi is not None else 0
     uv = uv if uv is not None else 0
@@ -40,75 +40,65 @@ def calculate_activity_score(temp, aqi, uv, wind, humid):
     humid = humid if humid is not None else 50
     
     score = 100
-    
-    # 1. Temperature Penalty
-    if temp < 65:
-        score -= (65 - temp) * 2.5
-    elif temp > 80:
-        score -= (temp - 80) * 3.5
-
-    # 2. AQI Penalty
-    if aqi > 50: 
-        score -= (aqi - 50) * 0.5
-    
-    # 3. Wind Penalty
-    if wind > 15: 
-        score -= (wind - 15) * 2
-    
-    # 4. UV Penalty
-    if uv > 7: 
-        score -= (uv - 7) * 5
-    
-    # 5. Humidity Penalty
-    if humid > 70: 
-        score -= (humid - 70) * 0.5
+    if temp < 65: score -= (65 - temp) * 2.5
+    elif temp > 80: score -= (temp - 80) * 3.5
+    if aqi > 50: score -= (aqi - 50) * 0.5
+    if wind > 15: score -= (wind - 15) * 2
+    if uv > 7: score -= (uv - 7) * 5
+    if humid > 70: score -= (humid - 70) * 0.5
     
     return max(0, min(100, round(score)))
 
 def fetch_json(url):
-    session = requests.Session()
-    # Retry 3 times on specific errors (timeout, 429 too many requests, 500 server error)
     retries = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
     session.mount('https://', HTTPAdapter(max_retries=retries))
-    
     try:
-        # Increase timeout to 10 seconds for Render's slower outbound network
         resp = session.get(url, timeout=10) 
         if resp.status_code == 200:
             return resp.json()
     except Exception as e:
-        print(f"Render API Timeout for {url}: {e}")
+        print(f"Fetch failed for {url}: {e}")
     return {}
+
+def fetch_aqi_waqi(lat, lon):
+    token = os.environ.get("WAQI_TOKEN")
+    if not token:
+        print("WAQI_TOKEN missing from environment variables!")
+        return {"aqi": 0, "station": "Unknown"}
     
+    url = f"https://api.waqi.info/feed/geo:{lat};{lon}/?token={token}"
+    data = fetch_json(url)
+    
+    if data.get('status') == 'ok':
+        return {
+            "aqi": data['data']['aqi'],
+            "station": data['data']['city']['name']
+        }
+    return {"aqi": 0, "station": "N/A"}
+
 def get_weather_data(lat, lon):
     try:
         lat_f, lon_f = round(float(lat), 4), round(float(lon), 4)
         
-        # 1. Get Metadata (Required for NWS URLs)
+        # 1. NWS Metadata
         meta = fetch_json(f"https://api.weather.gov/points/{lat_f},{lon_f}")
         if not meta or 'properties' not in meta:
-            print(f"Error: Could not retrieve NWS metadata for {lat_f},{lon_f}")
             return None
             
         prop = meta['properties']
         yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-        
-        # Safe location extraction
         loc_props = prop.get('relativeLocation', {}).get('properties', {})
-        city = loc_props.get('city', 'Unknown').title()
-        state = loc_props.get('state', '??')
-        
-        print(f">>> [CITY_LOAD] Location: {city}, {state}", flush=True)
-        
-        # 2. Sequential Fetches
-        # We fetch these one by one now. 
+        city_name = loc_props.get('city', 'Unknown').title()
+        state_name = loc_props.get('state', '??')
+
+        # 2. Parallel Fetches (Optional optimization, but sequential works for now)
         daily_data = fetch_json(prop['forecast'])
         hourly_data = fetch_json(prop['forecastHourly'])
         stations_data = fetch_json(prop['observationStations'])
         alerts_data = fetch_json(f"https://api.weather.gov/alerts/active?point={lat_f},{lon_f}")
         
-        env_url = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat_f}&longitude={lon_f}&current=us_aqi,uv_index&hourly=us_aqi&timezone=auto"
-        env_data = fetch_json(env_url)
+        # WAQI AQI Replace Open-Meteo
+        aqi_data = fetch_aqi_waqi(lat_f, lon_f)
         
         yesterday_url = f"https://archive-api.open-meteo.com/v1/archive?latitude={lat_f}&longitude={lon_f}&start_date={yesterday}&end_date={yesterday}&hourly=temperature_2m&temperature_unit=fahrenheit"
         yesterday_data = fetch_json(yesterday_url)
@@ -116,126 +106,93 @@ def get_weather_data(lat, lon):
         rain_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat_f}&longitude={lon_f}&minutely_15=precipitation&timezone=auto"
         rain_data = fetch_json(rain_url)
 
-        # 3. Get Station Observation (Latest)
+        # 3. Station Obs
         obs_data = {}
         stations = stations_data.get('features', [])
         if stations:
             st_id = stations[0]['properties']['stationIdentifier']
             obs_data = fetch_json(f"https://api.weather.gov/stations/{st_id}/observations/latest").get('properties', {})
 
-        # 4. Process Hourly
+        # 4. Processing
         hourly_periods = hourly_data.get('properties', {}).get('periods', [])
-        if not hourly_periods: 
-            return None
+        if not hourly_periods: return None
         
         current = hourly_periods[0]
         temp = current['temperature']
         humid = current.get('relativeHumidity', {}).get('value', 50) or 50
         
-        # Wind Parsing
         wind_raw = str(current.get('windSpeed', '0')).lower()
         wind_str = wind_raw.split('to')[-1].strip().split(' ')[0] if 'to' in wind_raw else wind_raw.split(' ')[0]
         wind_val = float(wind_str) if wind_str.replace('.','',1).isdigit() else 0
         
-        # Pressure
         pressure_val = obs_data.get('barometricPressure', {}).get('value')
         pressure_inhg = round(pressure_val * 0.0002953, 2) if pressure_val else "N/A"
 
-        # Sun Times
         sun = Sun(lat_f, lon_f)
         eastern_tz = pytz.timezone('US/Eastern')
         sunrise_local = sun.get_sunrise_time().astimezone(eastern_tz)
         sunset_local = sun.get_sunset_time().astimezone(eastern_tz)
 
-        # Yesterday Comparison
         current_hour = datetime.now().hour
         yesterday_temps = yesterday_data.get('hourly', {}).get('temperature_2m', [None]*24)
         yesterday_val = yesterday_temps[current_hour] if current_hour < len(yesterday_temps) else None
 
-        # Rain Pulse
         raw_rain = rain_data.get('minutely_15', {}).get('precipitation', [0]*4)
         rain_pulse = [val for val in raw_rain for _ in range(3)][:12]
 
-        # Forecasts
-        current_temp = hourly_periods[0]['temperature']
-        daily_periods = daily_data.get('properties', {}).get('periods', [])
         daily_forecasts = []
         seen_dates = set()
-
-        for i in range(len(daily_periods)):
-            p = daily_periods[i]
+        for i, p in enumerate(daily_data.get('properties', {}).get('periods', [])):
             date_str = p['startTime'][:10]
-        
             if date_str not in seen_dates:
-                if p['isDaytime']:
-                    high_val = p['temperature']
-                    low_val = daily_periods[i+1]['temperature'] if i+1 < len(daily_periods) else p['temperature']
-                else:
-                    high_val = current_temp
-                    low_val = p['temperature']
-
                 daily_forecasts.append({
-                    "name": p['name'], # Keep full name for JS to handle
-                    "icon": p['shortForecast'],
-                    "high": high_val,
-                    "low": low_val,
+                    "name": p['name'], "icon": p['shortForecast'],
+                    "high": p['temperature'] if p['isDaytime'] else hourly_periods[0]['temperature'],
+                    "low": p['temperature'] if not p['isDaytime'] else (daily_data['properties']['periods'][i+1]['temperature'] if i+1 < len(daily_data['properties']['periods']) else p['temperature']),
                     "date": date_str
                 })
                 seen_dates.add(date_str)
-
             if len(daily_forecasts) >= 7: break
 
         processed_hourly = [
             {
-                "startTime": p['startTime'], 
-                "temperature": p['temperature'],
-                "shortForecast": p['shortForecast'], 
-                "precipProb": p.get('probabilityOfPrecipitation', {}).get('value') or 0,
+                "startTime": p['startTime'], "temperature": p['temperature'],
+                "shortForecast": p['shortForecast'], "precipProb": p.get('probabilityOfPrecipitation', {}).get('value') or 0,
                 "humidity": p.get('relativeHumidity', {}).get('value') or 0,
                 "windSpeed": float(str(p.get('windSpeed', '0')).split(' ')[0]) if str(p.get('windSpeed', '0')).split(' ')[0].replace('.','',1).isdigit() else 0
             } for p in hourly_periods[:120]
         ]
 
-        env_hourly_raw = env_data.get('hourly', {}).get('us_aqi', [])
-        aqi_24h = env_hourly_raw[current_hour : current_hour + 24] if len(env_hourly_raw) > current_hour else []
-
-        env_hourly_uv = env_data.get('hourly', {}).get('uv_index', [])
-        uv_24h = env_hourly_uv[current_hour : current_hour + 24] if len(env_hourly_uv) > current_hour else []
-
         return {
-            "location": f"{city}, {state}",
+            "location": f"{city_name}, {state_name}",
             "current": current,
             "feels_like": round(calculate_feels_like(temp, humid, wind_val)),
             "wind": {"speed": wind_val, "direction": current.get('windDirection')},
             "pressure": pressure_inhg,
-            "aqi": env_data.get('current', {}).get('us_aqi'),
-            "hourly_aqi": aqi_24h,
-            "uv": env_data.get('current', {}).get('uv_index'),
-            "hourly_uv": uv_24h,
+            "aqi": aqi_data['aqi'],
+            "aqi_station": aqi_data['station'],
+            "hourly_aqi": [], # WAQI Free doesn't provide hourly via geo feed
+            "uv": 0, # Note: UV was from Open-Meteo; NWS or another source needed for UV
+            "hourly_uv": [],
             "yesterday_temp": yesterday_val,
             "daily": daily_forecasts,
             "hourly": processed_hourly,
             "alerts": alerts_data.get('features', []),
             "rain_pulse": rain_pulse,
-            "activity_score": calculate_activity_score(temp, env_data.get('current', {}).get('us_aqi'), env_data.get('current', {}).get('uv_index'), wind_val, humid),
+            "activity_score": calculate_activity_score(temp, aqi_data['aqi'], 0, wind_val, humid),
             "is_snow": any(x in current['shortForecast'].lower() for x in ["snow", "flurries"]),
             "precip_alert": any(v > 0 for v in rain_pulse[:3]), 
-            "sun": {
-                "sunrise": sunrise_local.strftime("%I:%M %p"),
-                "sunset": sunset_local.strftime("%I:%M %p")
-            },
+            "sun": {"sunrise": sunrise_local.strftime("%I:%M %p"), "sunset": sunset_local.strftime("%I:%M %p")},
             "updated": datetime.now(eastern_tz).strftime("%I:%M %p"),
             "lat": lat_f, "lon": lon_f
         }
     except Exception as e:
-        print(f"Error in get_weather_data: {e}")
         import traceback
-        traceback.print_exc() # This will print the exact line causing the crash
+        traceback.print_exc()
         return None
 
 @app.route('/')
-def home(): 
-    return render_template('index.html')
+def home(): return render_template('index.html')
 
 @app.route('/weather_data', methods=['POST'])
 def weather_data():
