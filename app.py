@@ -64,18 +64,23 @@ def calculate_activity_score(temp, aqi, uv, wind, humid):
     return max(0, min(100, round(score)))
 
 def fetch_json(url):
-    for attempt in range(3):  # Try up to 3 times
+    # Increasing total attempts and using a slightly longer timeout
+    for attempt in range(3): 
         try:
-            resp = session.get(url, timeout=TIMEOUT)
+            # Connect timeout = 3.05s, Read timeout = 15s
+            resp = session.get(url, timeout=(3.05, 15)) 
             if resp.status_code == 200:
                 return resp.json()
-            if resp.status_code == 500:
-                print(f"NWS 500 Error on {url}. Retrying {attempt+1}/3...")
-                time.sleep(1)  # Wait 1 second before retrying
-                continue
+            elif resp.status_code == 429: # Rate limited
+                time.sleep(2)
+            elif resp.status_code >= 500: # Server Error
+                time.sleep(1)
+        except requests.exceptions.Timeout:
+            print(f"Timeout on {url}. Attempt {attempt + 1}/3...")
+            time.sleep(1) # Short pause before trying again
         except Exception as e:
             print(f"Request failed: {e}")
-        time.sleep(1)
+            break 
     return {}
     
 def get_weather_data(lat, lon):

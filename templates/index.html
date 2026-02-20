@@ -886,19 +886,22 @@
                     }
                 };
 
-                const hv = getVisuals(hour.shortForecast, true);
-                const precipProb = hour.precipProb || 0;
+                data.hourly.slice(0, 24).forEach((hour) => {
+                    const hDate = new Date(hour.startTime);
+                    const hv = getVisuals(hour.shortForecast, true);
+                    const precipProb = hour.precipProb || 0;
 
-                // Standard Hourly Card
-                hHtml += `
-        <div class="hour-item">
-            <div class="h-time">${hDate.toLocaleTimeString([], { hour: 'numeric' })}</div>
-            <i class="wi ${hv.icon} h-icon"></i>
-            <div class="h-temp">${formatTemp(hour.temperature)}°</div>
-            <div class="h-precip" style="${precipProb > 0 ? 'opacity: 1' : 'opacity: 0'}">
-                <i class="wi wi-raindrop"></i>${precipProb}%
-            </div>
-        </div>`;
+                    hHtml += `
+    <div class="hour-item">
+        <div class="h-time">${hDate.toLocaleTimeString([], { hour: 'numeric' })}</div>
+        <i class="wi ${hv.icon} h-icon"></i>
+        <div class="h-temp">${formatTemp(hour.temperature)}°</div>
+        <div class="h-precip" style="${precipProb > 0 ? 'opacity: 1' : 'opacity: 0'}">
+            <i class="wi wi-raindrop"></i>${precipProb}%
+        </div>
+    </div>`;
+                });
+                document.getElementById('hourly-quick-view').innerHTML = hHtml;
 
                 // Use data.sun.sunrise and data.sun.sunset directly to avoid scope errors
                 if (data.sun && isEventUpcoming(data.sun.sunrise)) {
@@ -923,31 +926,40 @@
             // Final step to actually push the HTML to the page
             document.getElementById('hourly-quick-view').innerHTML = hHtml;
 
+            // --- Precipitation & Pulse Logic ---
             const pulseWrap = document.getElementById('rain-pulse-wrap');
             const pulseGrid = document.getElementById('pulse-segments');
-            const rainFound = data.rain_pulse?.some(v => v > 0.1);
+            const badgeCont = document.getElementById('badge-container');
 
-            if (rainFound) {
+            // 1. Clear old alerts/badges first
+            badgeCont.querySelectorAll('.precip-badge-rain, .precip-badge-snow').forEach(a => a.remove());
+
+            // 2. Check if rain or snow is detected in the pulse data
+            const hasPrecipitation = data.rain_pulse && data.rain_pulse.some(v => v > 0);
+
+            if (hasPrecipitation) {
+                // Fill the pulse grid
                 pulseGrid.innerHTML = '';
                 data.rain_pulse.forEach(val => {
                     const seg = document.createElement('div');
+                    // If intensity > 0, color it blue for rain or white for snow
                     seg.className = 'pulse-segment' + (val > 0 ? (data.is_snow ? ' active-snow' : ' active-rain') : '');
                     pulseGrid.appendChild(seg);
                 });
+
+                // Show the pulse container
                 pulseWrap.style.display = 'block';
                 document.getElementById('pulse-label').innerText = `Next Hour ${data.is_snow ? 'Snow' : 'Rain'} Pulse`;
-                document.getElementById('rain-status').innerText = `${data.is_snow ? 'Snow' : 'Rain'} in 60m`;
-            } else {
-                pulseWrap.style.display = 'none';
-            }
+                document.getElementById('rain-status').innerText = `${data.is_snow ? 'Snow' : 'Rain'} detected`;
 
-            const badgeCont = document.getElementById('badge-container');
-            badgeCont.querySelectorAll('.precip-badge-rain, .precip-badge-snow, .pulse-alert').forEach(a => a.remove());
-            if (data.precip_alert && rainFound) {
+                // 3. Add the "Imminent" Badge to the top
                 const pBadge = document.createElement('div');
                 pBadge.className = `env-badge ${data.is_snow ? 'precip-badge-snow' : 'precip-badge-rain'}`;
                 pBadge.innerHTML = `<i class="wi ${data.is_snow ? 'wi-snow' : 'wi-raindrops'} me-1"></i> ${(data.is_snow ? 'SNOW' : 'RAIN').toUpperCase()} IMMINENT`;
                 badgeCont.prepend(pBadge);
+            } else {
+                // Hide everything if it's dry
+                pulseWrap.style.display = 'none';
             }
 
             if (data.alerts?.length > 0) {
