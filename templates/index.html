@@ -777,6 +777,16 @@
                         Score: <span id="score-val" class="ms-1">--</span>
                         <i class="wi wi-stats-bars click-hint"></i>
                     </div>
+
+                    <div class="env-badge" id="vis-pill">
+                        <i class="wi wi-fog me-1"></i>
+                        Vis: <span id="vis-val" class="ms-1">--</span>
+                    </div>
+
+                    <div class="env-badge" id="safety-pill">
+                        <i id="safety-icon" class="wi wi-shield me-1"></i>
+                        Road: <span id="safety-val" class="ms-1">--</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -933,17 +943,19 @@
                 now.setDate(now.getDate() - 1);
                 const yStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
 
-                const [envRes, rainRes, precipRes, archiveRes] = await Promise.all([
+                const [envRes, rainRes, precipRes, archiveRes, weatherRes] = await Promise.all([
                     fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,uv_index&hourly=us_aqi,uv_index&timezone=auto`),
                     fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&minutely_15=precipitation&timezone=auto`),
                     fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&minutely_15=precipitation,snowfall&timezone=auto`),
-                    fetch(`https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${yStr}&end_date=${yStr}&hourly=temperature_2m&temperature_unit=fahrenheit&timezone=auto`)
+                    fetch(`https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${yStr}&end_date=${yStr}&hourly=temperature_2m&temperature_unit=fahrenheit&timezone=auto`),
+                    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=is_day&hourly=visibility,wind_gusts_10m&timezone=auto`)
                 ]);
 
                 const envData = await envRes.json();
                 const rainData = await rainRes.json();
                 const precipData = await precipRes.json();
                 const archiveData = await archiveRes.json();
+                const wData = await weatherRes.json();
 
                 const temp = nwsData.current.temperature;
                 const humid = nwsData.current.relativeHumidity?.value || 50;
@@ -951,7 +963,6 @@
                 const currentHour = new Date().getHours();
 
                 const rawRain = rainData.minutely_15?.precipitation || [0, 0, 0, 0];
-                // Map 4 readings (15m each) to 12 segments (5m each)
                 const rain_pulse = rawRain.flatMap(val => [val, val, val]);
                 rawRain.slice(0, 4).forEach(val => { rain_pulse.push(val, val, val); });
 
@@ -970,8 +981,16 @@
                     snow_pulse: snow_pulse,
                     feels_like: calculateFeelsLike(temp, humid, wind),
                     activity_score: calculateScoreLocally(temp, envData.current.us_aqi, envData.current.uv_index, wind, humid),
-                    is_snow: nwsData.current.shortForecast.toLowerCase().includes("snow")
+                    is_snow: nwsData.current.shortForecast.toLowerCase().includes("snow"),
+                    visibility: wData.hourly.visibility[0] / 1609,
+                    current_gusts: wData.hourly.wind_gusts_10m[0],
+                    hourly: nwsData.hourly.map((h, i) => ({
+                        ...h,
+                        windGusts: wData.hourly.wind_gusts_10m[i] || 0
+                    }))
                 };
+
+                console.log("Merged Data:", mergedData);
 
                 lastData = mergedData;
                 updateUI(mergedData);
@@ -1069,6 +1088,26 @@
 
             updatePrecipitationBar(data);
             applyWeatherEffects(data.current.shortForecast);
+
+            // Inside updateUI(data):
+            const visibility = data.visibility.toFixed(1);
+            const gusts = data.current_gusts;
+
+            // Road Safety Logic
+            let safetyText = "Safe";
+            let safetyColor = "#2ecc71";
+            if (visibility < 1 || gusts > 35) {
+                safetyText = "Hazardous";
+                safetyColor = "#ff4757";
+            } else if (visibility < 3 || gusts > 20) {
+                safetyText = "Caution";
+                safetyColor = "#ffa502";
+            }
+
+            document.getElementById('vis-val').innerText = visibility + " mi";
+            document.getElementById('safety-val').innerText = safetyText;
+            document.getElementById('safety-val').style.color = safetyColor;
+            document.getElementById('safety-pill').style.borderLeft = `3px solid ${safetyColor}`;
 
             const score = data.activity_score;
             const valSpan = document.getElementById('score-val');
@@ -1267,7 +1306,7 @@
                         borderWidth: 3,
                         tension: 0.4,
                         fill: true,
-                        pointRadius: 2,
+                        pointRadius: 0,
                         backgroundColor: (context) => {
                             const chart = context.chart;
                             const { ctx, chartArea } = chart;
@@ -1293,40 +1332,45 @@
             const ctx = document.getElementById('windChart').getContext('2d');
             if (window.windChartInstance) window.windChartInstance.destroy();
 
-            const windSpeeds = hourlyData.map(h => parseFloat(h.windSpeed) || 0);
+            const labels = hourlyData.slice(0, 24).map(h => new Date(h.startTime).getHours() + ':00');
+            const speeds = hourlyData.slice(0, 24).map(h => h.windSpeed);
+            const gusts = hourlyData.slice(0, 24).map(h => h.windGusts || 0);
 
             window.windChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: hourlyData.map(h => new Date(h.startTime).getHours() + ':00'),
-                    datasets: [{
-                        data: windSpeeds,
-                        borderWidth: 4,
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 0,
-                        borderColor: (context) => {
-                            const chart = context.chart;
-                            if (!chart.chartArea) return null;
-                            return getIntensityGradient(chart, 'wind');
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Sustained Wind',
+                            data: speeds,
+                            borderColor: '#70a1ff',
+                            backgroundColor: 'rgba(112, 161, 255, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 0
                         },
-                        backgroundColor: (context) => {
-                            const chart = context.chart;
-                            if (!chart.chartArea) return null;
-                            return getIntensityGradient(chart, 'wind', true);
+                        {
+                            label: 'Wind Gusts',
+                            data: gusts,
+                            borderColor: '#ff4757',
+                            fill: false,
+                            tension: 0.4,
+                            pointRadius: 0
                         }
-                    }]
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    plugins: {
+                        legend: {
+                            display: true, // Legend allows toggling lines
+                            labels: { color: '#999', usePointStyle: true }
+                        }
+                    },
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            suggestedMax: 25,
-                            grid: { color: 'rgba(255,255,255,0.05)' }
-                        },
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
                         x: { grid: { display: false } }
                     }
                 }
