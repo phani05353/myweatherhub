@@ -1153,11 +1153,9 @@
             updatePrecipitationBar(data);
             applyWeatherEffects(data.current.shortForecast);
 
-            // Inside updateUI(data):
             const visibility = data.visibility.toFixed(1);
             const gusts = data.current_gusts;
 
-            // Road Safety Logic
             let safetyText = "Safe";
             let safetyColor = "#2ecc71";
             if (visibility < 1 || gusts > 35) {
@@ -1200,22 +1198,17 @@
                 iconClass = "wi-alien"; // Warning/Bad
             }
 
-            // Apply the updates
             document.getElementById('activity-pill').style.borderLeft = `3px solid ${scoreColor}`;
             valSpan.style.color = scoreColor;
 
-            // Update the icon class (keeping the base 'wi' and 'me-1' classes)
             scoreIcon.className = `wi ${iconClass} me-1`;
-            scoreIcon.style.color = scoreColor; // Optional: make the icon match the text color
+            scoreIcon.style.color = scoreColor;
 
             const now = new Date();
 
-            // 1. Define Today's Sun Events
             const todaySunrise = new Date(data.sun.sunrise);
             const todaySunset = new Date(data.sun.sunset);
 
-            // 2. Calculate Tomorrow's Sunrise (Approx 24h later)
-            // Note: This ensures the 24-hour window always has a sunrise event.
             const tomorrowSunrise = new Date(todaySunrise);
             tomorrowSunrise.setDate(tomorrowSunrise.getDate() + 1);
 
@@ -1225,13 +1218,11 @@
                 { dateObj: tomorrowSunrise, type: 'Sunrise', icon: 'wi-sunrise' }
             ];
 
-            // 3. Filter hourly weather to only show current and future hours
             let combinedItems = data.hourly
                 .filter(h => new Date(h.startTime) >= now)
                 .slice(0, 24)
                 .map(h => ({ ...h, isWeather: true }));
 
-            // 4. Inject Sun Events ONLY if they are in the future
             sunEvents.forEach(event => {
                 if (event.dateObj > now) {
                     combinedItems.push({
@@ -1244,14 +1235,11 @@
                 }
             });
 
-            // 5. Sort chronologically
             combinedItems.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
-            // 6. BUILD THE HTML (hHtml)
             let hHtml = '';
             combinedItems.forEach((item) => {
                 if (item.isSunEvent) {
-                    // Render Sun Card (Sunrise/Sunset)
                     hHtml += `
             <div class="hour-item sun-event">
                 <div class="h-time">${item.displayTime}</div>
@@ -1259,10 +1247,9 @@
                 <div class="h-temp" style="font-size: 0.65rem; text-transform: uppercase;">${item.type}</div>
             </div>`;
                 } else {
-                    // Render Standard Weather Card
                     const hDate = new Date(item.startTime);
                     const hv = getVisuals(item.shortForecast, true);
-                    const isNow = combinedItems.indexOf(item) === 0; // Highlight the very first card
+                    const isNow = combinedItems.indexOf(item) === 0;
 
                     hHtml += `
             <div class="hour-item ${isNow ? 'active-hour' : ''}">
@@ -1276,7 +1263,6 @@
                 }
             });
 
-            // 7. Push to the UI
             document.getElementById('hourly-quick-view').innerHTML = hHtml;
 
             const pulseWrap = document.getElementById('rain-pulse-wrap');
@@ -1446,7 +1432,7 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            display: true, // Legend allows toggling lines
+                            display: true,
                             labels: { color: '#999', usePointStyle: true }
                         }
                     },
