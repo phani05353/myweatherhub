@@ -27,19 +27,16 @@ def get_weather_data(lat, lon):
     try:
         lat_f, lon_f = round(float(lat), 4), round(float(lon), 4)
         
-        # 1. Get NWS Metadata
         meta = fetch_json(f"https://api.weather.gov/points/{lat_f},{lon_f}")
         if not meta or 'properties' not in meta:
             return None
             
         prop = meta['properties']
         
-        # 2. Extract Location
         loc_props = prop.get('relativeLocation', {}).get('properties', {})
         city = loc_props.get('city', 'Unknown').title()
         state = loc_props.get('state', '??')
-
-        # 3. Fetch NWS Forecasts
+        
         daily_data = fetch_json(prop['forecast'])
         hourly_data = fetch_json(prop['forecastHourly'])
         alerts_data = fetch_json(f"https://api.weather.gov/alerts/active?point={lat_f},{lon_f}")
@@ -48,14 +45,10 @@ def get_weather_data(lat, lon):
         if not hourly_periods:
             return None
 
-        # 4. Sun Times (Calculated server-side for accuracy)
         sun = Sun(lat_f, lon_f)
-        # Using a generic UTC offset or localizing via JS is usually safer, 
-        # but we'll provide UTC for the frontend to format.
         sunrise = sun.get_sunrise_time()
         sunset = sun.get_sunset_time()
 
-        # 5. Process Daily Forecast (Consolidate Highs/Lows)
         daily_periods = daily_data.get('properties', {}).get('periods', [])
         daily_forecasts = []
         seen_dates = set()
@@ -63,7 +56,6 @@ def get_weather_data(lat, lon):
         for i, p in enumerate(daily_periods):
             date_str = p['startTime'][:10]
             if date_str not in seen_dates:
-                # If NWS starts with a 'Night' period, high is current temp
                 if p['isDaytime']:
                     high = p['temperature']
                     low = daily_periods[i+1]['temperature'] if i+1 < len(daily_periods) else high

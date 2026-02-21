@@ -16,7 +16,6 @@
             --card-bg: #1a1d29;
             --accent: #70a1ff;
         }
-
         [data-bs-theme="light"] {
             --glass: rgba(0, 0, 0, 0.05);
             --bg-color: #f8f9fa;
@@ -865,7 +864,6 @@
 
             document.getElementById('clothing-hint').innerText = getClothingAdvice(data.current.temperature, data.hourly[0].precipProb, parseFloat(data.current.windSpeed), data.uv);
 
-            // AQI Styling
             const aqiVal = data.aqi;
             const aqiPill = document.getElementById('aqi-pill');
             const aqiDisplay = document.getElementById('aqi-val');
@@ -876,7 +874,6 @@
 
             updatePrecipitationBar(data);
 
-            // Activity Score Styling
             const score = data.activity_score;
             const valSpan = document.getElementById('score-val');
             valSpan.innerText = score;
@@ -884,7 +881,6 @@
             document.getElementById('activity-pill').style.borderLeft = `3px solid ${scoreColor}`;
             valSpan.style.color = scoreColor;
 
-            // Hourly Quick View
             const todayStr = new Date().toISOString().split('T')[0];
 
             const sunEvents = [
@@ -939,7 +935,6 @@
             });
             document.getElementById('hourly-quick-view').innerHTML = hHtml;
 
-            // Pulse Logic
             const pulseWrap = document.getElementById('rain-pulse-wrap');
             const pulseGrid = document.getElementById('pulse-segments');
             const badgeCont = document.getElementById('badge-container');
@@ -970,7 +965,6 @@
             document.getElementById('main-icon').className = `wi ${vis.icon}`;
             document.getElementById('dynamic-bg').style.backgroundImage = `url('${vis.url}')`;
 
-            // Daily Container
             const weekTemps = data.daily.flatMap(d => [formatTemp(d.high), formatTemp(d.low)]);
             const minW = Math.min(...weekTemps), maxW = Math.max(...weekTemps), range = (maxW - minW) || 1;
             let dHtml = '';
@@ -978,7 +972,6 @@
                 const dv = getVisuals(day.icon, true);
                 let high = formatTemp(day.high), low = formatTemp(day.low);
 
-                // Check if this is the last day in the array
                 const isLastDay = i === data.daily.length - 1;
                 const clickAttr = isLastDay ? '' : `onclick="showDayHourly('${day.date}', '${i === 0 ? 'Today' : day.date}')"`;
                 const clickableClass = isLastDay ? '' : 'clickable';
@@ -1030,8 +1023,6 @@
             setTimeout(() => createChart(filtered), 300);
         }
 
-        // Chart Creation
-        // Helper to create gradients
         function getVerticalGradient(ctx, chartArea, colorStops) {
             const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
             colorStops.forEach(stop => gradient.addColorStop(stop.pos, stop.color));
@@ -1118,7 +1109,6 @@
             });
         }
 
-        // Universal Intensity Helper
         function getIntensityGradient(chart, type, isFill = false) {
             const { ctx, chartArea, scales } = chart;
             const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
@@ -1157,7 +1147,6 @@
 
             tracker.style.display = 'block';
 
-            // Determine the dominant type for the label
             if (hasSnow) {
                 statusText.innerText = "Snowfall Imminent";
                 statusText.style.color = "#ffffff";
@@ -1273,10 +1262,9 @@
                 gradient.addColorStop(Math.max(0, Math.min(1, stop)), finalColor);
             };
 
-            // Low point of the day is Blue, Mid is Yellow, High is Red
-            addRelativeStop(0.0, 'rgb(79, 172, 254)'); // Bottom of chart (Blue)
+            addRelativeStop(1.0, 'rgb(79, 172, 254)'); // Top of chart (Blue)
             addRelativeStop(0.5, 'rgb(255, 206, 0)');  // Middle of chart (Yellow/Orange)
-            addRelativeStop(1.0, 'rgb(255, 71, 87)');  // Top of chart (Red)
+            addRelativeStop(0.0, 'rgb(255, 71, 87)');  // Bottom of chart (Red)
 
             return gradient;
         }
