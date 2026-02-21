@@ -84,6 +84,8 @@ def get_weather_data(lat, lon):
             } for p in hourly_periods[:120]
         ]
 
+        print(f"User location: {city}, {state}", flush=True)
+
         return {
             "location": f"{city}, {state}",
             "lat": lat_f,
