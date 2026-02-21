@@ -102,6 +102,8 @@
             position: relative;
             max-width: 600px;
             margin: 0 auto;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            will-change: transform;
         }
 
         .controls {
@@ -503,6 +505,33 @@
             font-weight: 700;
         }
 
+        .btn-circle:active,
+        .unit-pill label:active,
+        .env-badge:active,
+        .daily-row:active {
+            transform: scale(0.96);
+            transition: transform 0.1s ease;
+        }
+
+        .btn-circle,
+        .unit-pill label,
+        .env-badge,
+        .daily-row {
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #pull-indicator {
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--accent);
+            font-size: 1.5rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 100;
+        }
+
         #loc-name {
             margin-top: 10px;
         }
@@ -786,8 +815,60 @@
             };
         };
 
+        let startY = 0;
+        let pulling = false;
+        const card = document.querySelector('.main-card');
+        const indicator = document.getElementById('pull-indicator');
+        const THRESHOLD = 120;
+
+        card.addEventListener('touchstart', (e) => {
+            if (window.scrollY === 0) {
+                startY = e.touches[0].pageY;
+                card.style.transition = 'none';
+            }
+        }, { passive: true });
+
+        card.addEventListener('touchmove', (e) => {
+            const currentY = e.touches[0].pageY;
+            const diff = currentY - startY;
+
+            if (diff > 0 && window.scrollY === 0) {
+                pulling = true;
+                const move = Math.pow(diff, 0.8);
+                card.style.transform = `translateY(${move}px)`;
+
+                indicator.style.opacity = Math.min(move / 50, 1);
+
+                if (move >= 60 && !card.dataset.triggered) {
+                    Haptics.light();
+                    card.dataset.triggered = "true";
+                    indicator.style.color = "#2ecc71"; 
+                }
+            }
+        }, { passive: true });
+
+        card.addEventListener('touchend', () => {
+            const isTriggered = card.dataset.triggered === "true";
+
+            card.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            card.style.transform = 'translateY(0)';
+            indicator.style.opacity = 0;
+
+            if (isTriggered) {
+                Haptics.medium();
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        p => fetchWeather(p.coords.latitude, p.coords.longitude)
+                    );
+                }
+            }
+
+            delete card.dataset.triggered;
+            indicator.style.color = "var(--accent)";
+        });
+
         function toggleTheme(init = false) {
-            if (!init && window.navigator.vibrate) window.navigator.vibrate(5);
+            if (!init) Haptics.medium();
             const html = document.getElementById('main-html');
             const isLight = html.getAttribute('data-bs-theme') === 'light';
             const newTheme = init ? (localStorage.getItem('theme') || 'dark') : (isLight ? 'dark' : 'light');
@@ -796,7 +877,16 @@
             document.getElementById('theme-icon').className = newTheme === 'light' ? 'wi wi-night-clear' : 'wi wi-day-sunny';
         }
 
+        const Haptics = {
+            light: () => window.navigator.vibrate?.(10),
+            medium: () => window.navigator.vibrate?.(25),
+            success: () => window.navigator.vibrate?.([10, 30, 10]),
+            warning: () => window.navigator.vibrate?.([50, 100, 50]),
+            error: () => window.navigator.vibrate?.([100, 50, 100, 50])
+        };
+
         function saveAndRefresh() {
+            Haptics.light();
             localStorage.setItem('unit', document.getElementById('c-unit').checked ? 'metric' : 'imperial');
             if (lastData) updateUI(lastData);
         }
@@ -882,6 +972,9 @@
 
                 lastData = mergedData;
                 updateUI(mergedData);
+
+                Haptics.success();
+                setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 800);
 
                 ldr.innerText = `Hello, ${mergedData.location.split(',')[0]}`;
                 setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 800);
