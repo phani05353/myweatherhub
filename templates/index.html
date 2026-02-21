@@ -1575,7 +1575,7 @@
             }
 
             // 2. RAIN
-            if (text.includes("rain") || text.includes("showers")) {
+            if (text.includes("rain") || text.includes("showers") && !text.includes("snow")) {
                 for (let i = 0; i < 30; i++) {
                     const drop = document.createElement('div');
                     drop.className = 'rain-drop';
@@ -1587,7 +1587,7 @@
             }
 
             // 3. SNOW
-            if (text.includes("snow")) {
+            if (text.includes("snow") && !text.includes("chance")) {
                 for (let i = 0; i < 40; i++) {
                     const flake = document.createElement('div');
                     flake.className = 'snowflake';
