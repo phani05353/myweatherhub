@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify
+from flask import send_from_directory
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -103,6 +104,14 @@ def get_weather_data(lat, lon):
 @app.route('/')
 def home():
     return render_template('index.html')
+
+@app.route('/manifest.json')
+def serve_manifest():
+    return send_from_directory('.', 'manifest.json')
+
+@app.route('/sw.js')
+def serve_sw():
+    return send_from_directory('static', 'sw.js')
 
 @app.route('/weather_data', methods=['POST'])
 def weather_data():
