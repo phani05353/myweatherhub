@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <link rel="manifest" href="/manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Weather Hub</title>
@@ -1554,17 +1554,31 @@
 
         function getVisuals(text, isDay) {
             text = text.toLowerCase();
-            let icon = isDay ? "wi-day-sunny" : "wi-night-clear", imgId = isDay ? "1534088568595-a066f410bcda" : "1507400492013-162706c8c05e";
-            if (text.includes("thunder")) { icon = "wi-thunderstorm"; imgId = "1605727281914-c0993d79a29e"; }
-            else if (text.includes("rain") || text.includes("showers")) { icon = "wi-showers"; imgId = "1515694346934-f24203c1f5d7"; }
-            else if (text.includes("cloud")) { icon = isDay ? "wi-day-cloudy" : "wi-night-alt-cloudy"; imgId = "1483706600575-e3dec2d4972a"; }
-            else if (text.includes("snow")) { icon = "wi-snow"; imgId = "1517560280453-3f97473950e2"; }
-            return { icon, url: `https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&w=800&q=80` };
-        }
+            let icon = isDay ? "wi-day-sunny" : "wi-night-clear";
 
+            let imgId = isDay ? "1588746853740-bd35aad10bfd" : "1507400492013-162706c8c05e";
+
+            if (text.includes("thunder")) {
+                icon = "wi-thunderstorm";
+                imgId = "1654232038022-67df6dcd1b10";
+            } else if (text.includes("rain") || text.includes("showers") && !text.includes("snow")) {
+                icon = "wi-showers";
+                imgId = "1637773336123-0c30a47b289d";
+            } else if (text.includes("cloud")) {
+                icon = isDay ? "wi-day-cloudy" : "wi-night-alt-cloudy";
+                imgId = "1739416395793-66ba6998c092";
+            } else if (text.includes("snow")) {
+                icon = "wi-snow";
+                imgId = "1702835124686-fd1faac06b8d";
+            }
+
+            const url = `https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&w=1200&q=60`;
+
+            return { icon, url };
+        }
         function applyWeatherEffects(condition) {
             const container = document.getElementById('weather-overlay');
-            container.innerHTML = ''; // Clear previous effects
+            container.innerHTML = '';
             const text = condition.toLowerCase();
 
             // 1. LIGHTNING (Thunderstorms)
@@ -1602,7 +1616,6 @@
             }
         }
 
-        // Add this at the end of your existing <script> block
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
