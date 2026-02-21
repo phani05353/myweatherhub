@@ -423,11 +423,54 @@
             display: none;
         }
 
+        .precip-alert-wrap {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 15px;
+            display: none;
+            /* Logic will show this */
+        }
+
+        .precip-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 4px;
+            height: 10px;
+            margin-top: 10px;
+        }
+
+        .precip-tile {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            transition: all 0.4s ease;
+        }
+
+        .tile-rain {
+            background: #4facfe !important;
+            box-shadow: 0 0 10px rgba(79, 172, 254, 0.6);
+        }
+
+        .tile-snow {
+            background: #ffffff !important;
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
+        }
+
+        .precip-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
         .hour-item {
             min-width: 70px;
             background: var(--glass);
             backdrop-filter: blur(var(--blur-level, 4px));
-            -webkit-backdrop-filter: blur(var(--blur-level, 4px));
             border-radius: 18px;
             padding: 12px 5px;
             text-align: center;
@@ -562,6 +605,7 @@
                 <p id="main-forecast" class="fw-light mt-2 mb-3">--</p>
                 <p id="clothing-hint" class="opacity-75 small italic"
                     style="font-size: 0.8rem; margin-top: -10px; color: var(--accent);"></p>
+
                 <div id="rain-pulse-wrap" style="display:none;">
                     <div class="rain-pulse-container">
                         <div class="d-flex justify-content-between align-items-center">
@@ -593,12 +637,19 @@
                     </div>
 
                     <div class="env-badge interactive" id="activity-pill" onclick="showActivityDetails()">
-                        <i id="activity-icon" class="wi wi-direction-up-right me-1"></i>
-                        Score: <span id="score-val" class="ms-1">--</span>
+                        Outdoor Score: <span id="score-val" class="ms-1">--</span>
                         <i class="wi wi-stats-bars click-hint"></i>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div id="precip-tracker" class="precip-alert-wrap">
+            <div class="precip-header">
+                <span id="precip-status-text">Scanning Sky...</span>
+                <span style="opacity: 0.5;">60 Min Outlook</span>
+            </div>
+            <div class="precip-grid" id="precip-tiles"></div>
         </div>
 
         <div class="px-3 mt-3">
@@ -638,34 +689,6 @@
             };
         };
 
-        function refreshWeather() {
-            const loader = document.getElementById('loader');
-            loader.style.display = 'flex';
-            loader.style.opacity = '1';
-
-            const fallbackTimer = setTimeout(() => {
-                console.warn("Geolocation timed out, using default.");
-                fetchWeather(41.38, -105.58);
-            }, 6000);
-
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    p => {
-                        clearTimeout(fallbackTimer);
-                        fetchWeather(p.coords.latitude, p.coords.longitude);
-                    },
-                    () => {
-                        clearTimeout(fallbackTimer);
-                        fetchWeather(41.38, -105.58);
-                    },
-                    { timeout: 5000, enableHighAccuracy: false }
-                );
-            } else {
-                clearTimeout(fallbackTimer);
-                fetchWeather(41.38, -105.58);
-            }
-        }
-
         function toggleTheme(init = false) {
             if (!init && window.navigator.vibrate) window.navigator.vibrate(5);
             const html = document.getElementById('main-html');
@@ -681,32 +704,95 @@
             if (lastData) updateUI(lastData);
         }
 
-        function showActivityDetails() {
-            if (!lastData) return;
-            const score = lastData.activity_score;
-            let details = "";
+        function formatTemp(val) { return document.getElementById('c-unit').checked ? Math.round((val - 32) * 5 / 9) : Math.round(val); }
 
-            if (score < 50) {
-                details = "Conditions are challenging. ";
-                if (lastData.current.temperature > 90) details += "Extreme heat detected. ";
-                if (lastData.current.temperature < 40) details += "Too Cold. ";
-                if (lastData.wind.speed > 20) details += "High winds may be bothersome. ";
-                if (lastData.aqi > 90) details += "Air quality is poor. ";
-            } else {
-                details = "Conditions are generally favorable for being outside.";
+        function calculateFeelsLike(temp, humidity, windSpeed) {
+            if (temp <= 50 && windSpeed > 3) {
+                return Math.round(35.74 + (0.6215 * temp) - (35.75 * Math.pow(windSpeed, 0.16)) + (0.4275 * temp * Math.pow(windSpeed, 0.16)));
             }
-
-            document.getElementById('modalDayLabel').innerText = "Outdoor Activity Verdict";
-            document.getElementById('modalContent').innerHTML = `
-        <div class="text-center p-3">
-            <h1 style="font-size: 3rem; color: ${document.getElementById('score-val').style.color}">${score}</h1>
-            <p class="mt-2">${details}</p>
-        </div>
-    `;
-            hourlyModal.show();
+            if (temp >= 80) {
+                return Math.round(0.5 * (temp + 61.0 + ((temp - 68.0) * 1.2) + (humidity * 0.094)));
+            }
+            return Math.round(temp);
         }
 
-        function formatTemp(val) { return document.getElementById('c-unit').checked ? Math.round((val - 32) * 5 / 9) : Math.round(val); }
+        function calculateScoreLocally(temp, aqi, uv, wind, humid) {
+            let score = 100;
+            if (temp < 65) score -= (65 - temp) * 2.5;
+            if (temp > 85) score -= (temp - 85) * 3.5;
+            if (aqi > 50) score -= (aqi - 50) * 0.5;
+            if (wind > 15) score -= (wind - 15) * 2;
+            if (uv > 7) score -= (uv - 7) * 5;
+            if (humid > 70) score -= (humid - 70) * 0.5;
+            return Math.max(0, Math.min(100, Math.round(score)));
+        }
+
+        async function fetchWeather(lat, lon) {
+            const ldr = document.querySelector('.loading-text');
+            ldr.innerText = "Reading Atmosphere..";
+
+            try {
+                const nwsRes = await fetch('/weather_data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lat, lon })
+                });
+                const nwsData = await nwsRes.json();
+
+                const now = new Date();
+                now.setDate(now.getDate() - 1);
+                const yStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+
+                const [envRes, rainRes, precipRes, archiveRes] = await Promise.all([
+                    fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,uv_index&hourly=us_aqi,uv_index&timezone=auto`),
+                    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&minutely_15=precipitation&timezone=auto`),
+                    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&minutely_15=precipitation,snowfall&timezone=auto`),
+                    fetch(`https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${yStr}&end_date=${yStr}&hourly=temperature_2m&temperature_unit=fahrenheit&timezone=auto`)
+                ]);
+
+                const envData = await envRes.json();
+                const rainData = await rainRes.json();
+                const precipData = await precipRes.json();
+                const archiveData = await archiveRes.json();
+
+                const temp = nwsData.current.temperature;
+                const humid = nwsData.current.relativeHumidity?.value || 50;
+                const wind = parseFloat(nwsData.current.windSpeed) || 0;
+                const currentHour = new Date().getHours();
+
+                const rawRain = rainData.minutely_15?.precipitation || [0, 0, 0, 0];
+                const rain_pulse = [];
+                rawRain.slice(0, 4).forEach(val => { rain_pulse.push(val, val, val); });
+
+                const rawSnow = precipData.minutely_15?.snowfall || [0, 0, 0, 0];
+                const snow_pulse = [];
+                rawSnow.slice(0, 4).forEach(val => { snow_pulse.push(val, val, val); });
+
+                const mergedData = {
+                    ...nwsData,
+                    aqi: envData.current.us_aqi,
+                    uv: envData.current.uv_index,
+                    hourly_aqi: envData.hourly.us_aqi.slice(currentHour, currentHour + 24),
+                    hourly_uv: envData.hourly.uv_index.slice(currentHour, currentHour + 24),
+                    yesterday_temp: archiveData.hourly.temperature_2m[currentHour],
+                    rain_pulse: rain_pulse,
+                    snow_pulse: snow_pulse,
+                    feels_like: calculateFeelsLike(temp, humid, wind),
+                    activity_score: calculateScoreLocally(temp, envData.current.us_aqi, envData.current.uv_index, wind, humid),
+                    is_snow: nwsData.current.shortForecast.toLowerCase().includes("snow")
+                };
+
+                lastData = mergedData;
+                updateUI(mergedData);
+
+                ldr.innerText = `Hello, ${mergedData.location.split(',')[0]}`;
+                setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 800);
+
+            } catch (err) {
+                console.error("Fetch Error:", err);
+                ldr.innerText = "Connection Failed.";
+            }
+        }
 
         window.onload = function () {
             const savedUnit = localStorage.getItem('unit') || 'imperial';
@@ -717,49 +803,40 @@
             } else fetchWeather(41.38, -105.58);
         };
 
-        function fetchWeather(lat, lon) {
-            const ldr = document.querySelector('.loading-text');
-            ldr.innerText = "Reading Atmosphere..";
+        function showActivityDetails() {
+            if (!lastData) return;
+            const score = lastData.activity_score;
+            let details = "";
 
-            fetch('/weather_data', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lat, lon })
-            })
-                .then(res => {
-                    if (!res.ok) throw new Error("Backend Error");
-                    return res.json();
-                })
-                .then(data => {
-                    lastData = data;
-                    updateUI(data);
-                    ldr.innerText = `Hello, ${data.location.split(',')[0]}`;
-                    setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 800);
-                })
-                .catch(err => {
-                    console.error(err);
-                    ldr.innerText = "Connection Failed. Retrying...";
-                    setTimeout(() => {
-                        document.getElementById('loader').style.display = 'none';
-                        alert("Weather service temporarily unavailable.");
-                    }, 3000);
-                });
+            const currentWind = parseFloat(lastData.current.windSpeed) || 0;
+
+            if (score < 50) {
+                details = "Conditions are challenging. ";
+                if (lastData.current.temperature > 90) details += "Extreme heat detected. ";
+                if (lastData.current.temperature < 40) details += "Too Cold. ";
+                if (currentWind > 20) details += "High winds may be bothersome. ";
+                if (lastData.aqi > 90) details += "Air quality is poor. ";
+            } else {
+                details = "Conditions are generally favorable for being outside.";
+            }
+
+            document.getElementById('modalDayLabel').innerText = "Outdoor Activity Verdict";
+            document.getElementById('modalContent').innerHTML = `
+                <div class="text-center p-3">
+                    <h1 style="font-size: 3rem; color: ${document.getElementById('score-val').style.color}">${score}</h1>
+                    <p class="mt-2">${details}</p>
+                </div>`;
+            hourlyModal.show();
         }
 
         function getClothingAdvice(temp, precip, wind, uv) {
-            if (precip > 40) {
-                return lastData.is_snow ? "Heavy Boots & Parka ❄️" : "Rain Jacket & Umbrella ☂️";
-            }
-
+            if (precip > 40) return lastData.is_snow ? "Heavy Boots & Parka ❄️" : "Rain Jacket & Umbrella ☂️";
             if (wind > 20) return "Windbreaker Needed 🌬️";
-
             if (temp <= 30) return "Extreme Cold: Layer Up! 🧣";
             if (temp <= 45) return "Heavy Jacket & Gloves 🧥";
             if (temp <= 55) return "Light Jacket or Hoodie 🧥";
             if (temp <= 60) return "Comfortable: Long Sleeves 👕";
-
             if (uv > 7) return "T-Shirt & Sunscreen 🧴";
-
             return "Perfect T-Shirt Weather 😎";
         }
 
@@ -771,194 +848,111 @@
             document.getElementById('temp').innerText = curT;
             document.getElementById('windchill').innerText = formatTemp(data.feels_like);
             document.getElementById('humidity').innerText = (data.current.relativeHumidity?.value || 0) + '%';
-            document.getElementById('wind').innerText = isMetric ? Math.round(data.wind.speed * 1.609) + ' km/h' : data.wind.speed + ' mph';
+            document.getElementById('wind').innerText = isMetric ? Math.round(parseFloat(data.current.windSpeed) * 1.609) + ' km/h' : data.current.windSpeed;
 
             if (data.yesterday_temp !== null) {
                 const diff = Math.round(data.current.temperature - data.yesterday_temp);
                 const wrap = document.getElementById('hindsight-wrap');
                 wrap.style.display = 'block';
-                document.getElementById('hindsight-text').innerText = diff > 0 ? `${diff}° warmer than yesterday` : (diff < 0 ? `${Math.abs(diff)}° colder than yesterday` : `Same as yesterday`);
+
+                if (Math.abs(diff) <= 1) {
+                    document.getElementById('hindsight-text').innerText = `Same as yesterday`;
+                } else {
+                    const word = diff > 0 ? 'warmer' : 'colder';
+                    document.getElementById('hindsight-text').innerText = `${Math.abs(diff)}° ${word} than yesterday`;
+                }
             }
 
-            const advice = getClothingAdvice(data.current.temperature, data.hourly[0].precipProb, data.wind.speed, data.uv);
-            document.getElementById('clothing-hint').innerText = `${advice}`;
+            document.getElementById('clothing-hint').innerText = getClothingAdvice(data.current.temperature, data.hourly[0].precipProb, parseFloat(data.current.windSpeed), data.uv);
 
-            const aqiWrapper = document.getElementById('aqi-val').parentElement;
-            aqiWrapper.style.cursor = 'pointer';
-            aqiWrapper.onclick = () => showAqiHourly();
-
-            const hourlyCont = document.getElementById('hourly-quick-view');
-            let hHtml = '';
-            const sunriseTime = data.sun.sunrise;
-            const sunsetTime = data.sun.sunset;
-
-            const now = new Date();
-
-            const isEventUpcoming = (eventStr) => {
-                const now = new Date();
-                const currentHour = now.getHours();
-                const [time, period] = eventStr.split(' ');
-                let [h, m] = time.split(':').map(Number);
-                if (period === 'PM' && h !== 12) h += 12;
-                if (period === 'AM' && h === 12) h = 0;
-                const eventDate = new Date(now);
-                eventDate.setHours(h, m, 0, 0);
-                return h === currentHour && eventDate > now;
-            };
-
+            // AQI Styling
             const aqiVal = data.aqi;
             const aqiPill = document.getElementById('aqi-pill');
             const aqiDisplay = document.getElementById('aqi-val');
-
             aqiDisplay.innerText = aqiVal;
-
-            function getAqiColor(val) {
-                if (val <= 50) return "#00e400";  // Good
-                if (val <= 100) return "#ffff00"; // Moderate
-                if (val <= 150) return "#ff7e00"; // Unhealthy for Sensitive Groups
-                if (val <= 200) return "#ff0000"; // Unhealthy
-                if (val <= 300) return "#8f3f97"; // Very Unhealthy
-                return "#7e0023";                // Hazardous
-            }
-
-            const aqiColor = getAqiColor(aqiVal);
-
+            const aqiColor = aqiVal <= 50 ? "#00e400" : (aqiVal <= 100 ? "#ffff00" : "#ff7e00");
             aqiDisplay.style.color = aqiColor;
             aqiPill.style.setProperty('border-left-color', aqiColor, 'important');
 
-            // --- Activity Pill Logic ---
+            updatePrecipitationBar(data);
+
+            // Activity Score Styling
             const score = data.activity_score;
-            const pill = document.getElementById('activity-pill');
             const valSpan = document.getElementById('score-val');
-            const icon = document.getElementById('activity-icon');
-
             valSpan.innerText = score;
+            let scoreColor = score >= 85 ? "#00e400" : (score >= 65 ? "#ffff00" : (score >= 40 ? "#ff7e00" : "#ff4757"));
+            document.getElementById('activity-pill').style.borderLeft = `3px solid ${scoreColor}`;
+            valSpan.style.color = scoreColor;
 
-            let color, iconClass, label;
-            if (score >= 85) {
-                color = "#00e400"; // Green
-                iconClass = "wi-day-sunny";
-                label = "Perfect";
-            } else if (score >= 65) {
-                color = "#ffff00"; // Yellow
-                iconClass = "wi-day-cloudy";
-                label = "Good";
-            } else if (score >= 40) {
-                color = "#ff7e00"; // Orange
-                iconClass = "wi-day-windy";
-                label = "Fair";
-            } else {
-                color = "#ff4757"; // Red
-                iconClass = "wi-alien";
-                label = "Poor";
-            }
+            // Hourly Quick View
+            const todayStr = new Date().toISOString().split('T')[0];
 
-            // Apply Styles
-            pill.style.borderLeft = `3px solid ${color}`;
-            valSpan.style.color = color;
-            icon.className = `wi ${iconClass} me-1`;
-            icon.style.color = color;
+            const sunEvents = [
+                {
+                    dateObj: new Date(data.sun.sunrise),
+                    type: 'Sunrise',
+                    icon: 'wi-sunrise'
+                },
+                {
+                    dateObj: new Date(data.sun.sunset),
+                    type: 'Sunset',
+                    icon: 'wi-sunset'
+                }
+            ];
 
-            // 1. Re-declare now right here to be absolutely sure
-            const currentTimestamp = new Date();
+            let combinedItems = data.hourly.slice(0, 24).map(h => ({ ...h, isWeather: true }));
 
-            data.hourly.slice(0, 24).forEach((hour, index) => {
-                const hDate = new Date(hour.startTime);
-                const hHourOnly = hDate.getHours();
-
-                // Fail-safe helper function
-                const isEventUpcoming = (eventStr) => {
-                    if (!eventStr || typeof eventStr !== 'string') return false;
-
-                    try {
-                        const [time, period] = eventStr.split(' ');
-                        let [h, m] = time.split(':').map(Number);
-                        if (period === 'PM' && h !== 12) h += 12;
-                        if (period === 'AM' && h === 12) h = 0;
-
-                        const eventDate = new Date(hDate);
-                        eventDate.setHours(h, m, 0, 0);
-
-                        // Check: Is this event in THIS specific hour AND is it still in the future?
-                        return h === hHourOnly && eventDate > currentTimestamp;
-                    } catch (e) {
-                        return false;
-                    }
-                };
-
-                data.hourly.slice(0, 24).forEach((hour) => {
-                    const hDate = new Date(hour.startTime);
-                    const hv = getVisuals(hour.shortForecast, true);
-                    const precipProb = hour.precipProb || 0;
-
-                    hHtml += `
-    <div class="hour-item">
-        <div class="h-time">${hDate.toLocaleTimeString([], { hour: 'numeric' })}</div>
-        <i class="wi ${hv.icon} h-icon"></i>
-        <div class="h-temp">${formatTemp(hour.temperature)}°</div>
-        <div class="h-precip" style="${precipProb > 0 ? 'opacity: 1' : 'opacity: 0'}">
-            <i class="wi wi-raindrop"></i>${precipProb}%
-        </div>
-    </div>`;
+            sunEvents.forEach(event => {
+                combinedItems.push({
+                    startTime: event.dateObj.toISOString(),
+                    displayTime: event.dateObj.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+                    type: event.type,
+                    icon: event.icon,
+                    isSunEvent: true
                 });
-                document.getElementById('hourly-quick-view').innerHTML = hHtml;
-
-                // Use data.sun.sunrise and data.sun.sunset directly to avoid scope errors
-                if (data.sun && isEventUpcoming(data.sun.sunrise)) {
-                    hHtml += `
-            <div class="hour-item sun-event">
-                <div class="h-time">${data.sun.sunrise}</div>
-                <i class="wi wi-sunrise h-icon"></i>
-                <div class="h-temp" style="font-size: 0.6rem; text-transform: uppercase;">Sunrise</div>
-            </div>`;
-                }
-
-                if (data.sun && isEventUpcoming(data.sun.sunset)) {
-                    hHtml += `
-            <div class="hour-item sun-event">
-                <div class="h-time">${data.sun.sunset}</div>
-                <i class="wi wi-sunset h-icon"></i>
-                <div class="h-temp" style="font-size: 0.6rem; text-transform: uppercase;">Sunset</div>
-            </div>`;
-                }
             });
 
-            // Final step to actually push the HTML to the page
+            combinedItems.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
+            let hHtml = '';
+            combinedItems.forEach((item) => {
+                if (item.isSunEvent) {
+                    hHtml += `
+                <div class="hour-item sun-event">
+                    <div class="h-time">${item.displayTime}</div>
+                    <i class="wi ${item.icon} h-icon"></i>
+                    <div class="h-temp" style="font-size: 0.65rem; text-transform: uppercase;">${item.type}</div>
+                </div>`;
+                } else {
+                    const hDate = new Date(item.startTime);
+                    const hv = getVisuals(item.shortForecast, true);
+                    hHtml += `
+                <div class="hour-item">
+                    <div class="h-time">${hDate.toLocaleTimeString([], { hour: 'numeric' })}</div>
+                    <i class="wi ${hv.icon} h-icon"></i>
+                    <div class="h-temp">${formatTemp(item.temperature)}°</div>
+                    <div class="h-precip" style="${item.precipProb > 0 ? 'opacity: 1' : 'opacity: 0'}">
+                        <i class="wi wi-raindrop"></i>${item.precipProb}%
+                    </div>
+                </div>`;
+                }
+            });
             document.getElementById('hourly-quick-view').innerHTML = hHtml;
 
-            // --- Precipitation & Pulse Logic ---
+            // Pulse Logic
             const pulseWrap = document.getElementById('rain-pulse-wrap');
             const pulseGrid = document.getElementById('pulse-segments');
             const badgeCont = document.getElementById('badge-container');
-
-            // 1. Clear old alerts/badges first
-            badgeCont.querySelectorAll('.precip-badge-rain, .precip-badge-snow').forEach(a => a.remove());
-
-            // 2. Check if rain or snow is detected in the pulse data
-            const hasPrecipitation = data.rain_pulse && data.rain_pulse.some(v => v > 0);
-
-            if (hasPrecipitation) {
-                // Fill the pulse grid
+            const hasPrecip = data.rain_pulse && data.rain_pulse.some(v => v > 0);
+            if (hasPrecip) {
                 pulseGrid.innerHTML = '';
                 data.rain_pulse.forEach(val => {
                     const seg = document.createElement('div');
-                    // If intensity > 0, color it blue for rain or white for snow
                     seg.className = 'pulse-segment' + (val > 0 ? (data.is_snow ? ' active-snow' : ' active-rain') : '');
                     pulseGrid.appendChild(seg);
                 });
-
-                // Show the pulse container
                 pulseWrap.style.display = 'block';
-                document.getElementById('pulse-label').innerText = `Next Hour ${data.is_snow ? 'Snow' : 'Rain'} Pulse`;
-                document.getElementById('rain-status').innerText = `${data.is_snow ? 'Snow' : 'Rain'} detected`;
-
-                // 3. Add the "Imminent" Badge to the top
-                const pBadge = document.createElement('div');
-                pBadge.className = `env-badge ${data.is_snow ? 'precip-badge-snow' : 'precip-badge-rain'}`;
-                pBadge.innerHTML = `<i class="wi ${data.is_snow ? 'wi-snow' : 'wi-raindrops'} me-1"></i> ${(data.is_snow ? 'SNOW' : 'RAIN').toUpperCase()} IMMINENT`;
-                badgeCont.prepend(pBadge);
             } else {
-                // Hide everything if it's dry
                 pulseWrap.style.display = 'none';
             }
 
@@ -972,427 +966,319 @@
                 badgeCont.appendChild(pill);
             }
 
-            const aqiEl = document.getElementById('aqi-val'); aqiEl.innerText = data.aqi;
-            aqiEl.style.color = data.aqi <= 50 ? "#00e400" : (data.aqi <= 100 ? "#ffff00" : "#ff7e00");
-
             const vis = getVisuals(data.current.shortForecast, data.current.isDaytime);
             document.getElementById('main-icon').className = `wi ${vis.icon}`;
             document.getElementById('dynamic-bg').style.backgroundImage = `url('${vis.url}')`;
 
+            // Daily Container
             const weekTemps = data.daily.flatMap(d => [formatTemp(d.high), formatTemp(d.low)]);
             const minW = Math.min(...weekTemps), maxW = Math.max(...weekTemps), range = (maxW - minW) || 1;
-            const dayMap = { 'Monday': 'Mon', 'Tuesday': 'Tue', 'Wednesday': 'Wed', 'Thursday': 'Thu', 'Friday': 'Fri', 'Saturday': 'Sat', 'Sunday': 'Sun' };
-
             let dHtml = '';
             data.daily.forEach((day, i) => {
                 const dv = getVisuals(day.icon, true);
                 let high = formatTemp(day.high), low = formatTemp(day.low);
-                if (low > high) [low, high] = [high, low];
 
-                const dateObj = new Date(day.date + 'T00:00:00');
-                let label = i === 0 ? 'Today' : new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(dateObj);
-                const hasHourly = data.hourly.some(h => h.startTime.startsWith(day.date));
-                const leftPos = Math.max(0, Math.min(100, ((low - minW) / range) * 100));
-                const widthBar = Math.max(5, Math.min(100 - leftPos, ((high - low) / range) * 100));
+                // Check if this is the last day in the array
+                const isLastDay = i === data.daily.length - 1;
+                const clickAttr = isLastDay ? '' : `onclick="showDayHourly('${day.date}', '${i === 0 ? 'Today' : day.date}')"`;
+                const clickableClass = isLastDay ? '' : 'clickable';
 
-                dHtml += `
-        <div class="daily-row ${hasHourly ? 'clickable' : ''}" 
-             ${hasHourly ? `onclick="showDayHourly('${day.date}', '${label}')"` : ''}>
-            <div class="day-label">${label}</div>
-            <div class="day-icon-col"><i class="wi ${dv.icon}"></i></div>
-            <div class="day-low-col">${low}°</div>
-            <div class="temp-bar-container">
-                <div class="temp-bar-fill" style="left:${leftPos}%; width:${widthBar}%"></div>
-                ${i === 0 ? `<div class="current-temp-dot" style="left:${Math.max(0, Math.min(100, ((curT - minW) / range) * 100))}%"></div>` : ''}
-            </div>
-            <div class="day-high-col">${high}°</div>
-        </div>`;
+                const leftPos = ((low - minW) / range) * 100;
+                const widthBar = ((high - low) / range) * 100;
+
+                dHtml += `<div class="daily-row ${clickableClass}" ${clickAttr}>
+        <div class="day-label">${i === 0 ? 'Today' : new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' })}</div>
+        <div class="day-icon-col"><i class="wi ${dv.icon}"></i></div>
+        <div class="day-low-col">${low}°</div>
+        <div class="temp-bar-container">
+            <div class="temp-bar-fill" style="left:${leftPos}%; width:${widthBar}%"></div>
+        </div>
+        <div class="day-high-col">${high}°</div>
+    </div>`;
             });
-            document.getElementById('daily-container').innerHTML = dHtml;
             document.getElementById('daily-container').innerHTML = dHtml;
             document.getElementById('radar-container').innerHTML = `<iframe class="w-100 rounded-4" style="height:350px;border:none" src="https://embed.windy.com/embed.html?type=radar&lat=${data.lat}&lon=${data.lon}&overlay=rain&product=radar&play=true"></iframe>`;
         }
 
+        // Modal Triggers
+        function showAqiHourly() {
+            document.getElementById('modalDayLabel').innerText = "Air Quality (24h)";
+            document.getElementById('modalContent').innerHTML = '<canvas id="aqiChart"></canvas>';
+            hourlyModal.show();
+            setTimeout(() => createAqiChart(lastData.hourly_aqi), 300);
+        }
+
         function showWindHourly() {
-            if (!lastData) return;
             document.getElementById('modalDayLabel').innerText = "Wind Forecast (24h)";
-            document.getElementById('modalContent').innerHTML = '<div style="height: 300px;"><canvas id="windChart"></canvas></div>';
-            const next24 = lastData.hourly.slice(0, 24);
-            const modalEl = document.getElementById('hourlyModal');
-            const onShown = () => { createWindChart(next24); modalEl.removeEventListener('shown.bs.modal', onShown); };
-            modalEl.addEventListener('shown.bs.modal', onShown);
+            document.getElementById('modalContent').innerHTML = '<canvas id="windChart"></canvas>';
             hourlyModal.show();
+            setTimeout(() => createWindChart(lastData.hourly.slice(0, 24)), 300);
         }
 
-        function createWindChart(hourlyData) {
-            const ctx = document.getElementById('windChart').getContext('2d');
-            const theme = getChartTheme();
-            const isMetric = document.getElementById('c-unit').checked;
-            const unit = isMetric ? 'km/h' : 'mph';
-            const speeds = hourlyData.map(h => isMetric ? Math.round(h.windSpeed * 1.609) : h.windSpeed);
-
-            const speedGradient = ctx.createLinearGradient(0, 0, 0, 300);
-            speedGradient.addColorStop(0, '#ff4757');
-            speedGradient.addColorStop(0.4, '#ffa502');
-            speedGradient.addColorStop(1, '#70a1ff');
-
-            const areaGradient = ctx.createLinearGradient(0, 0, 0, 300);
-            areaGradient.addColorStop(0, 'rgba(255, 71, 87, 0.2)');
-            areaGradient.addColorStop(1, 'rgba(112, 161, 255, 0.0)');
-
-            if (myWindChart) myWindChart.destroy();
-            myWindChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: hourlyData.map(h => new Date(h.startTime).toLocaleTimeString([], { hour: 'numeric' })),
-                    datasets: [{
-                        label: `Wind Speed`,
-                        data: speeds,
-                        borderColor: speedGradient,
-                        backgroundColor: areaGradient,
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 4,
-                        pointRadius: 0,
-                        pointHitRadius: 20
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: { duration: 1500, easing: 'easeInOutQuart' },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: theme.tooltipBg,
-                            titleColor: theme.tooltipText,
-                            bodyColor: theme.tooltipText,
-                            padding: 12,
-                            displayColors: false,
-                            callbacks: { label: (ctx) => ` Wind: ${ctx.parsed.y} ${unit}` }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: theme.gridColor },
-                            ticks: { color: theme.textColor, font: { size: 10 } }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: theme.textColor, font: { size: 10 }, maxTicksLimit: 6 }
-                        }
-                    }
-                }
-            });
-        }
-
-        function showAlertDetails(title, headline, description) {
-            document.getElementById('modalDayLabel').innerText = title;
-            document.getElementById('modalContent').innerHTML = `<div style="max-height: 400px; overflow-y: auto;"><p class="fw-bold text-danger">${headline}</p><hr><p style="white-space: pre-wrap; font-size: 0.85rem;">${description}</p></div>`;
+        function showHumidityHourly() {
+            document.getElementById('modalDayLabel').innerText = "Humidity (24h)";
+            document.getElementById('modalContent').innerHTML = '<canvas id="humidityChart"></canvas>';
             hourlyModal.show();
+            setTimeout(() => createHumidityChart(lastData.hourly.slice(0, 24)), 300);
         }
 
         function showDayHourly(dateStr, dayName) {
             document.getElementById('modalDayLabel').innerText = `${dayName} Hourly`;
-            document.getElementById('modalContent').innerHTML = '<div style="height: 300px;"><canvas id="hourlyChart"></canvas></div>';
+            document.getElementById('modalContent').innerHTML = '<canvas id="hourlyChart"></canvas>';
             const filtered = lastData.hourly.filter(h => h.startTime.startsWith(dateStr));
-            const modalEl = document.getElementById('hourlyModal');
-            const onShown = () => { if (filtered.length > 0) createChart(filtered); modalEl.removeEventListener('shown.bs.modal', onShown); };
-            modalEl.addEventListener('shown.bs.modal', onShown);
             hourlyModal.show();
+            setTimeout(() => createChart(filtered), 300);
         }
 
-        function createChart(hourlyData) {
-            const ctx = document.getElementById('hourlyChart').getContext('2d');
-            const theme = getChartTheme();
-            const temps = hourlyData.map(h => formatTemp(h.temperature));
+        // Chart Creation
+        // Helper to create gradients
+        function getVerticalGradient(ctx, chartArea, colorStops) {
+            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+            colorStops.forEach(stop => gradient.addColorStop(stop.pos, stop.color));
+            return gradient;
+        }
 
-            const lineGradient = ctx.createLinearGradient(0, 0, 0, 300);
-            lineGradient.addColorStop(0, '#ff4757');
-            lineGradient.addColorStop(1, '#70a1ff');
+        function createAqiChart(aqiData) {
+            const ctx = document.getElementById('aqiChart').getContext('2d');
+            if (window.aqiChartInstance) window.aqiChartInstance.destroy();
 
-            const areaGradient = ctx.createLinearGradient(0, 0, 0, 300);
-            areaGradient.addColorStop(0, 'rgba(255, 71, 87, 0.1)');
-            areaGradient.addColorStop(1, 'rgba(112, 161, 255, 0.0)');
-
-            if (myChart) myChart.destroy();
-            myChart = new Chart(ctx, {
+            window.aqiChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: hourlyData.map(h => new Date(h.startTime).toLocaleTimeString([], { hour: 'numeric' })),
-                    datasets: [
-                        {
-                            label: 'Temp',
-                            data: temps,
-                            borderColor: lineGradient,
-                            backgroundColor: areaGradient,
-                            borderWidth: 3,
-                            fill: true,
-                            tension: 0.4,
-                            pointRadius: 0,
-                            pointHitRadius: 20
-                        },
-                        {
-                            type: 'bar',
-                            label: 'Precipitation %',
-                            data: hourlyData.map(h => h.precipProb),
-                            backgroundColor: 'rgba(79, 172, 254, 0.2)',
-                            yAxisID: 'yP',
-                            borderRadius: 4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: { duration: 1000 },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: theme.tooltipBg,
-                            padding: 10,
-                            displayColors: false,
-                            callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y}${ctx.datasetIndex === 0 ? '°' : '%'}` }
-                        }
-                    },
-                    scales: {
-                        y: { grid: { color: theme.gridColor }, ticks: { color: theme.textColor, font: { size: 10 }, maxTicksLimit: 5 } },
-                        yP: { display: false, min: 0, max: 100 },
-                        x: { grid: { display: false }, ticks: { color: theme.textColor, font: { size: 10 }, maxTicksLimit: 6 } }
-                    }
-                }
-            });
-        }
-
-        function showAqiHourly() {
-            if (window.navigator.vibrate) {
-                window.navigator.vibrate(10);
-            }
-            if (!lastData || !lastData.hourly_aqi) return;
-            document.getElementById('modalDayLabel').innerText = "Air Quality Forecast (24h)";
-            document.getElementById('modalContent').innerHTML = '<div style="height: 300px;"><canvas id="aqiChart"></canvas></div>';
-
-            const modalEl = document.getElementById('hourlyModal');
-            const onShown = () => { createAqiChart(lastData.hourly_aqi); modalEl.removeEventListener('shown.bs.modal', onShown); };
-            modalEl.addEventListener('shown.bs.modal', onShown);
-            hourlyModal.show();
-        }
-
-        function showHumidityHourly() {
-            if (!lastData) return;
-            document.getElementById('modalDayLabel').innerText = "Humidity Forecast (24h)";
-            document.getElementById('modalContent').innerHTML = '<div style="height: 300px;"><canvas id="humidityChart"></canvas></div>';
-
-            const next24 = lastData.hourly.slice(0, 24);
-            const modalEl = document.getElementById('hourlyModal');
-            const onShown = () => {
-                createHumidityChart(next24);
-                modalEl.removeEventListener('shown.bs.modal', onShown);
-            };
-            modalEl.addEventListener('shown.bs.modal', onShown);
-            hourlyModal.show();
-        }
-
-        function showUvHourly() {
-            if (!lastData || !lastData.hourly_uv) return;
-            document.getElementById('modalDayLabel').innerText = "UV Index Forecast (24h)";
-            document.getElementById('modalContent').innerHTML = '<div style="height: 300px;"><canvas id="uvChart"></canvas></div>';
-
-            const modalEl = document.getElementById('hourlyModal');
-            const onShown = () => {
-                createUvChart(lastData.hourly_uv);
-                modalEl.removeEventListener('shown.bs.modal', onShown);
-            };
-            modalEl.addEventListener('shown.bs.modal', onShown);
-            hourlyModal.show();
-        }
-
-        function createUvChart(uvData) {
-            const ctx = document.getElementById('uvChart').getContext('2d');
-            const theme = getChartTheme();
-
-            // UV Spectrum Gradient
-            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-            gradient.addColorStop(0, 'rgba(170, 0, 255, 0.6)');   // Extreme (Violet)
-            gradient.addColorStop(0.2, 'rgba(255, 0, 0, 0.5)');   // Very High (Red)
-            gradient.addColorStop(0.4, 'rgba(255, 170, 0, 0.4)'); // High (Orange)
-            gradient.addColorStop(0.6, 'rgba(255, 255, 0, 0.3)'); // Moderate (Yellow)
-            gradient.addColorStop(0.9, 'rgba(0, 255, 0, 0.1)');   // Low (Green)
-
-            const labels = [];
-            let currentH = new Date().getHours();
-            for (let i = 0; i < uvData.length; i++) {
-                let h = (currentH + i) % 24;
-                labels.push(`${h == 0 ? 12 : (h > 12 ? h - 12 : h)} ${h >= 12 ? 'PM' : 'AM'}`);
-            }
-
-            if (window.myUvChart) window.myUvChart.destroy();
-            window.myUvChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
+                    labels: aqiData.map((_, i) => `${(new Date().getHours() + i) % 24}:00`),
                     datasets: [{
-                        label: 'UV Index',
-                        data: uvData,
-                        borderColor: '#ffce00', // Sun yellow line
+                        data: aqiData,
+                        borderColor: '#00e400',
                         borderWidth: 3,
-                        backgroundColor: gradient,
-                        fill: true,
                         tension: 0.4,
-                        pointRadius: 0,
-                        pointHitRadius: 20
+                        fill: true,
+                        pointRadius: 2,
+                        backgroundColor: (context) => {
+                            const chart = context.chart;
+                            const { ctx, chartArea } = chart;
+                            if (!chartArea) return null;
+                            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                            gradient.addColorStop(0, 'rgba(0, 228, 0, 0)');
+                            gradient.addColorStop(0.5, 'rgba(255, 255, 0, 0.2)');
+                            gradient.addColorStop(1, 'rgba(255, 126, 0, 0.4)');
+                            return gradient;
+                        }
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: { label: (ctx) => ` UV Index: ${ctx.parsed.y}` }
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        function createWindChart(hourlyData) {
+            const ctx = document.getElementById('windChart').getContext('2d');
+            if (window.windChartInstance) window.windChartInstance.destroy();
+
+            const windSpeeds = hourlyData.map(h => parseFloat(h.windSpeed) || 0);
+
+            window.windChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: hourlyData.map(h => new Date(h.startTime).getHours() + ':00'),
+                    datasets: [{
+                        data: windSpeeds,
+                        borderWidth: 4,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0,
+                        borderColor: (context) => {
+                            const chart = context.chart;
+                            if (!chart.chartArea) return null;
+                            return getIntensityGradient(chart, 'wind');
+                        },
+                        backgroundColor: (context) => {
+                            const chart = context.chart;
+                            if (!chart.chartArea) return null;
+                            return getIntensityGradient(chart, 'wind', true);
                         }
-                    },
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
                     scales: {
                         y: {
                             beginAtZero: true,
-                            suggestedMax: 11, // Standard UV scale tops at 11+
-                            grid: { color: theme.gridColor },
-                            ticks: { color: theme.textColor }
+                            suggestedMax: 25,
+                            grid: { color: 'rgba(255,255,255,0.05)' }
                         },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: theme.textColor, maxTicksLimit: 6 }
-                        }
+                        x: { grid: { display: false } }
                     }
                 }
+            });
+        }
+
+        // Universal Intensity Helper
+        function getIntensityGradient(chart, type, isFill = false) {
+            const { ctx, chartArea, scales } = chart;
+            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+
+            const addStop = (value, color) => {
+                const pixel = scales.y.getPixelForValue(value);
+                let stop = (pixel - chartArea.top) / (chartArea.bottom - chartArea.top);
+                stop = 1 - Math.max(0, Math.min(1, stop));
+
+                const alpha = isFill ? 0.3 : 1;
+                gradient.addColorStop(stop, color.replace('rgb', 'rgba').replace(')', `, ${alpha})`));
+            };
+
+            if (type === 'wind') {
+                addStop(0, 'rgb(0, 228, 0)');    // 0 mph = Green
+                addStop(10, 'rgb(112, 161, 255)'); // 10 mph = Blue
+                addStop(20, 'rgb(255, 206, 0)');  // 20 mph = Yellow/Orange
+                addStop(30, 'rgb(255, 71, 87)');   // 30 mph = Red
+            }
+
+            return gradient;
+        }
+
+        function updatePrecipitationBar(data) {
+            const tracker = document.getElementById('precip-tracker');
+            const tileContainer = document.getElementById('precip-tiles');
+            const statusText = document.getElementById('precip-status-text');
+
+            const hasRain = data.rain_pulse && data.rain_pulse.some(v => v > 0);
+            const hasSnow = data.snow_pulse && data.snow_pulse.some(v => v > 0);
+
+            if (!hasRain && !hasSnow) {
+                tracker.style.display = 'none';
+                return;
+            }
+
+            tracker.style.display = 'block';
+
+            // Determine the dominant type for the label
+            if (hasSnow) {
+                statusText.innerText = "Snowfall Imminent";
+                statusText.style.color = "#ffffff";
+            } else {
+                statusText.innerText = "Rain Incoming";
+                statusText.style.color = "#4facfe";
+            }
+
+            tileContainer.innerHTML = '';
+            data.rain_pulse.forEach((val, i) => {
+                const tile = document.createElement('div');
+                tile.className = 'precip-tile';
+
+                if (data.snow_pulse[i] > 0) {
+                    tile.classList.add('tile-snow');
+                }
+
+                else if (val > 0) {
+                    tile.classList.add('tile-rain');
+                }
+
+                tileContainer.appendChild(tile);
             });
         }
 
         function createHumidityChart(hourlyData) {
             const ctx = document.getElementById('humidityChart').getContext('2d');
-            const theme = getChartTheme();
+            if (window.humidChartInstance) window.humidChartInstance.destroy();
 
-            // Windy-style Water Gradient
-            const gradientLine = ctx.createLinearGradient(0, 0, 0, 300);
-            gradientLine.addColorStop(0, '#0077b2');   // Deep Blue (High Humidity)
-            gradientLine.addColorStop(1, '#00b4d8');   // Cyan (Low Humidity)
-
-            const gradientFill = ctx.createLinearGradient(0, 0, 0, 300);
-            gradientFill.addColorStop(0, 'rgba(0, 119, 178, 0.3)');
-            gradientFill.addColorStop(1, 'rgba(0, 180, 216, 0)');
-
-            if (window.myHumidityChart) window.myHumidityChart.destroy();
-            window.myHumidityChart = new Chart(ctx, {
+            window.humidChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: hourlyData.map(h => new Date(h.startTime).toLocaleTimeString([], { hour: 'numeric' })),
+                    labels: hourlyData.map(h => new Date(h.startTime).getHours() + ':00'),
                     datasets: [{
-                        label: 'Humidity',
                         data: hourlyData.map(h => h.humidity),
-                        borderColor: gradientLine,
-                        backgroundColor: gradientFill,
-                        fill: true,
+                        borderColor: '#00d2ff',
                         tension: 0.4,
+                        fill: true,
+                        backgroundColor: (context) => {
+                            const chart = context.chart;
+                            const { ctx, chartArea } = chart;
+                            if (!chartArea) return null;
+                            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                            gradient.addColorStop(0, 'rgba(0, 210, 255, 0)');
+                            gradient.addColorStop(1, 'rgba(0, 210, 255, 0.4)');
+                            return gradient;
+                        }
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function createChart(hourlyData) {
+            const ctx = document.getElementById('hourlyChart').getContext('2d');
+            if (window.tempChartInstance) window.tempChartInstance.destroy();
+
+            const temps = hourlyData.map(h => formatTemp(h.temperature));
+            const minTemp = Math.min(...temps);
+            const maxTemp = Math.max(...temps);
+
+            window.tempChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: hourlyData.map(h => new Date(h.startTime).getHours() + ':00'),
+                    datasets: [{
+                        data: temps,
                         borderWidth: 4,
+                        tension: 0.4,
+                        fill: true,
                         pointRadius: 0,
-                        pointHitRadius: 20
+                        pointHoverRadius: 6,
+                        borderColor: (context) => {
+                            const chart = context.chart;
+                            const { ctx, chartArea, scales } = chart;
+                            if (!chartArea) return null;
+                            return getTemperatureGradient(ctx, chartArea, scales.y);
+                        },
+                        backgroundColor: (context) => {
+                            const chart = context.chart;
+                            const { ctx, chartArea, scales } = chart;
+                            if (!chartArea) return null;
+
+                            return getTemperatureGradient(ctx, chartArea, scales.y, true);
+                        }
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: theme.tooltipBg,
-                            callbacks: { label: (ctx) => ` Humidity: ${ctx.parsed.y}%` }
-                        }
-                    },
+                    plugins: { legend: { display: false } },
                     scales: {
                         y: {
-                            beginAtZero: true,
-                            max: 100, // Humidity is always %
-                            grid: { color: theme.gridColor },
-                            ticks: { color: theme.textColor, font: { size: 10 } }
+                            beginAtZero: false,
+                            grid: { color: 'rgba(255,255,255,0.05)' }
                         },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: theme.textColor, font: { size: 10 }, maxTicksLimit: 6 }
-                        }
+                        x: { grid: { display: false } }
                     }
                 }
             });
         }
 
-        function createAqiChart(aqiData) {
-            const canvas = document.getElementById('aqiChart');
-            const ctx = canvas.getContext('2d');
-            const theme = getChartTheme();
+        function getTemperatureGradient(ctx, chartArea, yScale, isFill = false) {
+            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
 
-            const chartHeight = 300;
-            const gradientLine = ctx.createLinearGradient(0, 0, 0, chartHeight);
+            const min = yScale.min;
+            const max = yScale.max;
 
-            gradientLine.addColorStop(0, '#7e0023');   // Hazardous (Very Top)
-            gradientLine.addColorStop(0.2, '#ff0000'); // Unhealthy
-            gradientLine.addColorStop(0.4, '#ff7e00'); // Sensitive Groups
-            gradientLine.addColorStop(0.6, '#ffff00'); // Moderate
-            gradientLine.addColorStop(0.9, '#00e400'); // Good (Bottom)
+            const addRelativeStop = (percent, color) => {
+                const stop = 1 - percent;
+                const alpha = isFill ? 0.4 : 1;
+                const finalColor = color.replace('rgb', 'rgba').replace(')', `, ${alpha})`);
+                gradient.addColorStop(Math.max(0, Math.min(1, stop)), finalColor);
+            };
 
-            const labels = [];
-            let currentH = new Date().getHours();
-            for (let i = 0; i < aqiData.length; i++) {
-                let h = (currentH + i) % 24;
-                labels.push(`${h == 0 ? 12 : (h > 12 ? h - 12 : h)} ${h >= 12 ? 'PM' : 'AM'}`);
-            }
+            // Low point of the day is Blue, Mid is Yellow, High is Red
+            addRelativeStop(0.0, 'rgb(79, 172, 254)'); // Bottom of chart (Blue)
+            addRelativeStop(0.5, 'rgb(255, 206, 0)');  // Middle of chart (Yellow/Orange)
+            addRelativeStop(1.0, 'rgb(255, 71, 87)');  // Top of chart (Red)
 
-            if (window.myAqiChart) window.myAqiChart.destroy();
-            window.myAqiChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'US AQI',
-                        data: aqiData,
-                        borderColor: gradientLine, // The line itself now changes color
-                        backgroundColor: 'rgba(255, 255, 255, 0.05)', // Very subtle fill
-                        fill: true,
-                        tension: 0.45, // Smoother Windy-style curves
-                        borderWidth: 4,
-                        pointRadius: 0, // Hides points for a cleaner look
-                        pointHitRadius: 25
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        annotation: {
-                            annotations: {
-                                // Helpful reference lines
-                                safeLine: {
-                                    type: 'line', yMin: 50, yMax: 50,
-                                    borderColor: 'rgba(0, 228, 0, 0.2)',
-                                    borderWidth: 1, borderDash: [5, 5]
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            suggestedMax: 150,
-                            grid: { color: theme.gridColor, drawBorder: false },
-                            ticks: { color: theme.textColor, font: { size: 10 } }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: theme.textColor, font: { size: 10 }, maxTicksLimit: 6 }
-                        }
-                    }
-                }
-            });
+            return gradient;
         }
 
         function getVisuals(text, isDay) {
