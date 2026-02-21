@@ -220,7 +220,7 @@
             font-weight: 600;
             background: rgba(0, 0, 0, 0.35);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            margin: 3px;
+            margin: 0.5px;
             display: inline-flex;
             align-items: center;
         }
@@ -773,7 +773,8 @@
                     </div>
 
                     <div class="env-badge interactive" id="activity-pill" onclick="showActivityDetails()">
-                        Outdoor Score: <span id="score-val" class="ms-1">--</span>
+                        <i id="score-icon" class="wi wi-direction-up me-1"></i>
+                        Score: <span id="score-val" class="ms-1">--</span>
                         <i class="wi wi-stats-bars click-hint"></i>
                     </div>
                 </div>
@@ -1075,6 +1076,34 @@
             let scoreColor = score >= 85 ? "#00e400" : (score >= 65 ? "#ffff00" : (score >= 40 ? "#ff7e00" : "#ff4757"));
             document.getElementById('activity-pill').style.borderLeft = `3px solid ${scoreColor}`;
             valSpan.style.color = scoreColor;
+
+            const scoreIcon = document.getElementById('score-icon'); // Target the icon
+
+            valSpan.innerText = score;
+
+            let iconClass = "";
+
+            if (score >= 85) {
+                scoreColor = "#00e400"; // Great
+                iconClass = "wi-horizon"; // Mountain peak
+            } else if (score >= 65) {
+                scoreColor = "#ffff00"; // Good
+                iconClass = "wi-day-cloudy"; // Partly cloudy/fair
+            } else if (score >= 40) {
+                scoreColor = "#ff7e00"; // Okay/Caution
+                iconClass = "wi-cloudy"; // Cloudy
+            } else {
+                scoreColo = "#ff4757"; // Poor
+                iconClass = "wi-alien"; // Warning/Bad
+            }
+
+            // Apply the updates
+            document.getElementById('activity-pill').style.borderLeft = `3px solid ${scoreColor}`;
+            valSpan.style.color = scoreColor;
+
+            // Update the icon class (keeping the base 'wi' and 'me-1' classes)
+            scoreIcon.className = `wi ${iconClass} me-1`;
+            scoreIcon.style.color = scoreColor; // Optional: make the icon match the text color
 
             const todayStr = new Date().toISOString().split('T')[0];
 
