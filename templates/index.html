@@ -16,6 +16,7 @@
             --card-bg: #1a1d29;
             --accent: #70a1ff;
         }
+
         [data-bs-theme="light"] {
             --glass: rgba(0, 0, 0, 0.05);
             --bg-color: #f8f9fa;
@@ -531,12 +532,107 @@
             vertical-align: middle;
         }
 
+        /* Container for all weather effects */
+        #weather-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        /* RAIN EFFECT */
+        .rain-drop {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.4);
+            width: 2px;
+            height: 15px;
+            top: -20px;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(350px);
+            }
+        }
+
+        /* SNOW EFFECT */
+        .snowflake {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            top: -10px;
+            opacity: 0.8;
+            animation: snowFall linear infinite;
+        }
+
+        @keyframes snowFall {
+            0% {
+                transform: translateY(0) translateX(0);
+            }
+
+            50% {
+                transform: translateY(150px) translateX(20px);
+            }
+
+            100% {
+                transform: translateY(350px) translateX(-20px);
+            }
+        }
+
+        /* LIGHTNING FLASH */
+        .lightning-flash {
+            position: absolute;
+            inset: 0;
+            background: white;
+            opacity: 0;
+            z-index: 3;
+        }
+
+        .flash-anim {
+            animation: flash 3s infinite;
+        }
+
+        @keyframes flash {
+
+            0%,
+            90%,
+            100% {
+                opacity: 0;
+            }
+
+            92% {
+                opacity: 0.3;
+            }
+
+            94% {
+                opacity: 0;
+            }
+
+            96% {
+                opacity: 0.5;
+            }
+        }
+
+        #badge-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+        }
+
         #wind-pill {
             border-left: 3px solid #70a1ff !important;
         }
 
         #aqi-pill {
             border-left: 3px solid #00e400 !important;
+        }
+
+        /* Change these in your CSS */
+        #rain-pulse-wrap,
+        .precip-alert-wrap {
+            display: none !important;
         }
 
         .powered-by-footer {
@@ -584,6 +680,7 @@
         </div>
 
         <div class="header-bg">
+            <div id="weather-overlay"></div>
             <div id="dynamic-bg"></div>
             <div class="header-content">
                 <h6 id="loc-name" class="text-uppercase opacity-50 small fw-bold mb-1" style="font-size: 0.65rem;">---
@@ -617,6 +714,14 @@
                     </div>
                 </div>
 
+                <div id="precip-tracker" class="precip-alert-wrap">
+                    <div class="precip-header">
+                        <span id="precip-status-text">Scanning Sky...</span>
+                        <span style="opacity: 0.5;">60 Min Outlook</span>
+                    </div>
+                    <div class="precip-grid" id="precip-tiles"></div>
+                </div>
+
                 <div class="d-flex flex-wrap" id="badge-container">
                     <div class="env-badge interactive" id="aqi-pill" onclick="showAqiHourly()">
                         AQI: <span id="aqi-val" class="ms-1">--</span>
@@ -641,14 +746,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div id="precip-tracker" class="precip-alert-wrap">
-            <div class="precip-header">
-                <span id="precip-status-text">Scanning Sky...</span>
-                <span style="opacity: 0.5;">60 Min Outlook</span>
-            </div>
-            <div class="precip-grid" id="precip-tiles"></div>
         </div>
 
         <div class="px-3 mt-3">
@@ -760,7 +857,8 @@
                 const currentHour = new Date().getHours();
 
                 const rawRain = rainData.minutely_15?.precipitation || [0, 0, 0, 0];
-                const rain_pulse = [];
+                // Map 4 readings (15m each) to 12 segments (5m each)
+                const rain_pulse = rawRain.flatMap(val => [val, val, val]);
                 rawRain.slice(0, 4).forEach(val => { rain_pulse.push(val, val, val); });
 
                 const rawSnow = precipData.minutely_15?.snowfall || [0, 0, 0, 0];
@@ -873,6 +971,7 @@
             aqiPill.style.setProperty('border-left-color', aqiColor, 'important');
 
             updatePrecipitationBar(data);
+            applyWeatherEffects(data.current.shortForecast);
 
             const score = data.activity_score;
             const valSpan = document.getElementById('score-val');
@@ -1278,6 +1377,47 @@
             else if (text.includes("snow")) { icon = "wi-snow"; imgId = "1517560280453-3f97473950e2"; }
             return { icon, url: `https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&w=800&q=80` };
         }
+
+        function applyWeatherEffects(condition) {
+            const container = document.getElementById('weather-overlay');
+            container.innerHTML = ''; // Clear previous effects
+            const text = condition.toLowerCase();
+
+            // 1. LIGHTNING (Thunderstorms)
+            if (text.includes("thunder")) {
+                const flash = document.createElement('div');
+                flash.className = 'lightning-flash flash-anim';
+                container.appendChild(flash);
+            }
+
+            // 2. RAIN
+            if (text.includes("rain") || text.includes("showers")) {
+                for (let i = 0; i < 30; i++) {
+                    const drop = document.createElement('div');
+                    drop.className = 'rain-drop';
+                    drop.style.left = Math.random() * 100 + '%';
+                    drop.style.animationDuration = (Math.random() * 0.5 + 0.5) + 's';
+                    drop.style.animationDelay = Math.random() * 2 + 's';
+                    container.appendChild(drop);
+                }
+            }
+
+            // 3. SNOW
+            if (text.includes("snow")) {
+                for (let i = 0; i < 40; i++) {
+                    const flake = document.createElement('div');
+                    flake.className = 'snowflake';
+                    const size = Math.random() * 4 + 2 + 'px';
+                    flake.style.width = size;
+                    flake.style.height = size;
+                    flake.style.left = Math.random() * 100 + '%';
+                    flake.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                    flake.style.animationDelay = Math.random() * 2 + 's';
+                    container.appendChild(flake);
+                }
+            }
+        }
+
     </script>
     <footer class="powered-by-footer">
         Powered by NWS, OpenMeteo & Windy
