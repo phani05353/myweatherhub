@@ -1144,58 +1144,75 @@
             scoreIcon.className = `wi ${iconClass} me-1`;
             scoreIcon.style.color = scoreColor; // Optional: make the icon match the text color
 
-            const todayStr = new Date().toISOString().split('T')[0];
+            const now = new Date();
+
+            // 1. Define Today's Sun Events
+            const todaySunrise = new Date(data.sun.sunrise);
+            const todaySunset = new Date(data.sun.sunset);
+
+            // 2. Calculate Tomorrow's Sunrise (Approx 24h later)
+            // Note: This ensures the 24-hour window always has a sunrise event.
+            const tomorrowSunrise = new Date(todaySunrise);
+            tomorrowSunrise.setDate(tomorrowSunrise.getDate() + 1);
 
             const sunEvents = [
-                {
-                    dateObj: new Date(data.sun.sunrise),
-                    type: 'Sunrise',
-                    icon: 'wi-sunrise'
-                },
-                {
-                    dateObj: new Date(data.sun.sunset),
-                    type: 'Sunset',
-                    icon: 'wi-sunset'
-                }
+                { dateObj: todaySunrise, type: 'Sunrise', icon: 'wi-sunrise' },
+                { dateObj: todaySunset, type: 'Sunset', icon: 'wi-sunset' },
+                { dateObj: tomorrowSunrise, type: 'Sunrise', icon: 'wi-sunrise' }
             ];
 
-            let combinedItems = data.hourly.slice(0, 24).map(h => ({ ...h, isWeather: true }));
+            // 3. Filter hourly weather to only show current and future hours
+            let combinedItems = data.hourly
+                .filter(h => new Date(h.startTime) >= now)
+                .slice(0, 24)
+                .map(h => ({ ...h, isWeather: true }));
 
+            // 4. Inject Sun Events ONLY if they are in the future
             sunEvents.forEach(event => {
-                combinedItems.push({
-                    startTime: event.dateObj.toISOString(),
-                    displayTime: event.dateObj.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
-                    type: event.type,
-                    icon: event.icon,
-                    isSunEvent: true
-                });
+                if (event.dateObj > now) {
+                    combinedItems.push({
+                        startTime: event.dateObj.toISOString(),
+                        displayTime: event.dateObj.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+                        type: event.type,
+                        icon: event.icon,
+                        isSunEvent: true
+                    });
+                }
             });
 
+            // 5. Sort chronologically
             combinedItems.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
+            // 6. BUILD THE HTML (hHtml)
             let hHtml = '';
             combinedItems.forEach((item) => {
                 if (item.isSunEvent) {
+                    // Render Sun Card (Sunrise/Sunset)
                     hHtml += `
-                <div class="hour-item sun-event">
-                    <div class="h-time">${item.displayTime}</div>
-                    <i class="wi ${item.icon} h-icon"></i>
-                    <div class="h-temp" style="font-size: 0.65rem; text-transform: uppercase;">${item.type}</div>
-                </div>`;
+            <div class="hour-item sun-event">
+                <div class="h-time">${item.displayTime}</div>
+                <i class="wi ${item.icon} h-icon"></i>
+                <div class="h-temp" style="font-size: 0.65rem; text-transform: uppercase;">${item.type}</div>
+            </div>`;
                 } else {
+                    // Render Standard Weather Card
                     const hDate = new Date(item.startTime);
                     const hv = getVisuals(item.shortForecast, true);
+                    const isNow = combinedItems.indexOf(item) === 0; // Highlight the very first card
+
                     hHtml += `
-                <div class="hour-item">
-                    <div class="h-time">${hDate.toLocaleTimeString([], { hour: 'numeric' })}</div>
-                    <i class="wi ${hv.icon} h-icon"></i>
-                    <div class="h-temp">${formatTemp(item.temperature)}°</div>
-                    <div class="h-precip" style="${item.precipProb > 0 ? 'opacity: 1' : 'opacity: 0'}">
-                        <i class="wi wi-raindrop"></i>${item.precipProb}%
-                    </div>
-                </div>`;
+            <div class="hour-item ${isNow ? 'active-hour' : ''}">
+                <div class="h-time">${isNow ? 'NOW' : hDate.toLocaleTimeString([], { hour: 'numeric' })}</div>
+                <i class="wi ${hv.icon} h-icon"></i>
+                <div class="h-temp">${formatTemp(item.temperature)}°</div>
+                <div class="h-precip" style="${item.precipProb > 0 ? 'opacity: 1' : 'opacity: 0'}">
+                    <i class="wi wi-raindrop"></i>${item.precipProb}%
+                </div>
+            </div>`;
                 }
             });
+
+            // 7. Push to the UI
             document.getElementById('hourly-quick-view').innerHTML = hHtml;
 
             const pulseWrap = document.getElementById('rain-pulse-wrap');
