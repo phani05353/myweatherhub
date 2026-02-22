@@ -763,6 +763,28 @@
                 <p id="clothing-hint" class="opacity-75 small italic"
                     style="font-size: 0.8rem; margin-top: -10px; color: var(--accent);"></p>
 
+                <div id="precip-pulse-container" class="rain-pulse-container" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span id="pulse-label" class="text-uppercase fw-bold"
+                            style="font-size: 0.65rem; letter-spacing: 1px;">Rain Pulse</span>
+                        <span id="pulse-intensity" class="opacity-75" style="font-size: 0.65rem;">Next 60m</span>
+                    </div>
+                    <div class="pulse-grid" id="pulse-grid">
+                        <div class="pulse-segment"></div>
+                        <div class="pulse-segment"></div>
+                        <div class="pulse-segment"></div>
+                        <div class="pulse-segment"></div>
+                        <div class="pulse-segment"></div>
+                        <div class="pulse-segment"></div>
+                        <div class="pulse-segment"></div>
+                        <div class="pulse-segment"></div>
+                        <div class="pulse-segment"></div>
+                        <div class="pulse-segment"></div>
+                        <div class="pulse-segment"></div>
+                        <div class="pulse-segment"></div>
+                    </div>
+                </div>
+
                 <div class="d-flex flex-wrap" id="badge-container">
                     <div class="env-badge interactive" id="aqi-pill" onclick="showAqiHourly()">
                         AQI: <span id="aqi-val" class="ms-1">--</span>
@@ -1094,11 +1116,11 @@
             aqiPill.style.setProperty('border-left-color', aqiColor, 'important');
 
             applyWeatherEffects(data.current.shortForecast);
+            updatePrecipitationPulse(data);
 
             const visibility = data.visibility.toFixed(1);
             const gusts = data.current_gusts;
 
-            // Inside your updateUI function:
             const roadStatus = evaluateRoadSafety(
                 data.visibility,
                 data.current_gusts,
@@ -1653,6 +1675,38 @@
                 return { label: "Caution", color: "#ffa502", icon: "wi-cloudy-windy" };
             } else {
                 return { label: "Safe", color: "#2ecc71", icon: "wi-shield" };
+            }
+        }
+
+        function updatePrecipitationPulse(data) {
+            const container = document.getElementById('precip-pulse-container');
+            const label = document.getElementById('pulse-label');
+            const segments = document.querySelectorAll('.pulse-segment');
+
+            const maxRain = Math.max(...data.rain_pulse);
+            const maxSnow = Math.max(...data.snow_pulse);
+
+            const isSnowing = maxSnow > 0;
+
+            const activePulse = isSnowing ? data.snow_pulse : data.rain_pulse;
+            const hasPrecip = maxRain > 0 || maxSnow > 0;
+
+            if (hasPrecip) {
+                container.style.display = 'block';
+                label.innerText = isSnowing ? "Snow Pulse" : "Rain Pulse";
+                label.style.color = isSnowing ? "#ffffff" : "#4facfe";
+
+                segments.forEach((seg, i) => {
+                    seg.classList.remove('active-rain', 'active-snow');
+                    if (activePulse[i] > 0) {
+                        seg.classList.add(isSnowing ? 'active-snow' : 'active-rain');
+                        seg.style.opacity = "1";
+                    } else {
+                        seg.style.opacity = "0.1";
+                    }
+                });
+            } else {
+                container.style.display = 'none';
             }
         }
 
