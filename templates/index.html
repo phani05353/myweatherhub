@@ -431,30 +431,6 @@
             display: none;
         }
 
-        .precip-alert-wrap {
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 12px;
-            margin-bottom: 15px;
-            display: none;
-            /* Logic will show this */
-        }
-
-        .precip-grid {
-            display: grid;
-            grid-template-columns: repeat(12, 1fr);
-            gap: 4px;
-            height: 10px;
-            margin-top: 10px;
-        }
-
-        .precip-tile {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-            transition: all 0.4s ease;
-        }
-
         .tile-rain {
             background: #4facfe !important;
             box-shadow: 0 0 10px rgba(79, 172, 254, 0.6);
@@ -463,16 +439,6 @@
         .tile-snow {
             background: #ffffff !important;
             box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
-        }
-
-        .precip-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.65rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
         }
 
         .hour-item {
@@ -661,11 +627,6 @@
             border-left: 3px solid #00e400 !important;
         }
 
-        #rain-pulse-wrap,
-        .precip-alert-wrap {
-            display: none !important;
-        }
-
         .search-wrapper {
             position: relative;
             display: flex;
@@ -801,26 +762,6 @@
                 <p id="main-forecast" class="fw-light mt-2 mb-3">--</p>
                 <p id="clothing-hint" class="opacity-75 small italic"
                     style="font-size: 0.8rem; margin-top: -10px; color: var(--accent);"></p>
-
-                <div id="rain-pulse-wrap" style="display:none;">
-                    <div class="rain-pulse-container">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span id="pulse-label"
-                                style="font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8;">Next
-                                Hour Pulse</span>
-                            <span id="rain-status" style="font-size: 0.6rem; opacity: 0.6;">Scanning...</span>
-                        </div>
-                        <div class="pulse-grid" id="pulse-segments"></div>
-                    </div>
-                </div>
-
-                <div id="precip-tracker" class="precip-alert-wrap">
-                    <div class="precip-header">
-                        <span id="precip-status-text">Scanning Sky...</span>
-                        <span style="opacity: 0.5;">60 Min Outlook</span>
-                    </div>
-                    <div class="precip-grid" id="precip-tiles"></div>
-                </div>
 
                 <div class="d-flex flex-wrap" id="badge-container">
                     <div class="env-badge interactive" id="aqi-pill" onclick="showAqiHourly()">
@@ -1152,7 +1093,6 @@
             aqiDisplay.style.color = aqiColor;
             aqiPill.style.setProperty('border-left-color', aqiColor, 'important');
 
-            updatePrecipitationBar(data);
             applyWeatherEffects(data.current.shortForecast);
 
             const visibility = data.visibility.toFixed(1);
@@ -1269,22 +1209,6 @@
             });
 
             document.getElementById('hourly-quick-view').innerHTML = hHtml;
-
-            const pulseWrap = document.getElementById('rain-pulse-wrap');
-            const pulseGrid = document.getElementById('pulse-segments');
-            const badgeCont = document.getElementById('badge-container');
-            const hasPrecip = data.rain_pulse && data.rain_pulse.some(v => v > 0);
-            if (hasPrecip) {
-                pulseGrid.innerHTML = '';
-                data.rain_pulse.forEach(val => {
-                    const seg = document.createElement('div');
-                    seg.className = 'pulse-segment' + (val > 0 ? (data.is_snow ? ' active-snow' : ' active-rain') : '');
-                    pulseGrid.appendChild(seg);
-                });
-                pulseWrap.style.display = 'block';
-            } else {
-                pulseWrap.style.display = 'none';
-            }
 
             if (data.alerts?.length > 0) {
                 const p = data.alerts[0].properties;
@@ -1470,46 +1394,6 @@
             }
 
             return gradient;
-        }
-
-        function updatePrecipitationBar(data) {
-            const tracker = document.getElementById('precip-tracker');
-            const tileContainer = document.getElementById('precip-tiles');
-            const statusText = document.getElementById('precip-status-text');
-
-            const hasRain = data.rain_pulse && data.rain_pulse.some(v => v > 0);
-            const hasSnow = data.snow_pulse && data.snow_pulse.some(v => v > 0);
-
-            if (!hasRain && !hasSnow) {
-                tracker.style.display = 'none';
-                return;
-            }
-
-            tracker.style.display = 'block';
-
-            if (hasSnow) {
-                statusText.innerText = "Snowfall Imminent";
-                statusText.style.color = "#ffffff";
-            } else {
-                statusText.innerText = "Rain Incoming";
-                statusText.style.color = "#4facfe";
-            }
-
-            tileContainer.innerHTML = '';
-            data.rain_pulse.forEach((val, i) => {
-                const tile = document.createElement('div');
-                tile.className = 'precip-tile';
-
-                if (data.snow_pulse[i] > 0) {
-                    tile.classList.add('tile-snow');
-                }
-
-                else if (val > 0) {
-                    tile.classList.add('tile-rain');
-                }
-
-                tileContainer.appendChild(tile);
-            });
         }
 
         function createHumidityChart(hourlyData) {
