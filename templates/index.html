@@ -7,6 +7,9 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link id="favicon" rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌤️</text></svg>">
+    <meta name="theme-color" id="meta-theme" content="#0f111a">
     <title>Weather Hub</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/weather-icons/2.0.12/css/weather-icons.min.css">
@@ -761,8 +764,7 @@
         <div class="controls">
             <div class="search-wrapper" id="search-wrapper">
                 <button type="button" class="btn-circle" id="search-trigger" onclick="toggleSearch(event)">
-                    <i class="wi wi-direction-up"
-                        style="transform: rotate(45deg); font-size: 1.1rem; pointer-events: none;"></i>
+                    <i class="wi wi-direction-up" style="font-size: 1.1rem; pointer-events: none;"></i>
                 </button>
                 <input type="text" id="search-input" placeholder="Search city..." autocomplete="off">
                 <div id="search-results" class="search-results"></div>
@@ -1107,7 +1109,7 @@
         }
 
         function getClothingAdvice(temp, precip, wind, uv) {
-            if (precip > 40) return lastData.is_snow ? "Heavy Boots & Parka ❄️" : "Rain Jacket & Umbrella ☂️";
+            if (precip > 40) return lastData.is_snow ? "Heavy Boots & Jacket ❄️" : "Rain Jacket & Umbrella ☂️";
             if (wind > 20) return "Windbreaker Needed 🌬️";
             if (temp <= 30) return "Extreme Cold: Layer Up! 🧣";
             if (temp <= 45) return "Heavy Jacket & Gloves 🧥";
@@ -1156,20 +1158,23 @@
             const visibility = data.visibility.toFixed(1);
             const gusts = data.current_gusts;
 
-            let safetyText = "Safe";
-            let safetyColor = "#2ecc71";
-            if (visibility < 1 || gusts > 35) {
-                safetyText = "Hazardous";
-                safetyColor = "#ff4757";
-            } else if (visibility < 3 || gusts > 20) {
-                safetyText = "Caution";
-                safetyColor = "#ffa502";
-            }
+            // Inside your updateUI function:
+            const roadStatus = evaluateRoadSafety(
+                data.visibility,
+                data.current_gusts,
+                data.current.temperature,
+                data.hourly[0].precipProb
+            );
+
+            const safetyVal = document.getElementById('safety-val');
+            safetyVal.innerText = roadStatus.label;
+            safetyVal.style.color = roadStatus.color;
+
+            document.getElementById('safety-pill').style.borderLeft = `3px solid ${roadStatus.color}`;
+            document.getElementById('safety-icon').className = `wi ${roadStatus.icon} me-1`;
+            document.getElementById('safety-icon').style.color = roadStatus.color;
 
             document.getElementById('vis-val').innerText = visibility + " mi";
-            document.getElementById('safety-val').innerText = safetyText;
-            document.getElementById('safety-val').style.color = safetyColor;
-            document.getElementById('safety-pill').style.borderLeft = `3px solid ${safetyColor}`;
 
             const score = data.activity_score;
             const valSpan = document.getElementById('score-val');
@@ -1744,6 +1749,27 @@
             document.getElementById('search-results').style.display = 'none';
             document.getElementById('search-wrapper').classList.remove('active');
             document.getElementById('search-input').value = '';
+        }
+
+        function evaluateRoadSafety(vis, gusts, temp, precipProb) {
+            let score = 0;
+            if (vis < 0.5) score += 50;
+            else if (vis < 2) score += 25;
+            else if (vis < 5) score += 10;
+
+            if (gusts > 45) score += 40;
+            else if (gusts > 25) score += 20;
+
+            if (temp <= 32 && precipProb > 20) score += 50;
+            else if (temp > 105) score += 15;
+
+            if (score >= 50) {
+                return { label: "Hazardous", color: "#ff4757", icon: "wi-thunderstorm" };
+            } else if (score >= 20) {
+                return { label: "Caution", color: "#ffa502", icon: "wi-cloudy-windy" };
+            } else {
+                return { label: "Safe", color: "#2ecc71", icon: "wi-shield" };
+            }
         }
 
     </script>
