@@ -7,7 +7,7 @@ from suntime import Sun
 
 app = Flask(__name__)
 
-HEADERS = {'User-Agent': '(WeatherHubProject, contact: your-email@example.com)'}
+HEADERS = {'User-Agent': '(WeatherHubProject, maruthi.phanikumar@yopmail.com)'}
 
 def fetch_json(url):
     session = requests.Session()
