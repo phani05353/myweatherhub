@@ -993,13 +993,19 @@
                 const wind = parseFloat(nwsData.current.windSpeed) || 0;
                 const currentHour = new Date().getHours();
 
-                const rawRain = rainData.minutely_15?.precipitation || [0, 0, 0, 0];
-                const rain_pulse = rawRain.flatMap(val => [val, val, val]);
-                rawRain.slice(0, 4).forEach(val => { rain_pulse.push(val, val, val); });
+                const currentISO = now.toISOString().substring(0, 16);
 
-                const rawSnow = precipData.minutely_15?.snowfall || [0, 0, 0, 0];
+                let startIndex = precipData.minutely_15.time.findIndex(t => t >= currentISO);
+                if (startIndex === -1) startIndex = 0;
+
+                const rainNow = rainData.minutely_15.precipitation.slice(startIndex, startIndex + 4);
+                const snowNow = precipData.minutely_15.snowfall.slice(startIndex, startIndex + 4);
+
+                const rain_pulse = [];
                 const snow_pulse = [];
-                rawSnow.slice(0, 4).forEach(val => { snow_pulse.push(val, val, val); });
+
+                rainNow.forEach(val => rain_pulse.push(val, val, val));
+                snowNow.forEach(val => snow_pulse.push(val, val, val));
 
                 const mergedData = {
                     ...nwsData,
@@ -1021,6 +1027,9 @@
                     }))
                 };
 
+                if (window.location.hostname === "localhost") {
+                    console.log("Merged Data:", mergedData);
+                }
                 lastData = mergedData;
                 updateUI(mergedData);
 
