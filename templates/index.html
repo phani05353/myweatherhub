@@ -627,6 +627,42 @@
             border-left: 3px solid #00e400 !important;
         }
 
+        .pulse-segment.active-snow {
+            background: #ffffff;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.8),
+                0 0 15px rgba(173, 216, 230, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            filter: brightness(1.2);
+        }
+
+        .pulse-segment {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 2px;
+            transition: all 0.5s ease;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        @keyframes snow-pulse-glow {
+            0% {
+                opacity: 0.8;
+                box-shadow: 0 0 8px #fff;
+            }
+
+            50% {
+                opacity: 1;
+                box-shadow: 0 0 15px #fff;
+            }
+
+            100% {
+                opacity: 0.8;
+                box-shadow: 0 0 8px #fff;
+            }
+        }
+
+        .pulse-segment.active-snow {
+            animation: snow-pulse-glow 2s infinite ease-in-out;
+        }
+
         .search-wrapper {
             position: relative;
             display: flex;
@@ -1126,6 +1162,16 @@
 
             applyWeatherEffects(data.current.shortForecast);
             updatePrecipitationPulse(data);
+
+            const isDay = data.current.isDaytime !== undefined ? data.current.isDaytime : data.current.is_day;
+
+            const weatherText = data.current.shortForecast.toLowerCase();
+            let emoji = isDay ? '☀️' : '🌙';
+            if (weatherText.includes("rain")) emoji = '🌧️';
+            if (weatherText.includes("snow")) emoji = '❄️';
+            if (weatherText.includes("cloud")) emoji = '☁️';
+
+            document.getElementById('favicon').href = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>${emoji}</text></svg>`;
 
             const visibility = data.visibility.toFixed(1);
             const gusts = data.current_gusts;
@@ -1690,18 +1736,25 @@
         function updatePrecipitationPulse(data) {
             const container = document.getElementById('precip-pulse-container');
             const label = document.getElementById('pulse-label');
+            const intensityLabel = document.getElementById('pulse-intensity');
             const segments = document.querySelectorAll('.pulse-segment');
 
-            const maxRain = Math.max(...data.rain_pulse);
             const maxSnow = Math.max(...data.snow_pulse);
-
             const isSnowing = maxSnow > 0;
-
             const activePulse = isSnowing ? data.snow_pulse : data.rain_pulse;
-            const hasPrecip = maxRain > 0 || maxSnow > 0;
+            const hasPrecip = Math.max(...data.rain_pulse) > 0 || maxSnow > 0;
 
             if (hasPrecip) {
                 container.style.display = 'block';
+                const firstPrecipIndex = activePulse.findIndex(val => val > 0);
+
+                if (firstPrecipIndex === 0) {
+                    intensityLabel.innerText = isSnowing ? "Snowing now" : "Raining now";
+                } else {
+                    const minsAway = firstPrecipIndex * 5;
+                    intensityLabel.innerText = `${isSnowing ? 'Snow' : 'Rain'} in ${minsAway} min`;
+                }
+
                 label.innerText = isSnowing ? "Snow Pulse" : "Rain Pulse";
                 label.style.color = isSnowing ? "#ffffff" : "#4facfe";
 
