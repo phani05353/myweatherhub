@@ -1288,22 +1288,34 @@
             document.getElementById('hourly-quick-view').innerHTML = hHtml;
             const badgeCont = document.getElementById('badge-container');
 
+            const dynamicAlerts = badgeCont.querySelectorAll('.pulse-alert');
+            dynamicAlerts.forEach(alert => alert.remove());
+
             if (data.alerts?.length > 0) {
                 const p = data.alerts[0].properties;
                 const pill = document.createElement('div');
                 pill.className = 'env-badge pulse-alert';
                 pill.style.cssText = `background: ${p.severity.toLowerCase() === 'extreme' ? '#ff4757' : '#fd9644'} !important; color: #000; font-weight: 800; cursor: pointer; border: none;`;
                 pill.innerHTML = `<i class="wi wi-warning me-1"></i> ${p.event}`;
-                pill.onclick = () => showAlertDetails(p.event, p.headline, p.description);
+                pill.onclick = () => showAlertDetails(p.event, p.headline, p.description, p.expires);
                 badgeCont.appendChild(pill);
             }
 
-            function showAlertDetails(title, headline, description) {
-                Haptics.warning(); // Give it that tactile feel you like
+            function showAlertDetails(title, headline, description, expires) {
+                Haptics.warning();
+
+                const expiryDate = new Date(expires);
+                const timeStr = expiryDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                const dateStr = expiryDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
                 document.getElementById('modalDayLabel').innerText = title;
                 document.getElementById('modalContent').innerHTML = `
         <div class="p-2">
-            <h6 class="text-warning mb-3">${headline}</h6>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="text-warning m-0">${headline}</h6>
+                <span class="badge bg-dark border border-secondary opacity-75" style="font-size: 0.65rem;">
+                    Expires: ${dateStr}, ${timeStr}
+                </span>
+            </div>
             <p class="small opacity-75" style="line-height: 1.6;">${description}</p>
         </div>`;
                 hourlyModal.show();
