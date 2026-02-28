@@ -1286,6 +1286,7 @@
             });
 
             document.getElementById('hourly-quick-view').innerHTML = hHtml;
+            const badgeCont = document.getElementById('badge-container');
 
             if (data.alerts?.length > 0) {
                 const p = data.alerts[0].properties;
