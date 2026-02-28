@@ -1298,6 +1298,17 @@
                 badgeCont.appendChild(pill);
             }
 
+            function showAlertDetails(title, headline, description) {
+                Haptics.warning(); // Give it that tactile feel you like
+                document.getElementById('modalDayLabel').innerText = title;
+                document.getElementById('modalContent').innerHTML = `
+        <div class="p-2">
+            <h6 class="text-warning mb-3">${headline}</h6>
+            <p class="small opacity-75" style="line-height: 1.6;">${description}</p>
+        </div>`;
+                hourlyModal.show();
+            }
+
             const vis = getVisuals(data.current.shortForecast, data.current.isDaytime);
             document.getElementById('main-icon').className = `wi ${vis.icon}`;
             document.getElementById('dynamic-bg').style.backgroundImage = `url('${vis.url}')`;
