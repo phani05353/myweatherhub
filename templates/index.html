@@ -725,6 +725,17 @@
             background: var(--accent);
         }
 
+        :root {
+            --dynamic-blur: 4px;
+        }
+
+        .hour-item,
+        .main-card,
+        .search-wrapper {
+            backdrop-filter: blur(var(--dynamic-blur, 4px)) !important;
+            -webkit-backdrop-filter: blur(var(--dynamic-blur, 4px)) !important;
+        }
+
         .powered-by-footer {
             padding: 25px 15px;
             text-align: center;
@@ -1148,6 +1159,24 @@
                     const word = diff > 0 ? 'warmer' : 'colder';
                     document.getElementById('hindsight-text').innerText = `${Math.abs(diff)}° ${word} than yesterday`;
                 }
+            }
+
+            const humidity = data.current.relativeHumidity?.value || 50;
+            const visibile = data.visibility || 10;
+
+            const humidityContribution = (humidity / 100) * 8;
+            const visibilityContribution = Math.max(0, (10 - visibile) * 0.8);
+
+            const finalBlur = 4 + humidityContribution + visibilityContribution;
+            document.documentElement.style.setProperty('--dynamic-blur', `${finalBlur.toFixed(1)}px`);
+
+            const mainCard = document.querySelector('.main-card');
+
+            if (data.is_snow) {
+                mainCard.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+                document.documentElement.style.setProperty('--dynamic-blur', `25px`);
+            } else {
+                mainCard.style.backgroundColor = "var(--card-bg)";
             }
 
             document.getElementById('clothing-hint').innerText = getClothingAdvice(data.current.temperature, data.hourly[0].precipProb, parseFloat(data.current.windSpeed), data.uv);
