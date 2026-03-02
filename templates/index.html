@@ -505,6 +505,11 @@
 
         #loc-name {
             margin-top: 10px;
+            font-size: 0.75rem !important;
+            font-weight: 800 !important;
+            letter-spacing: 1.5px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            text-transform: uppercase;
         }
 
         .env-badge.interactive {
@@ -1141,7 +1146,10 @@
         function updateUI(data) {
             const isMetric = document.getElementById('c-unit').checked;
             const curT = formatTemp(data.current.temperature);
-            document.getElementById('loc-name').innerText = data.location;
+            const locElement = document.getElementById('loc-name');
+            locElement.innerText = data.location;
+            locElement.classList.remove('opacity-50');
+            locElement.style.opacity = "0.9";
             document.getElementById('main-forecast').innerText = data.current.shortForecast;
             document.getElementById('temp').innerText = curT;
             document.getElementById('windchill').innerText = formatTemp(data.feels_like);
