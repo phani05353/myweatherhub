@@ -1268,8 +1268,8 @@
             hourlyQuickView.innerHTML = '';
 
             const sunEvents = [
-                { dateObj: new Date(data.sun.sunrise), type: 'Sunrise', icon: 'wi-sunrise' },
-                { dateObj: new Date(data.sun.sunset), type: 'Sunset', icon: 'wi-sunset' }
+                { dateObj: new Date(data.sun.sunrise), type: 'SUNRISE', icon: 'wi-sunrise' },
+                { dateObj: new Date(data.sun.sunset), type: 'SUNSET', icon: 'wi-sunset' }
             ];
 
             sunEvents.forEach(event => {
@@ -1284,13 +1284,15 @@
                 .map(h => ({ ...h, isWeather: true }));
 
             sunEvents.forEach(event => {
-                combinedItems.push({
-                    startTime: event.dateObj.toISOString(),
-                    displayTime: event.dateObj.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
-                    type: event.type,
-                    icon: event.icon,
-                    isSunEvent: true
-                });
+                if (event.dateObj >= now && event.dateObj <= new Date(now.getTime() + 26 * 60 * 60 * 1000)) {
+                    combinedItems.push({
+                        startTime: event.dateObj.toISOString(),
+                        displayTime: event.dateObj.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+                        type: event.type,
+                        icon: event.icon,
+                        isSunEvent: true
+                    });
+                }
             });
 
             combinedItems.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
@@ -1320,6 +1322,7 @@
                 }
             });
             hourlyQuickView.innerHTML = hHtml;
+
             const badgeCont = document.getElementById('badge-container');
 
             const dynamicAlerts = badgeCont.querySelectorAll('.pulse-alert');
