@@ -1267,13 +1267,14 @@
             const hourlyQuickView = document.getElementById('hourly-quick-view');
             hourlyQuickView.innerHTML = '';
 
+            const today = new Date();
             const sunEvents = [
-                { dateObj: new Date(data.sun.sunrise), type: 'SUNRISE', icon: 'wi-sunrise' },
-                { dateObj: new Date(data.sun.sunset), type: 'SUNSET', icon: 'wi-sunset' }
+                { dateObj: new Date(today.toDateString() + ' ' + data.sun.sunrise), type: 'SUNRISE', icon: 'wi-sunrise' },
+                { dateObj: new Date(today.toDateString() + ' ' + data.sun.sunset), type: 'SUNSET', icon: 'wi-sunset' }
             ];
 
             sunEvents.forEach(event => {
-                if (event.dateObj < now) {
+                if (event.dateObj < new Date(now.getTime() - 30 * 60000)) {
                     event.dateObj.setDate(event.dateObj.getDate() + 1);
                 }
             });
