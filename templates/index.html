@@ -870,6 +870,16 @@
                         <i id="safety-icon" class="wi wi-shield me-1"></i>
                         Road: <span id="safety-val" class="ms-1">--</span>
                     </div>
+
+                    <div class="env-badge" id="sunrise-pill">
+                        <i class="wi wi-sunrise me-1" style="color: #ffce00;"></i>
+                        <span id="sunrise-val">--</span>
+                    </div>
+
+                    <div class="env-badge" id="sunset-pill">
+                        <i class="wi wi-sunset me-1" style="color: #ff7e00;"></i>
+                        <span id="sunset-val">--</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1153,6 +1163,17 @@
             document.getElementById('main-forecast').innerText = data.current.shortForecast;
             document.getElementById('temp').innerText = curT;
             document.getElementById('windchill').innerText = formatTemp(data.feels_like);
+            
+            const formatSunTime = (timeStr) => {
+                if (!timeStr) return "--";
+                // Handle both "HH:MM AM/PM" and ISO strings
+                const date = timeStr.includes('T') 
+                    ? new Date(timeStr) 
+                    : new Date('2000-01-01 ' + timeStr);
+                return isNaN(date.getTime()) ? "--" : date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            };
+            document.getElementById('sunrise-val').innerText = formatSunTime(data.sun.sunrise);
+            document.getElementById('sunset-val').innerText = formatSunTime(data.sun.sunset);
             document.getElementById('humidity').innerText = (data.current.relativeHumidity?.value || 0) + '%';
             document.getElementById('wind').innerText = isMetric ? Math.round(parseFloat(data.current.windSpeed) * 1.609) + ' km/h' : data.current.windSpeed;
 
@@ -1369,16 +1390,16 @@
             data.daily.forEach((day, i) => {
                 const dv = getVisuals(day.icon, true);
                 let high = formatTemp(day.high), low = formatTemp(day.low);
-
+                const displayDay = i === 0 ? 'Today' : new Date(day.date.replace(/-/g, '\/')).toLocaleDateString('en-US', { weekday: 'short' });
                 const isLastDay = i === data.daily.length - 1;
-                const clickAttr = isLastDay ? '' : `onclick="showDayHourly('${day.date}', '${i === 0 ? 'Today' : day.date}')"`;
+                const clickAttr = isLastDay ? '' : `onclick="showDayHourly('${day.date}', '${displayDay}')"`;
                 const clickableClass = isLastDay ? '' : 'clickable';
 
                 const leftPos = ((low - minW) / range) * 100;
                 const widthBar = ((high - low) / range) * 100;
 
                 dHtml += `<div class="daily-row ${clickableClass}" ${clickAttr}>
-        <div class="day-label">${i === 0 ? 'Today' : new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' })}</div>
+        <div class="day-label">${displayDay}</div>
         <div class="day-icon-col"><i class="wi ${dv.icon}"></i></div>
         <div class="day-low-col">${low}°</div>
         <div class="temp-bar-container">
