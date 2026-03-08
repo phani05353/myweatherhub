@@ -4,6 +4,9 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from suntime import Sun
+from timezonefinder import TimezoneFinder
+import pytz
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -44,9 +47,13 @@ def get_weather_data(lat, lon):
         if not hourly_periods:
             return None
 
+        tf = TimezoneFinder()
+        tz_name = tf.timezone_at(lng=lon_f, lat=lat_f) or 'UTC'
+        local_tz = pytz.timezone(tz_name)
+
         sun = Sun(lat_f, lon_f)
-        sunrise = sun.get_sunrise_time()
-        sunset = sun.get_sunset_time()
+        sunrise = sun.get_sunrise_time().astimezone(local_tz)
+        sunset = sun.get_sunset_time().astimezone(local_tz)
 
         daily_periods = daily_data.get('properties', {}).get('periods', [])
         daily_forecasts = []
