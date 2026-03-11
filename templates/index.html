@@ -1347,18 +1347,18 @@
 
             const badgeCont = document.getElementById('badge-container');
 
-            const dynamicAlerts = badgeCont.querySelectorAll('.pulse-alert');
+            const dynamicAlerts = document.querySelectorAll('.pulse-alert');
             dynamicAlerts.forEach(alert => alert.remove());
 
-            if (data.alerts?.length > 0) {
-                const p = data.alerts[0].properties;
+            (data.alerts || []).forEach(alert => {
+                const p = alert.properties;
                 const pill = document.createElement('div');
                 pill.className = 'env-badge pulse-alert';
                 pill.style.cssText = `background: ${p.severity.toLowerCase() === 'extreme' ? '#ff4757' : '#fd9644'} !important; color: #000; font-weight: 800; cursor: pointer; border: none;`;
                 pill.innerHTML = `<i class="wi wi-warning me-1"></i> ${p.event}`;
                 pill.onclick = () => showAlertDetails(p.event, p.headline, p.description, p.expires);
-                badgeCont.appendChild(pill);
-            }
+                badgeCont.insertBefore(pill, badgeCont.firstChild);
+            });
 
             function showAlertDetails(title, headline, description, expires) {
                 Haptics.warning();
