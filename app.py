@@ -1,3 +1,11 @@
+"""
+WeatherHub Backend
+Context: This Flask application serves as a proxy for the National Weather Service (NWS) API.
+It calculates sunrise/sunset times using 'suntime', determines timezones via 'timezonefinder',
+and aggregates daily/hourly forecasts.
+Requirements: Flask, requests, suntime, timezonefinder, pytz.
+Target: PWA-compatible weather dashboard.
+"""
 from flask import Flask, render_template, request, jsonify
 from flask import send_from_directory
 import requests
