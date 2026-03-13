@@ -7,16 +7,16 @@ from suntime import Sun
 from timezonefinder import TimezoneFinder
 import pytz
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
+session = requests.Session()
+retries = Retry(total=3, backoff_factor=0.3, status_forcelist=[429, 500, 502, 503, 504])
+session.mount('https://', HTTPAdapter(max_retries=retries, pool_connections=10, pool_maxsize=10))
 
 HEADERS = {'User-Agent': '(WeatherHubProject, maruthi.phanikumar@yopmail.com)'}
 
 def fetch_json(url):
-    session = requests.Session()
-    retries = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
-    session.mount('https://', HTTPAdapter(max_retries=retries))
-    
     try:
         resp = session.get(url, headers=HEADERS, timeout=10)
         if resp.status_code == 200:
@@ -38,10 +38,14 @@ def get_weather_data(lat, lon):
         loc_props = prop.get('relativeLocation', {}).get('properties', {})
         city = loc_props.get('city', 'Unknown').title()
         state = loc_props.get('state', '??')
-        
-        daily_data = fetch_json(prop['forecast'])
-        hourly_data = fetch_json(prop['forecastHourly'])
-        alerts_data = fetch_json(f"https://api.weather.gov/alerts/active?point={lat_f},{lon_f}")
+
+        urls = [
+            prop['forecast'],
+            prop['forecastHourly'],
+            f"https://api.weather.gov/alerts/active?point={lat_f},{lon_f}"
+        ]
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            daily_data, hourly_data, alerts_data = list(executor.map(fetch_json, urls))
         
         hourly_periods = hourly_data.get('properties', {}).get('periods', [])
         if not hourly_periods:
