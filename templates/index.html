@@ -290,12 +290,6 @@ Project Context: MyWeatherHub
             margin-top: 8px;
         }
 
-        .pulse-segment {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px;
-            transition: all 0.5s ease;
-        }
-
         .pulse-segment.active-rain {
             background: #4facfe;
             box-shadow: 0 0 8px rgba(79, 172, 254, 0.6);
@@ -479,6 +473,11 @@ Project Context: MyWeatherHub
         }
 
         .hour-item:first-child {
+            border-color: var(--accent);
+            background: rgba(112, 161, 255, 0.1);
+        }
+
+        .hour-item.active-hour {
             border-color: var(--accent);
             background: rgba(112, 161, 255, 0.1);
         }
@@ -801,6 +800,7 @@ Project Context: MyWeatherHub
     </div>
 
     <div class="main-card">
+        <div id="pull-indicator"><i class="wi wi-refresh"></i></div>
         <div class="controls">
             <div class="search-wrapper" id="search-wrapper">
                 <button type="button" class="btn-circle" id="search-trigger" onclick="toggleSearch(event)">
@@ -1058,9 +1058,10 @@ Project Context: MyWeatherHub
                 });
                 const nwsData = await nwsRes.json();
 
-                const now = new Date();
-                now.setDate(now.getDate() - 1);
-                const yStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+                const realNow = new Date();
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yStr = yesterday.getFullYear() + '-' + String(yesterday.getMonth() + 1).padStart(2, '0') + '-' + String(yesterday.getDate()).padStart(2, '0');
 
                 const [envRes, rainRes, precipRes, archiveRes, weatherRes] = await Promise.all([
                     fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,uv_index&hourly=us_aqi,uv_index&timezone=auto`),
@@ -1081,7 +1082,7 @@ Project Context: MyWeatherHub
                 const wind = parseFloat(nwsData.current.windSpeed) || 0;
                 const currentHour = new Date().getHours();
 
-                const currentISO = now.toISOString().substring(0, 16);
+                const currentISO = realNow.toISOString().substring(0, 16);
 
                 let startIndex = precipData.minutely_15.time.findIndex(t => t >= currentISO);
                 if (startIndex === -1) startIndex = 0;
@@ -1101,7 +1102,7 @@ Project Context: MyWeatherHub
                     uv: envData.current.uv_index,
                     hourly_aqi: envData.hourly.us_aqi.slice(currentHour, currentHour + 24),
                     hourly_uv: envData.hourly.uv_index.slice(currentHour, currentHour + 24),
-                    yesterday_temp: archiveData.hourly.temperature_2m[currentHour],
+                    yesterday_temp: archiveData.hourly.temperature_2m[realNow.getHours()],
                     rain_pulse: rain_pulse,
                     snow_pulse: snow_pulse,
                     feels_like: calculateFeelsLike(temp, humid, wind),
@@ -1122,8 +1123,6 @@ Project Context: MyWeatherHub
                 updateUI(mergedData);
 
                 Haptics.success();
-                setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 800);
-
                 ldr.innerText = `Hello, ${mergedData.location.split(',')[0]}`;
                 setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 800);
 
@@ -1279,34 +1278,26 @@ Project Context: MyWeatherHub
 
             const score = data.activity_score;
             const valSpan = document.getElementById('score-val');
-            valSpan.innerText = score;
-            let scoreColor = score >= 85 ? "#00e400" : (score >= 65 ? "#ffff00" : (score >= 40 ? "#ff7e00" : "#ff4757"));
-            document.getElementById('activity-pill').style.borderLeft = `3px solid ${scoreColor}`;
-            valSpan.style.color = scoreColor;
+            const scoreIcon = document.getElementById('score-icon');
 
-            const scoreIcon = document.getElementById('score-icon'); // Target the icon
-
-            valSpan.innerText = score;
-
-            let iconClass = "";
-
+            let scoreColor, iconClass;
             if (score >= 85) {
-                scoreColor = "#00e400"; // Great
-                iconClass = "wi-horizon"; // Mountain peak
+                scoreColor = "#00e400";
+                iconClass = "wi-horizon";
             } else if (score >= 65) {
-                scoreColor = "#ffff00"; // Good
-                iconClass = "wi-day-cloudy"; // Partly cloudy/fair
+                scoreColor = "#ffff00";
+                iconClass = "wi-day-cloudy";
             } else if (score >= 40) {
-                scoreColor = "#ff7e00"; // Okay/Caution
-                iconClass = "wi-cloudy"; // Cloudy
+                scoreColor = "#ff7e00";
+                iconClass = "wi-cloudy";
             } else {
-                scoreColor = "#ff4757"; // Poor
-                iconClass = "wi-alien"; // Warning/Bad
+                scoreColor = "#ff4757";
+                iconClass = "wi-alien";
             }
 
-            document.getElementById('activity-pill').style.borderLeft = `3px solid ${scoreColor}`;
+            valSpan.innerText = score;
             valSpan.style.color = scoreColor;
-
+            document.getElementById('activity-pill').style.borderLeft = `3px solid ${scoreColor}`;
             scoreIcon.className = `wi ${iconClass} me-1`;
             scoreIcon.style.color = scoreColor;
 
@@ -1314,10 +1305,9 @@ Project Context: MyWeatherHub
             const hourlyQuickView = document.getElementById('hourly-quick-view');
             hourlyQuickView.innerHTML = '';
 
-            const today = new Date();
             const sunEvents = [
-                { dateObj: new Date(today.toDateString() + ' ' + data.sun.sunrise), type: 'SUNRISE', icon: 'wi-sunrise' },
-                { dateObj: new Date(today.toDateString() + ' ' + data.sun.sunset), type: 'SUNSET', icon: 'wi-sunset' }
+                { dateObj: new Date(data.sun.sunrise), type: 'SUNRISE', icon: 'wi-sunrise' },
+                { dateObj: new Date(data.sun.sunset), type: 'SUNSET', icon: 'wi-sunset' }
             ];
 
             sunEvents.forEach(event => {
@@ -1346,6 +1336,7 @@ Project Context: MyWeatherHub
             combinedItems.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
             let hHtml = '';
+            let firstWeatherShown = false;
             combinedItems.forEach((item) => {
                 if (item.isSunEvent) {
                     hHtml += `
@@ -1357,7 +1348,8 @@ Project Context: MyWeatherHub
                 } else {
                     const hDate = new Date(item.startTime);
                     const hv = getVisuals(item.shortForecast, true);
-                    const isNow = combinedItems.indexOf(item) === 0;
+                    const isNow = !firstWeatherShown;
+                    firstWeatherShown = true;
                     hHtml += `
             <div class="hour-item ${isNow ? 'active-hour' : ''}">
                 <div class="h-time">${isNow ? 'NOW' : hDate.toLocaleTimeString([], { hour: 'numeric' })}</div>
@@ -1468,12 +1460,6 @@ Project Context: MyWeatherHub
             setTimeout(() => createChart(filtered), 300);
         }
 
-        function getVerticalGradient(ctx, chartArea, colorStops) {
-            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-            colorStops.forEach(stop => gradient.addColorStop(stop.pos, stop.color));
-            return gradient;
-        }
-
         function createAqiChart(aqiData) {
             const ctx = document.getElementById('aqiChart').getContext('2d');
             if (window.aqiChartInstance) window.aqiChartInstance.destroy();
@@ -1559,29 +1545,6 @@ Project Context: MyWeatherHub
             });
         }
 
-        function getIntensityGradient(chart, type, isFill = false) {
-            const { ctx, chartArea, scales } = chart;
-            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-
-            const addStop = (value, color) => {
-                const pixel = scales.y.getPixelForValue(value);
-                let stop = (pixel - chartArea.top) / (chartArea.bottom - chartArea.top);
-                stop = 1 - Math.max(0, Math.min(1, stop));
-
-                const alpha = isFill ? 0.3 : 1;
-                gradient.addColorStop(stop, color.replace('rgb', 'rgba').replace(')', `, ${alpha})`));
-            };
-
-            if (type === 'wind') {
-                addStop(0, 'rgb(0, 228, 0)');    // 0 mph = Green
-                addStop(10, 'rgb(112, 161, 255)'); // 10 mph = Blue
-                addStop(20, 'rgb(255, 206, 0)');  // 20 mph = Yellow/Orange
-                addStop(30, 'rgb(255, 71, 87)');   // 30 mph = Red
-            }
-
-            return gradient;
-        }
-
         function createHumidityChart(hourlyData) {
             const ctx = document.getElementById('humidityChart').getContext('2d');
             if (window.humidChartInstance) window.humidChartInstance.destroy();
@@ -1615,8 +1578,6 @@ Project Context: MyWeatherHub
             if (window.tempChartInstance) window.tempChartInstance.destroy();
 
             const temps = hourlyData.map(h => formatTemp(h.temperature));
-            const minTemp = Math.min(...temps);
-            const maxTemp = Math.max(...temps);
 
             window.tempChartInstance = new Chart(ctx, {
                 type: 'line',
