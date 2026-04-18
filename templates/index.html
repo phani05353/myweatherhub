@@ -1058,10 +1058,19 @@ Project Context: MyWeatherHub
                 });
                 const nwsData = await nwsRes.json();
 
+                if (!nwsRes.ok || nwsData.error) {
+                    ldr.innerText = nwsData.error || "Weather unavailable for this location.";
+                    Haptics.error();
+                    return;
+                }
+
                 const realNow = new Date();
                 const yesterday = new Date();
                 yesterday.setDate(yesterday.getDate() - 1);
                 const yStr = yesterday.getFullYear() + '-' + String(yesterday.getMonth() + 1).padStart(2, '0') + '-' + String(yesterday.getDate()).padStart(2, '0');
+
+                const pad = n => String(n).padStart(2, '0');
+                const localISO = `${realNow.getFullYear()}-${pad(realNow.getMonth() + 1)}-${pad(realNow.getDate())}T${pad(realNow.getHours())}:${pad(realNow.getMinutes())}`;
 
                 const [envRes, rainRes, precipRes, archiveRes, weatherRes] = await Promise.all([
                     fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,uv_index&hourly=us_aqi,uv_index&timezone=auto`),
@@ -1080,9 +1089,9 @@ Project Context: MyWeatherHub
                 const temp = nwsData.current.temperature;
                 const humid = nwsData.current.relativeHumidity?.value || 50;
                 const wind = parseFloat(nwsData.current.windSpeed) || 0;
-                const currentHour = new Date().getHours();
+                const currentHour = realNow.getHours();
 
-                const currentISO = realNow.toISOString().substring(0, 16);
+                const currentISO = localISO;
 
                 let startIndex = precipData.minutely_15.time.findIndex(t => t >= currentISO);
                 if (startIndex === -1) startIndex = 0;
@@ -1129,6 +1138,7 @@ Project Context: MyWeatherHub
             } catch (err) {
                 console.error("Fetch Error:", err);
                 ldr.innerText = "Connection Failed.";
+                setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 2000);
             }
         }
 
@@ -1136,9 +1146,21 @@ Project Context: MyWeatherHub
             const savedUnit = localStorage.getItem('unit') || 'imperial';
             document.getElementById(savedUnit === 'metric' ? 'c-unit' : 'f-unit').checked = true;
             toggleTheme(true);
+            const ldr = document.querySelector('.loading-text');
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(p => fetchWeather(p.coords.latitude, p.coords.longitude), () => fetchWeather(41.38, -105.58));
-            } else fetchWeather(41.38, -105.58);
+                ldr.innerText = "Locating you...";
+                navigator.geolocation.getCurrentPosition(
+                    p => fetchWeather(p.coords.latitude, p.coords.longitude),
+                    () => {
+                        ldr.innerText = "Location denied — search for your city ↗";
+                        setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 3000);
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+                );
+            } else {
+                ldr.innerText = "Geolocation not supported — search for your city ↗";
+                setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 3000);
+            }
         };
 
         function showActivityDetails() {
