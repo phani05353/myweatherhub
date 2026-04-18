@@ -1142,24 +1142,39 @@ Project Context: MyWeatherHub
             }
         }
 
+        async function fetchByIP(ldr) {
+            try {
+                ldr.innerText = "Detecting location via IP...";
+                const res = await fetch('https://ipapi.co/json/');
+                const data = await res.json();
+                if (data.latitude && data.longitude) {
+                    fetchWeather(data.latitude, data.longitude);
+                } else {
+                    throw new Error('No coords');
+                }
+            } catch {
+                ldr.innerText = "Could not detect location — use search ↗";
+                setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 3000);
+            }
+        }
+
         window.onload = function () {
             const savedUnit = localStorage.getItem('unit') || 'imperial';
             document.getElementById(savedUnit === 'metric' ? 'c-unit' : 'f-unit').checked = true;
             toggleTheme(true);
             const ldr = document.querySelector('.loading-text');
-            if (navigator.geolocation) {
+
+            // Geolocation requires a secure context (HTTPS or localhost).
+            // On plain HTTP (homelab), fall back to IP-based geolocation.
+            if (navigator.geolocation && window.isSecureContext) {
                 ldr.innerText = "Locating you...";
                 navigator.geolocation.getCurrentPosition(
                     p => fetchWeather(p.coords.latitude, p.coords.longitude),
-                    () => {
-                        ldr.innerText = "Location denied — search for your city ↗";
-                        setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 3000);
-                    },
+                    () => fetchByIP(ldr),
                     { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
                 );
             } else {
-                ldr.innerText = "Geolocation not supported — search for your city ↗";
-                setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 3000);
+                fetchByIP(ldr);
             }
         };
 
