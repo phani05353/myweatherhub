@@ -26,6 +26,10 @@ Project Context: MyWeatherHub
     <meta charset="UTF-8">
     <link rel="manifest" href="/manifest.json">
     <link rel="preconnect" href="https://api.open-meteo.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet" media="print" onload="this.media='all'">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -48,18 +52,20 @@ Project Context: MyWeatherHub
         }
 
         [data-bs-theme="light"] {
-            --bg-color: #aebfd6;
-            --glass: rgba(255, 255, 255, 0.35);
-            --glass-brd: rgba(255, 255, 255, 0.55);
-            --sheet: rgba(245, 248, 255, 0.6);
-            --accent: #0056b3;
+            --bg-color: #c2d2e8;
+            --glass: rgba(255, 255, 255, 0.45);
+            --glass-brd: rgba(255, 255, 255, 0.65);
+            --sheet: rgba(247, 250, 255, 0.78);
+            --accent: #2563eb;
         }
 
         * { -webkit-tap-highlight-color: transparent; }
 
+        html { scroll-behavior: smooth; }
+
         body {
             background-color: var(--bg-color) !important;
-            font-family: -apple-system, system-ui, "Segoe UI", sans-serif;
+            font-family: "Inter", -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
             padding: 0;
             overflow-x: hidden;
         }
@@ -719,6 +725,129 @@ Project Context: MyWeatherHub
             font-size: 0.85rem;
             color: #ffce00;
             text-shadow: 0 0 8px rgba(255, 206, 0, 0.2);
+        }
+
+        /* ════════════════════════════════════════════════════════════════════
+           WEB / DESKTOP LAYOUT
+           On phones the app is a single tall column (a "window onto the sky").
+           From 992px up it becomes a full-bleed weather dashboard: the sky
+           fills the whole viewport and the content splits into a hero panel
+           (left) and a scrollable details panel (right) — no more lonely
+           600px strip with empty margins on a big screen.
+           ════════════════════════════════════════════════════════════════════ */
+        @media (min-width: 992px) {
+            body { min-height: 100vh; }
+
+            /* Sky + weather FX go full-bleed behind everything */
+            #dynamic-bg,
+            #weather-overlay {
+                position: fixed;
+                inset: 0;
+            }
+
+            #celestial { position: fixed; }
+            .celestial.sun { top: 9vh; right: 9vw; width: 150px; height: 150px; }
+            .celestial.moon { top: 9vh; right: 10vw; }
+
+            .main-card {
+                max-width: 1280px;
+                min-height: 100vh;
+                margin: 0 auto;
+                padding: 0 34px 28px;
+                background: transparent;
+                border-radius: 0;
+                box-shadow: none;
+                /* Defeat the mobile containing-block tricks so the fixed sky
+                   above can anchor to the viewport, not to this card. */
+                transform: none !important;
+                will-change: auto;
+                contain: none;
+                display: grid;
+                grid-template-columns: minmax(360px, 440px) minmax(0, 1fr);
+                grid-template-rows: auto minmax(0, 1fr);
+                column-gap: 26px;
+                row-gap: 16px;
+                align-items: start;
+            }
+
+            /* Control bar stretches across the top of the dashboard */
+            .controls {
+                position: relative;
+                top: auto;
+                right: auto;
+                z-index: 20;
+                grid-column: 1 / -1;
+                grid-row: 1;
+                justify-content: flex-end;
+                align-items: center;
+                padding-top: 22px;
+            }
+
+            /* LEFT — hero panel. Kept on a dark scrim (independent of light/dark
+               theme) so the big temperature stays legible over any sky. */
+            .header-bg {
+                grid-column: 1;
+                grid-row: 2;
+                min-height: 0;
+                border-radius: 28px;
+                overflow: hidden;
+                border: 1px solid var(--glass-brd);
+                background: linear-gradient(180deg, rgba(8, 11, 22, 0.30) 0%, rgba(8, 11, 22, 0.58) 100%);
+                -webkit-backdrop-filter: blur(8px);
+                backdrop-filter: blur(8px);
+                box-shadow: 0 28px 70px rgba(0, 0, 0, 0.40);
+            }
+
+            .header-content {
+                padding: 28px 28px 32px;
+                justify-content: flex-start;
+                color: #fff !important;
+            }
+
+            /* RIGHT — details panel, scrolls on its own like a real app pane */
+            .sheet {
+                grid-column: 2;
+                grid-row: 2;
+                margin-top: 0;
+                padding-top: 8px;
+                border: 1px solid var(--glass-brd);
+                border-radius: 28px;
+                box-shadow: 0 28px 70px rgba(0, 0, 0, 0.32);
+                max-height: calc(100vh - 64px);
+                overflow-y: auto;
+                overscroll-behavior: contain;
+            }
+
+            .sheet-handle { display: none; }
+
+            .sheet::-webkit-scrollbar { width: 8px; }
+            .sheet::-webkit-scrollbar-thumb {
+                background: var(--glass-brd);
+                border-radius: 8px;
+            }
+            .sheet { scrollbar-width: thin; scrollbar-color: var(--glass-brd) transparent; }
+
+            /* Roomier, hoverable cards on a pointer device */
+            .hour-item { min-width: 72px; cursor: default; }
+            .hour-item:hover { transform: translateY(-3px); }
+            .daily-row.clickable:hover { background: rgba(255, 255, 255, 0.06); }
+            .search-wrapper.active { width: 260px; }
+            .search-wrapper.active #search-input { width: 200px; }
+            .search-results { width: 260px; }
+
+            #radar-container iframe { height: 420px !important; }
+        }
+
+        @media (min-width: 1440px) {
+            .main-card { grid-template-columns: minmax(380px, 480px) minmax(0, 1fr); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.001ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.001ms !important;
+            }
         }
 
     </style>
