@@ -1,0 +1,12 @@
+# Keep junk out of the build context / image (the Dockerfile does `COPY . .`).
+.git
+.gitignore
+.github
+.DS_Store
+**/.DS_Store
+*.pyc
+__pycache__/
+README.md
+deploy.sh
+Procfile
+.dockerignore
