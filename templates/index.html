@@ -28,35 +28,49 @@ Project Context: MyWeatherHub
     <link rel="preconnect" href="https://api.open-meteo.com">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet" media="print" onload="this.media='all'">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link id="favicon" rel="icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌤️</text></svg>">
-    <meta name="theme-color" id="meta-theme" content="#0f111a">
+    <meta name="theme-color" id="meta-theme" content="#241019">
     <title>Weather Hub</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/weather-icons/2.0.12/css/weather-icons.min.css" media="print" onload="this.media='all'">
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <style>
+        /* ── EMBER · dark & glassy ──
+           Deep plum/maroon canvas, frosted white-glass cards, a pink→orange→amber
+           accent ramp, mauve muted text. Light theme is a warm cream counterpart so
+           the C/F + theme toggles keep working. */
         :root {
-            --bg-color: #05060f;
-            --glass: rgba(255, 255, 255, 0.10);
-            --glass-brd: rgba(255, 255, 255, 0.16);
-            --sheet: rgba(13, 16, 28, 0.55);
-            --accent: #70a1ff;
+            --bg-color: #0c0508;
+            --card-bg: #241019;
+            --glass: rgba(255, 255, 255, 0.06);
+            --glass-brd: rgba(255, 255, 255, 0.10);
+            --sheet: rgba(28, 12, 20, 0.55);
+            --accent: #FF8A5C;
+            --accent2: #FF5E7E;
+            --accent-amber: #FFB05C;
+            --text: #FFF1E9;
+            --muted: #C99AA6;
             --dynamic-blur: 4px;
         }
 
         [data-bs-theme="light"] {
-            --bg-color: #c2d2e8;
-            --glass: rgba(255, 255, 255, 0.45);
-            --glass-brd: rgba(255, 255, 255, 0.65);
-            --sheet: rgba(247, 250, 255, 0.78);
-            --accent: #2563eb;
+            --bg-color: #FFF4EA;
+            --card-bg: #FFF4EA;
+            --glass: rgba(255, 255, 255, 0.58);
+            --glass-brd: rgba(122, 58, 26, 0.14);
+            --sheet: rgba(255, 244, 234, 0.82);
+            --accent: #E0682E;
+            --accent2: #d9542f;
+            --accent-amber: #d9802f;
+            --text: #3a2317;
+            --muted: #9c6646;
         }
 
         * { -webkit-tap-highlight-color: transparent; }
@@ -65,7 +79,8 @@ Project Context: MyWeatherHub
 
         body {
             background-color: var(--bg-color) !important;
-            font-family: "Inter", -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+            color: var(--text);
+            font-family: "Sora", -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
             padding: 0;
             overflow-x: hidden;
         }
@@ -73,7 +88,7 @@ Project Context: MyWeatherHub
         #loader {
             position: fixed;
             inset: 0;
-            background: linear-gradient(180deg, #05060f 0%, #0d1430 60%, #1b2350 100%);
+            background: radial-gradient(120% 70% at 70% 0%, #5a1d33 0%, #3a1226 40%, #241019 75%);
             z-index: 2000;
             display: flex;
             flex-direction: column;
@@ -120,7 +135,7 @@ Project Context: MyWeatherHub
 
         /* ── The card is now a window onto the sky ── */
         .main-card {
-            background: var(--bg-color);
+            background: var(--card-bg);
             border-radius: 0 0 36px 36px;
             overflow: hidden;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
@@ -137,8 +152,22 @@ Project Context: MyWeatherHub
             position: absolute;
             inset: 0;
             z-index: 0;
-            background: linear-gradient(180deg, #05060f 0%, #0d1430 50%, #1b2350 100%);
+            background: radial-gradient(120% 70% at 70% 0%, #5a1d33 0%, #3a1226 40%, #241019 75%);
             transition: background 1.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Ember signature: soft pink + orange light blooms over the plum canvas. */
+        #dynamic-bg::before {
+            content: "";
+            position: absolute;
+            left: -40px;
+            top: 60px;
+            width: 240px;
+            height: 240px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 94, 126, 0.35), transparent 70%);
+            filter: blur(24px);
+            pointer-events: none;
         }
 
         #dynamic-bg::after {
@@ -146,8 +175,9 @@ Project Context: MyWeatherHub
             position: absolute;
             inset: 0;
             background:
-                radial-gradient(120% 70% at 50% -8%, rgba(255, 255, 255, 0.16), transparent 55%),
-                linear-gradient(180deg, transparent 60%, rgba(0, 0, 0, 0.22) 100%);
+                radial-gradient(200px 200px at 88% 3%, rgba(255, 176, 92, 0.40), transparent 70%),
+                radial-gradient(120% 70% at 50% -8%, rgba(255, 255, 255, 0.06), transparent 55%),
+                linear-gradient(180deg, transparent 55%, rgba(0, 0, 0, 0.28) 100%);
             pointer-events: none;
         }
 
@@ -167,8 +197,8 @@ Project Context: MyWeatherHub
             top: 90px;
             right: 36px;
             opacity: 1;
-            background: radial-gradient(circle, #fff7e0 0%, #ffd25e 58%, rgba(255, 210, 94, 0) 72%);
-            box-shadow: 0 0 90px 26px rgba(255, 210, 94, 0.40);
+            background: radial-gradient(circle, #FFE9C8 0%, #FFB05C 58%, rgba(255, 176, 92, 0) 72%);
+            box-shadow: 0 0 90px 26px rgba(255, 140, 92, 0.45);
         }
 
         .celestial.moon {
@@ -177,8 +207,8 @@ Project Context: MyWeatherHub
             top: 84px;
             right: 44px;
             opacity: 1;
-            background: radial-gradient(circle at 38% 38%, #fdfdfb 0%, #cdd3e0 70%, #aeb6c8 100%);
-            box-shadow: 0 0 46px 8px rgba(205, 213, 224, 0.35);
+            background: radial-gradient(circle at 38% 38%, #fdf0f3 0%, #e2c7cf 70%, #c99aa6 100%);
+            box-shadow: 0 0 46px 8px rgba(201, 154, 166, 0.40);
         }
 
         .controls {
@@ -268,10 +298,14 @@ Project Context: MyWeatherHub
 
         .temp-display {
             font-size: clamp(5rem, 22vw, 7rem);
-            font-weight: 200;
+            font-weight: 700;
             line-height: 0.88;
-            letter-spacing: -3px;
-            text-shadow: 0 3px 24px rgba(0, 0, 0, 0.30);
+            letter-spacing: -4px;
+            background: linear-gradient(120deg, #FFE0A8, #FF8A9E);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent !important;
+            filter: drop-shadow(0 3px 24px rgba(0, 0, 0, 0.30));
         }
 
         #loc-name {
@@ -427,9 +461,18 @@ Project Context: MyWeatherHub
 
         .hour-item:first-child,
         .hour-item.active-hour {
-            border-color: var(--accent);
-            background: rgba(112, 161, 255, 0.18);
+            border-color: transparent;
+            background: linear-gradient(165deg, #FF5E7E, #FF8A5C);
+            box-shadow: 0 8px 20px -8px rgba(255, 94, 126, 0.6);
         }
+
+        .hour-item:first-child .h-time,
+        .hour-item.active-hour .h-time,
+        .hour-item:first-child .h-temp,
+        .hour-item.active-hour .h-temp { color: #fff; opacity: 1; }
+
+        .hour-item:first-child .h-icon,
+        .hour-item.active-hour .h-icon { color: #fff; }
 
         .hour-item .h-time {
             font-size: 0.65rem;
@@ -499,7 +542,7 @@ Project Context: MyWeatherHub
             position: absolute;
             height: 100%;
             border-radius: 10px;
-            background: linear-gradient(90deg, #4facfe, #00f2fe);
+            background: linear-gradient(90deg, #7ec0ef, #FFB05C);
         }
 
         .current-temp-dot {
@@ -507,7 +550,7 @@ Project Context: MyWeatherHub
             width: 7px;
             height: 7px;
             background: white;
-            border: 1.5px solid #1a1d29;
+            border: 1.5px solid #241019;
             border-radius: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
@@ -530,8 +573,9 @@ Project Context: MyWeatherHub
 
         .modal-content {
             border-radius: 24px;
-            border: 1px solid var(--glass-brd);
-            background: rgba(20, 24, 36, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(36, 16, 25, 0.92);
+            color: #FFF1E9;
             backdrop-filter: blur(30px);
             -webkit-backdrop-filter: blur(30px);
         }
@@ -648,7 +692,7 @@ Project Context: MyWeatherHub
             gap: 10px;
         }
 
-        #wind-pill { border-left: 3px solid #70a1ff !important; }
+        #wind-pill { border-left: 3px solid var(--accent2) !important; }
         #aqi-pill { border-left: 3px solid #00e400 !important; }
 
         .search-wrapper {
@@ -723,8 +767,8 @@ Project Context: MyWeatherHub
             text-align: center;
             opacity: 0.9;
             font-size: 0.85rem;
-            color: #ffce00;
-            text-shadow: 0 0 8px rgba(255, 206, 0, 0.2);
+            color: var(--accent-amber);
+            text-shadow: 0 0 8px rgba(255, 176, 92, 0.25);
         }
 
         /* ════════════════════════════════════════════════════════════════════
@@ -791,8 +835,8 @@ Project Context: MyWeatherHub
                 min-height: 0;
                 border-radius: 28px;
                 overflow: hidden;
-                border: 1px solid var(--glass-brd);
-                background: linear-gradient(180deg, rgba(8, 11, 22, 0.30) 0%, rgba(8, 11, 22, 0.58) 100%);
+                border: 1px solid rgba(255, 255, 255, 0.10);
+                background: linear-gradient(180deg, rgba(36, 16, 25, 0.32) 0%, rgba(20, 8, 14, 0.62) 100%);
                 -webkit-backdrop-filter: blur(8px);
                 backdrop-filter: blur(8px);
                 box-shadow: 0 28px 70px rgba(0, 0, 0, 0.40);
@@ -1761,32 +1805,35 @@ Project Context: MyWeatherHub
             let icon = isDay ? "wi-day-sunny" : "wi-night-clear";
             let sky, themeColor;
 
+            // Ember palette: every condition stays in the dark plum→maroon→amber
+            // family so the dynamic sky still reads the weather, but always looks
+            // like the "Ember · dark & glassy" direction.
             if (text.includes("thunder")) {
                 icon = "wi-thunderstorm";
-                sky = "linear-gradient(180deg,#1c2230 0%,#33384a 50%,#4a4f63 100%)";
-                themeColor = "#1c2230";
+                sky = "radial-gradient(120% 70% at 70% 0%,#2e1a2a 0%,#221624 50%,#160d14 85%)";
+                themeColor = "#160d14";
             } else if (text.includes("rain") || (text.includes("showers") && !text.includes("snow"))) {
                 icon = "wi-showers";
-                sky = "linear-gradient(180deg,#2b3340 0%,#3c4a5c 50%,#566375 100%)";
-                themeColor = "#2b3340";
+                sky = "radial-gradient(120% 70% at 70% 0%,#3a2433 0%,#262030 50%,#1a1019 85%)";
+                themeColor = "#1a1019";
             } else if (text.includes("cloud")) {
                 icon = isDay ? "wi-day-cloudy" : "wi-night-alt-cloudy";
                 sky = isDay
-                    ? "linear-gradient(180deg,#4a5568 0%,#6b7689 50%,#9aa3b2 100%)"
-                    : "linear-gradient(180deg,#11151f 0%,#222a38 55%,#3a4456 100%)";
-                themeColor = isDay ? "#4a5568" : "#11151f";
+                    ? "radial-gradient(120% 70% at 70% 0%,#5a3346 0%,#3b2330 45%,#261621 80%)"
+                    : "radial-gradient(120% 70% at 70% 0%,#3f2433 0%,#2a1a26 50%,#1c1118 85%)";
+                themeColor = isDay ? "#261621" : "#1c1118";
             } else if (text.includes("snow")) {
                 icon = "wi-snow";
                 sky = isDay
-                    ? "linear-gradient(180deg,#5b6678 0%,#8089a0 50%,#c3cad8 100%)"
-                    : "linear-gradient(180deg,#1a1f2b 0%,#33384a 55%,#5a6276 100%)";
-                themeColor = isDay ? "#5b6678" : "#1a1f2b";
+                    ? "radial-gradient(120% 70% at 70% 0%,#6e4456 0%,#4a2d3b 50%,#2c1a24 85%)"
+                    : "radial-gradient(120% 70% at 70% 0%,#5e3a4a 0%,#3e2734 50%,#281620 85%)";
+                themeColor = isDay ? "#2c1a24" : "#281620";
             } else {
                 // clear / default
                 sky = isDay
-                    ? "linear-gradient(180deg,#1c5fb0 0%,#3f86d6 42%,#8fc0ef 100%)"
-                    : "linear-gradient(180deg,#05060f 0%,#0d1430 50%,#1b2350 100%)";
-                themeColor = isDay ? "#1c5fb0" : "#05060f";
+                    ? "radial-gradient(120% 70% at 70% 0%,#7a2f44 0%,#4a1730 42%,#2a121d 78%)"
+                    : "radial-gradient(120% 70% at 70% 0%,#5a1d33 0%,#3a1226 40%,#241019 75%)";
+                themeColor = isDay ? "#2a121d" : "#241019";
             }
 
             return { icon, sky, themeColor };
