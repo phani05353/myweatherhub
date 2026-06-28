@@ -1,65 +1,68 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────────────────────────
-# MyWeatherHub — homelab deploy script
-# Run from: /home/phanikumar/weather-hub/
+# MyWeatherHub — homelab deploy script (GHCR pull-and-run)
 #
-# Layout expected:
-#   weather-hub/
-#   ├── deploy.sh             ← this script
-#   └── myweatherhub/         ← git repo (auto-cloned if missing)
+# The image is BUILT in CI (.github/workflows/deploy.yml) and pushed to GHCR.
+# This script does NOT build — it pulls the pre-built image and (re)starts the
+# container. Same role as before, but no local `docker build`.
+#
+# Used two ways:
+#   • CI: the self-hosted runner runs `bash deploy.sh` with IMAGE/GHCR_* set.
+#   • Manual: IMAGE=ghcr.io/phani05353/myweatherhub:latest ./deploy.sh
+#     (run `docker login ghcr.io` first, or pass GHCR_USER/GHCR_TOKEN).
 # ─────────────────────────────────────────────────────────────────────────────
-set -e
+set -euo pipefail
 
-REPO_URL="https://github.com/phani05353/myweatherhub"
-REPO_DIR="myweatherhub"
-IMAGE_NAME="myweatherhub"
-CONTAINER_NAME="myweatherhub"
-BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
+IMAGE="${IMAGE:-ghcr.io/phani05353/myweatherhub:latest}"
+CONTAINER_NAME="${CONTAINER_NAME:-myweatherhub}"
+HOST_PORT="${HOST_PORT:-5090}"   # host :5090 → container :5000 (tailscale-served at :8449)
 
 echo ""
 echo "╔══════════════════════════════════════╗"
-echo "║   MyWeatherHub — Deploy             ║"
+echo "║   MyWeatherHub — Deploy (GHCR)       ║"
 echo "╚══════════════════════════════════════╝"
+echo "  image: $IMAGE"
 echo ""
 
-# ── 1. Pull latest code ───────────────────────────────────────────────────────
-echo "▶ Step 1/4 — Updating source code..."
-if [ -d "$BASE_DIR/$REPO_DIR/.git" ]; then
-  cd "$BASE_DIR/$REPO_DIR"
-  git pull
+# ── 1. Log in to GHCR (only if creds are provided) ───────────────────────────
+# CI passes GHCR_USER/GHCR_TOKEN (the workflow's GITHUB_TOKEN). For a manual run
+# where you've already `docker login`-ed, leave them unset and this is skipped.
+if [ -n "${GHCR_TOKEN:-}" ]; then
+  echo "▶ Step 1/4 — Logging in to ghcr.io as ${GHCR_USER:-?}..."
+  echo "$GHCR_TOKEN" | docker login ghcr.io -u "${GHCR_USER:-x}" --password-stdin
+  echo "  ✓ Logged in"
 else
-  echo "  Repo not found — cloning..."
-  cd "$BASE_DIR"
-  git clone "$REPO_URL" "$REPO_DIR"
+  echo "▶ Step 1/4 — Skipping login (no GHCR_TOKEN; using existing docker auth)"
 fi
-echo "  ✓ Source up to date"
 
-# ── 2. Build Docker image ─────────────────────────────────────────────────────
+# ── 2. Pull the pre-built image ──────────────────────────────────────────────
 echo ""
-echo "▶ Step 2/4 — Building Docker image..."
-cd "$BASE_DIR/$REPO_DIR"
-sudo docker build -t "$IMAGE_NAME" .
-echo "  ✓ Image built"
+echo "▶ Step 2/4 — Pulling image..."
+docker pull "$IMAGE"
+echo "  ✓ Image pulled"
 
 # ── 3. Stop + remove old container ───────────────────────────────────────────
 echo ""
 echo "▶ Step 3/4 — Replacing container..."
-sudo docker stop "$CONTAINER_NAME" 2>/dev/null && echo "  Stopped old container" || echo "  No running container found"
-sudo docker rm   "$CONTAINER_NAME" 2>/dev/null && echo "  Removed old container" || true
+docker stop "$CONTAINER_NAME" 2>/dev/null && echo "  Stopped old container" || echo "  No running container found"
+docker rm   "$CONTAINER_NAME" 2>/dev/null && echo "  Removed old container" || true
 
-# ── 4. Start new container ────────────────────────────────────────────────────
+# ── 4. Start new container ───────────────────────────────────────────────────
 echo ""
 echo "▶ Step 4/4 — Starting new container..."
-sudo docker run -d \
+docker run -d \
   --name "$CONTAINER_NAME" \
   --restart unless-stopped \
-  -p 5090:5000 \
-  "$IMAGE_NAME"
-
+  -p "${HOST_PORT}:5000" \
+  "$IMAGE"
 echo "  ✓ Container started"
+
+# Reclaim disk from the now-dangling previous image.
+docker image prune -f >/dev/null 2>&1 || true
+
 echo ""
 echo "══════════════════════════════════════════"
 echo "  ✅ Deploy complete!"
-echo "  🌐 http://$(hostname -I | awk '{print $1}'):5090"
+echo "  🌐 http://$(hostname -I | awk '{print $1}'):${HOST_PORT}"
 echo "══════════════════════════════════════════"
 echo ""
