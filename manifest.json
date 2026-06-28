@@ -3,8 +3,8 @@
     "short_name": "WeatherHub",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#0f111a",
-    "theme_color": "#70a1ff",
+    "background_color": "#0a0e1f",
+    "theme_color": "#1b2350",
     "icons": [
       {
         "src": "https://cdn-icons-png.flaticon.com/512/869/869869.png",
