@@ -26,7 +26,6 @@ Project Context: MyWeatherHub
     <meta charset="UTF-8">
     <link rel="manifest" href="/manifest.json">
     <link rel="preconnect" href="https://api.open-meteo.com">
-    <link rel="preconnect" href="https://images.unsplash.com">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -37,35 +36,38 @@ Project Context: MyWeatherHub
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/weather-icons/2.0.12/css/weather-icons.min.css" media="print" onload="this.media='all'">
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <link rel="preload" as="image" href="https://images.unsplash.com/photo-1588746853740-bd35aad10bfd?auto=format&fit=crop&w=1200&q=60">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <style>
         :root {
-            --glass: rgba(255, 255, 255, 0.05);
-            --bg-color: #0f111a;
-            --card-bg: #1a1d29;
+            --bg-color: #05060f;
+            --glass: rgba(255, 255, 255, 0.10);
+            --glass-brd: rgba(255, 255, 255, 0.16);
+            --sheet: rgba(13, 16, 28, 0.55);
             --accent: #70a1ff;
+            --dynamic-blur: 4px;
         }
 
         [data-bs-theme="light"] {
-            --glass: rgba(0, 0, 0, 0.05);
-            --bg-color: #f8f9fa;
-            --card-bg: #ffffff;
+            --bg-color: #aebfd6;
+            --glass: rgba(255, 255, 255, 0.35);
+            --glass-brd: rgba(255, 255, 255, 0.55);
+            --sheet: rgba(245, 248, 255, 0.6);
             --accent: #0056b3;
         }
 
+        * { -webkit-tap-highlight-color: transparent; }
+
         body {
             background-color: var(--bg-color) !important;
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: -apple-system, system-ui, "Segoe UI", sans-serif;
             padding: 0;
             overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent;
         }
 
         #loader {
             position: fixed;
             inset: 0;
-            background: #0f111a;
+            background: linear-gradient(180deg, #05060f 0%, #0d1430 60%, #1b2350 100%);
             z-index: 2000;
             display: flex;
             flex-direction: column;
@@ -101,45 +103,82 @@ Project Context: MyWeatherHub
         }
 
         @keyframes float {
-
-            0%,
-            100% {
-                transform: translateY(0);
-            }
-
-            50% {
-                transform: translateY(-10px);
-            }
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
 
         @keyframes rotateSun {
-            from {
-                transform: rotate(0deg);
-            }
-
-            to {
-                transform: rotate(360deg);
-            }
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
+        /* ── The card is now a window onto the sky ── */
         .main-card {
-            background: var(--card-bg) !important;
-            border-radius: 0 0 32px 32px;
+            background: var(--bg-color);
+            border-radius: 0 0 36px 36px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(128, 128, 128, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
             position: relative;
             max-width: 600px;
+            min-height: 100vh;
             margin: 0 auto;
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             will-change: transform;
             contain: content;
         }
 
+        #dynamic-bg {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            background: linear-gradient(180deg, #05060f 0%, #0d1430 50%, #1b2350 100%);
+            transition: background 1.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #dynamic-bg::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(120% 70% at 50% -8%, rgba(255, 255, 255, 0.16), transparent 55%),
+                linear-gradient(180deg, transparent 60%, rgba(0, 0, 0, 0.22) 100%);
+            pointer-events: none;
+        }
+
+        /* ── Sun / moon ── */
+        .celestial {
+            position: absolute;
+            z-index: 1;
+            border-radius: 50%;
+            pointer-events: none;
+            transition: all 1.4s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+        }
+
+        .celestial.sun {
+            width: 110px;
+            height: 110px;
+            top: 90px;
+            right: 36px;
+            opacity: 1;
+            background: radial-gradient(circle, #fff7e0 0%, #ffd25e 58%, rgba(255, 210, 94, 0) 72%);
+            box-shadow: 0 0 90px 26px rgba(255, 210, 94, 0.40);
+        }
+
+        .celestial.moon {
+            width: 72px;
+            height: 72px;
+            top: 84px;
+            right: 44px;
+            opacity: 1;
+            background: radial-gradient(circle at 38% 38%, #fdfdfb 0%, #cdd3e0 70%, #aeb6c8 100%);
+            box-shadow: 0 0 46px 8px rgba(205, 213, 224, 0.35);
+        }
+
         .controls {
             position: absolute;
-            top: 12px;
-            right: 12px;
+            top: 14px;
+            right: 14px;
             z-index: 1050;
             display: flex;
             gap: 8px;
@@ -148,18 +187,16 @@ Project Context: MyWeatherHub
         .unit-pill {
             position: relative;
             display: flex;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.30);
+            backdrop-filter: blur(12px);
             padding: 3px;
             border-radius: 50px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-brd);
             width: 80px;
             height: 34px;
         }
 
-        .unit-pill input {
-            display: none;
-        }
+        .unit-pill input { display: none; }
 
         .unit-pill label {
             flex: 1;
@@ -169,12 +206,10 @@ Project Context: MyWeatherHub
             font-size: 0.75rem;
             font-weight: 700;
             cursor: pointer;
-            color: rgba(255, 255, 255, 0.5);
+            color: rgba(255, 255, 255, 0.55);
         }
 
-        .unit-pill input:checked+label {
-            color: white;
-        }
+        .unit-pill input:checked + label { color: white; }
 
         .pill-bg {
             position: absolute;
@@ -188,17 +223,15 @@ Project Context: MyWeatherHub
             z-index: 1;
         }
 
-        #c-unit:checked~.pill-bg {
-            transform: translateX(37px);
-        }
+        #c-unit:checked ~ .pill-bg { transform: translateX(37px); }
 
         .btn-circle {
             width: 34px;
             height: 34px;
             border-radius: 50%;
-            border: none;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-brd);
+            background: rgba(0, 0, 0, 0.30);
+            backdrop-filter: blur(12px);
             color: white;
             display: flex;
             align-items: center;
@@ -207,79 +240,72 @@ Project Context: MyWeatherHub
 
         .header-bg {
             position: relative;
-            min-height: 320px;
+            z-index: 5;
+            min-height: 400px;
             width: 100%;
-            overflow: hidden;
             display: flex;
             flex-direction: column;
-        }
-
-        #dynamic-bg {
-            position: absolute;
-            inset: 0;
-            background-size: cover;
-            background-position: center;
-            transition: background 1s;
         }
 
         .header-content {
             position: relative;
             z-index: 5;
             flex: 1;
-            padding: 15px 20px 20px 20px;
+            padding: 70px 22px 18px 22px;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
             color: white !important;
-            background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.85) 100%);
         }
 
         .temp-display {
-            font-size: clamp(4rem, 15vw, 5.5rem);
-            font-weight: 800;
-            line-height: 0.85;
-            letter-spacing: -2px;
+            font-size: clamp(5rem, 22vw, 7rem);
+            font-weight: 200;
+            line-height: 0.88;
+            letter-spacing: -3px;
+            text-shadow: 0 3px 24px rgba(0, 0, 0, 0.30);
         }
 
+        #loc-name {
+            margin-top: 10px;
+            font-size: 0.72rem !important;
+            font-weight: 800 !important;
+            letter-spacing: 1.6px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+            text-transform: uppercase;
+        }
+
+        #main-forecast { text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4); }
+
         .env-badge {
-            padding: 4px 10px;
-            border-radius: 10px;
-            font-size: 0.7rem;
+            padding: 6px 11px;
+            border-radius: 12px;
+            font-size: 0.72rem;
             font-weight: 600;
-            background: rgba(0, 0, 0, 0.35);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            margin: 0.5px;
+            background: var(--glass);
+            border: 1px solid var(--glass-brd);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            margin: 2px;
             display: inline-flex;
             align-items: center;
         }
 
-        .pulse-alert {
-            animation: alertPulse 2s linear 6;
-        }
+        .pulse-alert { animation: alertPulse 2s linear 6; }
 
         @keyframes alertPulse {
-            0% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4);
-            }
-
-            50% {
-                transform: scale(1.05);
-                box-shadow: 0 0 12px 4px rgba(255, 71, 87, 0.2);
-            }
-
-            100% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(255, 71, 87, 0);
-            }
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 0 12px 4px rgba(255, 71, 87, 0.2); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
         }
 
         .rain-pulse-container {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 10px;
-            border-radius: 15px;
+            background: var(--glass);
+            backdrop-filter: blur(14px);
+            padding: 10px 12px;
+            border-radius: 16px;
             margin-bottom: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-brd);
         }
 
         .pulse-grid {
@@ -290,6 +316,13 @@ Project Context: MyWeatherHub
             margin-top: 8px;
         }
 
+        .pulse-segment {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 2px;
+            transition: all 0.5s ease;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
         .pulse-segment.active-rain {
             background: #4facfe;
             box-shadow: 0 0 8px rgba(79, 172, 254, 0.6);
@@ -297,7 +330,16 @@ Project Context: MyWeatherHub
 
         .pulse-segment.active-snow {
             background: #ffffff;
-            box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.8), 0 0 15px rgba(173, 216, 230, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            filter: brightness(1.2);
+            animation: snow-pulse-glow 2s infinite ease-in-out;
+        }
+
+        @keyframes snow-pulse-glow {
+            0% { opacity: 0.8; box-shadow: 0 0 8px #fff; }
+            50% { opacity: 1; box-shadow: 0 0 15px #fff; }
+            100% { opacity: 0.8; box-shadow: 0 0 8px #fff; }
         }
 
         .precip-badge-rain {
@@ -326,27 +368,94 @@ Project Context: MyWeatherHub
         }
 
         @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
 
-            0%,
-            100% {
-                opacity: 1;
-            }
+        /* ── Frosted sheet that rises over the sky ── */
+        .sheet {
+            position: relative;
+            z-index: 5;
+            margin-top: -26px;
+            padding-top: 12px;
+            background: var(--sheet);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-top: 1px solid var(--glass-brd);
+            border-radius: 30px 30px 0 0;
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
+        }
 
-            50% {
-                opacity: 0.7;
-            }
+        .sheet-handle {
+            width: 38px;
+            height: 4px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.25);
+            margin: 4px auto 6px auto;
+        }
+
+        .hourly-scroll-container {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            padding: 12px 5px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .hourly-scroll-container::-webkit-scrollbar { display: none; }
+
+        .hour-item {
+            min-width: 64px;
+            background: var(--glass);
+            backdrop-filter: blur(var(--dynamic-blur, 4px));
+            border-radius: 18px;
+            padding: 12px 5px;
+            text-align: center;
+            border: 1px solid var(--glass-brd);
+            will-change: transform;
+            transition: all 0.5s ease;
+        }
+
+        .hour-item:first-child,
+        .hour-item.active-hour {
+            border-color: var(--accent);
+            background: rgba(112, 161, 255, 0.18);
+        }
+
+        .hour-item .h-time {
+            font-size: 0.65rem;
+            opacity: 0.65;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .hour-item .h-icon {
+            font-size: 1.2rem;
+            margin: 8px 0;
+            display: block;
+            color: var(--accent);
+        }
+
+        .hour-item .h-temp { font-size: 0.92rem; font-weight: 700; }
+
+        .tile-rain {
+            background: #4facfe !important;
+            box-shadow: 0 0 10px rgba(79, 172, 254, 0.6);
+        }
+
+        .tile-snow {
+            background: #ffffff !important;
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
         }
 
         .hour-item.sun-event {
             background: rgba(255, 206, 0, 0.15);
             border: 1px solid rgba(255, 206, 0, 0.3);
-            min-width: 80px;
+            min-width: 72px;
         }
 
-        .sun-event .h-time {
-            color: #ffce00;
-            opacity: 1;
-        }
+        .sun-event .h-time { color: #ffce00; opacity: 1; }
 
         .sun-event .h-icon {
             color: #ffce00;
@@ -357,45 +466,22 @@ Project Context: MyWeatherHub
             display: flex;
             align-items: center;
             padding: 14px 8px;
-            border-bottom: 1px solid rgba(128, 128, 128, 0.08);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             transition: background 0.2s;
         }
 
-        .daily-row.clickable {
-            cursor: pointer;
-        }
+        .daily-row.clickable { cursor: pointer; }
+        .daily-row.clickable:active { background: rgba(255, 255, 255, 0.10); }
 
-        .daily-row.clickable:active {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .day-label {
-            width: 50px;
-            font-weight: 500;
-        }
-
-        .day-icon-col {
-            width: 40px;
-            text-align: center;
-            color: var(--accent);
-        }
-
-        .day-low-col {
-            width: 35px;
-            text-align: right;
-            opacity: 0.5;
-        }
-
-        .day-high-col {
-            width: 35px;
-            text-align: left;
-            font-weight: 600;
-        }
+        .day-label { width: 50px; font-weight: 500; }
+        .day-icon-col { width: 40px; text-align: center; color: var(--accent); }
+        .day-low-col { width: 35px; text-align: right; opacity: 0.5; }
+        .day-high-col { width: 35px; text-align: left; font-weight: 600; }
 
         .temp-bar-container {
             flex-grow: 1;
             height: 5px;
-            background: rgba(128, 128, 128, 0.15);
+            background: rgba(255, 255, 255, 0.15);
             border-radius: 10px;
             margin: 0 12px;
             position: relative;
@@ -423,82 +509,23 @@ Project Context: MyWeatherHub
         .nav-pills .nav-link {
             font-size: 0.85rem;
             padding: 8px 20px;
-            color: rgba(255, 255, 255, 0.6);
+            color: rgba(255, 255, 255, 0.65);
+            background: var(--glass);
+            border: 1px solid var(--glass-brd);
         }
 
         .nav-pills .nav-link.active {
             background-color: var(--accent) !important;
+            border-color: var(--accent);
             color: white;
         }
 
         .modal-content {
             border-radius: 24px;
-            border: none;
-            background: #1a1d29;
-        }
-
-        .hourly-scroll-container {
-            display: flex;
-            overflow-x: auto;
-            gap: 12px;
-            padding: 15px 5px;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-        }
-
-        .hourly-scroll-container::-webkit-scrollbar {
-            display: none;
-        }
-
-        .tile-rain {
-            background: #4facfe !important;
-            box-shadow: 0 0 10px rgba(79, 172, 254, 0.6);
-        }
-
-        .tile-snow {
-            background: #ffffff !important;
-            box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
-        }
-
-        .hour-item {
-            min-width: 70px;
-            background: var(--glass);
-            backdrop-filter: blur(var(--blur-level, 4px));
-            border-radius: 18px;
-            padding: 12px 5px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            will-change: transform;
-            transition: all 0.5s ease;
-        }
-
-        .hour-item:first-child {
-            border-color: var(--accent);
-            background: rgba(112, 161, 255, 0.1);
-        }
-
-        .hour-item.active-hour {
-            border-color: var(--accent);
-            background: rgba(112, 161, 255, 0.1);
-        }
-
-        .hour-item .h-time {
-            font-size: 0.65rem;
-            opacity: 0.6;
-            text-transform: uppercase;
-            font-weight: 700;
-        }
-
-        .hour-item .h-icon {
-            font-size: 1.2rem;
-            margin: 8px 0;
-            display: block;
-            color: var(--accent);
-        }
-
-        .hour-item .h-temp {
-            font-size: 0.9rem;
-            font-weight: 700;
+            border: 1px solid var(--glass-brd);
+            background: rgba(20, 24, 36, 0.85);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
         }
 
         .btn-circle:active,
@@ -528,25 +555,14 @@ Project Context: MyWeatherHub
             z-index: 100;
         }
 
-        #loc-name {
-            margin-top: 10px;
-            font-size: 0.75rem !important;
-            font-weight: 800 !important;
-            letter-spacing: 1.5px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-            text-transform: uppercase;
-        }
-
         .env-badge.interactive {
             cursor: pointer;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
-            background: rgba(255, 255, 255, 0.1);
         }
 
         .env-badge.interactive:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.20);
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
@@ -575,18 +591,15 @@ Project Context: MyWeatherHub
             position: absolute;
             background-color: rgba(255, 255, 255, 0.4);
             width: 2px;
-            height: 15px;
+            height: 16px;
             top: -20px;
             will-change: transform;
             animation: fall linear infinite;
         }
 
         @keyframes fall {
-            to {
-                transform: translateY(350px);
-            }
+            to { transform: translateY(880px); }
         }
-
 
         .snowflake {
             position: absolute;
@@ -599,17 +612,9 @@ Project Context: MyWeatherHub
         }
 
         @keyframes snowFall {
-            0% {
-                transform: translateY(0) translateX(0);
-            }
-
-            50% {
-                transform: translateY(150px) translateX(20px);
-            }
-
-            100% {
-                transform: translateY(350px) translateX(-20px);
-            }
+            0% { transform: translateY(0) translateX(0); }
+            50% { transform: translateY(400px) translateX(20px); }
+            100% { transform: translateY(880px) translateX(-20px); }
         }
 
         .lightning-flash {
@@ -620,29 +625,13 @@ Project Context: MyWeatherHub
             z-index: 3;
         }
 
-        .flash-anim {
-            animation: flash 3s infinite;
-        }
+        .flash-anim { animation: flash 3s infinite; }
 
         @keyframes flash {
-
-            0%,
-            90%,
-            100% {
-                opacity: 0;
-            }
-
-            92% {
-                opacity: 0.3;
-            }
-
-            94% {
-                opacity: 0;
-            }
-
-            96% {
-                opacity: 0.5;
-            }
+            0%, 90%, 100% { opacity: 0; }
+            92% { opacity: 0.3; }
+            94% { opacity: 0; }
+            96% { opacity: 0.5; }
         }
 
         #badge-container {
@@ -651,58 +640,17 @@ Project Context: MyWeatherHub
             gap: 10px;
         }
 
-        #wind-pill {
-            border-left: 3px solid #70a1ff !important;
-        }
-
-        #aqi-pill {
-            border-left: 3px solid #00e400 !important;
-        }
-
-        .pulse-segment.active-snow {
-            background: #ffffff;
-            box-shadow: 0 0 8px rgba(255, 255, 255, 0.8),
-                0 0 15px rgba(173, 216, 230, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.9);
-            filter: brightness(1.2);
-        }
-
-        .pulse-segment {
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 2px;
-            transition: all 0.5s ease;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        @keyframes snow-pulse-glow {
-            0% {
-                opacity: 0.8;
-                box-shadow: 0 0 8px #fff;
-            }
-
-            50% {
-                opacity: 1;
-                box-shadow: 0 0 15px #fff;
-            }
-
-            100% {
-                opacity: 0.8;
-                box-shadow: 0 0 8px #fff;
-            }
-        }
-
-        .pulse-segment.active-snow {
-            animation: snow-pulse-glow 2s infinite ease-in-out;
-        }
+        #wind-pill { border-left: 3px solid #70a1ff !important; }
+        #aqi-pill { border-left: 3px solid #00e400 !important; }
 
         .search-wrapper {
             position: relative;
             display: flex;
             align-items: center;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.30);
             backdrop-filter: blur(15px);
             border-radius: 50px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: 1px solid var(--glass-brd);
             height: 34px;
             width: 34px;
             transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
@@ -712,7 +660,7 @@ Project Context: MyWeatherHub
 
         .search-wrapper.active {
             width: 200px;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.7);
         }
 
         #search-input {
@@ -736,9 +684,10 @@ Project Context: MyWeatherHub
             top: 40px;
             left: 0;
             width: 200px;
-            background: #1a1d29;
+            background: rgba(20, 24, 36, 0.92);
+            backdrop-filter: blur(20px);
             border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-brd);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
             display: none;
             overflow: hidden;
@@ -753,16 +702,9 @@ Project Context: MyWeatherHub
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .search-result-item:hover {
-            background: var(--accent);
-        }
-
-        :root {
-            --dynamic-blur: 4px;
-        }
+        .search-result-item:hover { background: var(--accent); }
 
         .hour-item,
-        .main-card,
         .search-wrapper {
             backdrop-filter: blur(var(--dynamic-blur, 4px)) !important;
             -webkit-backdrop-filter: blur(var(--dynamic-blur, 4px)) !important;
@@ -776,6 +718,7 @@ Project Context: MyWeatherHub
             color: #ffce00;
             text-shadow: 0 0 8px rgba(255, 206, 0, 0.2);
         }
+
     </style>
 </head>
 <body>
@@ -819,9 +762,11 @@ Project Context: MyWeatherHub
             <button class="btn-circle" onclick="toggleTheme()"><i class="wi wi-day-sunny" id="theme-icon"></i></button>
         </div>
 
+        <div id="dynamic-bg"></div>
+        <div id="celestial" class="celestial"></div>
+        <div id="weather-overlay"></div>
+
         <div class="header-bg">
-            <div id="weather-overlay"></div>
-            <div id="dynamic-bg"></div>
             <div class="header-content">
                 <h6 id="loc-name" class="text-uppercase opacity-50 small fw-bold mb-1" style="font-size: 0.65rem;">---
                 </h6>
@@ -911,7 +856,9 @@ Project Context: MyWeatherHub
             </div>
         </div>
 
-        <div class="px-3 mt-3">
+        <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="px-3 pt-1">
             <div class="hourly-scroll-container" id="hourly-quick-view"></div>
         </div>
 
@@ -930,6 +877,7 @@ Project Context: MyWeatherHub
                     <div id="radar-container"></div>
                 </div>
             </div>
+        </div>
         </div>
     </div>
 
@@ -1261,13 +1209,9 @@ Project Context: MyWeatherHub
             const finalBlur = 4 + humidityContribution + visibilityContribution;
             document.documentElement.style.setProperty('--dynamic-blur', `${finalBlur.toFixed(1)}px`);
 
-            const mainCard = document.querySelector('.main-card');
-
+            // Snow frosts the floating glass chips harder; the sky gradient itself conveys the condition.
             if (data.is_snow) {
-                mainCard.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
                 document.documentElement.style.setProperty('--dynamic-blur', `25px`);
-            } else {
-                mainCard.style.backgroundColor = "var(--card-bg)";
             }
 
             document.getElementById('clothing-hint').innerText = getClothingAdvice(data.current.temperature, data.hourly[0].precipProb, parseFloat(data.current.windSpeed), data.uv);
@@ -1437,7 +1381,9 @@ Project Context: MyWeatherHub
 
             const vis = getVisuals(data.current.shortForecast, data.current.isDaytime);
             document.getElementById('main-icon').className = `wi ${vis.icon}`;
-            document.getElementById('dynamic-bg').style.backgroundImage = `url('${vis.url}')`;
+            document.getElementById('dynamic-bg').style.background = vis.sky;
+            document.getElementById('meta-theme').setAttribute('content', vis.themeColor);
+            updateCelestial(data.current.isDaytime);
 
             const weekTemps = data.daily.flatMap(d => [formatTemp(d.high), formatTemp(d.low)]);
             const minW = Math.min(...weekTemps), maxW = Math.max(...weekTemps), range = (maxW - minW) || 1;
@@ -1677,29 +1623,48 @@ Project Context: MyWeatherHub
             return gradient;
         }
 
+        // Dynamic Sky: the background is a generated gradient driven by condition + day/night,
+        // not a photo. Returns the weather icon, a CSS sky gradient, and a status-bar theme color.
         function getVisuals(text, isDay) {
             text = text.toLowerCase();
             let icon = isDay ? "wi-day-sunny" : "wi-night-clear";
-
-            let imgId = isDay ? "1588746853740-bd35aad10bfd" : "1507400492013-162706c8c05e";
+            let sky, themeColor;
 
             if (text.includes("thunder")) {
                 icon = "wi-thunderstorm";
-                imgId = "1654232038022-67df6dcd1b10";
-            } else if (text.includes("rain") || text.includes("showers") && !text.includes("snow")) {
+                sky = "linear-gradient(180deg,#1c2230 0%,#33384a 50%,#4a4f63 100%)";
+                themeColor = "#1c2230";
+            } else if (text.includes("rain") || (text.includes("showers") && !text.includes("snow"))) {
                 icon = "wi-showers";
-                imgId = "1637773336123-0c30a47b289d";
+                sky = "linear-gradient(180deg,#2b3340 0%,#3c4a5c 50%,#566375 100%)";
+                themeColor = "#2b3340";
             } else if (text.includes("cloud")) {
                 icon = isDay ? "wi-day-cloudy" : "wi-night-alt-cloudy";
-                imgId = "1739416395793-66ba6998c092";
+                sky = isDay
+                    ? "linear-gradient(180deg,#4a5568 0%,#6b7689 50%,#9aa3b2 100%)"
+                    : "linear-gradient(180deg,#11151f 0%,#222a38 55%,#3a4456 100%)";
+                themeColor = isDay ? "#4a5568" : "#11151f";
             } else if (text.includes("snow")) {
                 icon = "wi-snow";
-                imgId = "1702835124686-fd1faac06b8d";
+                sky = isDay
+                    ? "linear-gradient(180deg,#5b6678 0%,#8089a0 50%,#c3cad8 100%)"
+                    : "linear-gradient(180deg,#1a1f2b 0%,#33384a 55%,#5a6276 100%)";
+                themeColor = isDay ? "#5b6678" : "#1a1f2b";
+            } else {
+                // clear / default
+                sky = isDay
+                    ? "linear-gradient(180deg,#1c5fb0 0%,#3f86d6 42%,#8fc0ef 100%)"
+                    : "linear-gradient(180deg,#05060f 0%,#0d1430 50%,#1b2350 100%)";
+                themeColor = isDay ? "#1c5fb0" : "#05060f";
             }
 
-            const url = `https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&w=1200&q=60`;
+            return { icon, sky, themeColor };
+        }
 
-            return { icon, url };
+        // Show the sun (day) or moon (night) on the sky.
+        function updateCelestial(isDay) {
+            const cel = document.getElementById('celestial');
+            if (cel) cel.className = 'celestial ' + (isDay ? 'sun' : 'moon');
         }
         function applyWeatherEffects(condition) {
             const container = document.getElementById('weather-overlay');
