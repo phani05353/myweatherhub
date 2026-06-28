@@ -249,9 +249,11 @@ Project Context: MyWeatherHub
 
         .header-content {
             position: relative;
-            z-index: 5;
+            z-index: 6;
             flex: 1;
-            padding: 70px 22px 18px 22px;
+            /* Bottom padding (52px) > the sheet's -26px overlap so the badge rows
+               always clear the frosted sheet, even when an alert pill adds a row. */
+            padding: 70px 22px 52px 22px;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
