@@ -120,6 +120,35 @@ def get_weather_data(lat, lon):
         print(f"Server Error: {e}")
         return None
 
+def get_active_alerts(lat, lon):
+    try:
+        lat_f, lon_f = round(float(lat), 4), round(float(lon), 4)
+    except (TypeError, ValueError):
+        return []
+
+    alerts_data = fetch_json(f"https://api.weather.gov/alerts/active?point={lat_f},{lon_f}")
+    features = alerts_data.get('features', []) if alerts_data else []
+
+    alerts = []
+    for feature in features:
+        props = feature.get('properties', {}) or {}
+        alerts.append({
+            "id": props.get('id') or feature.get('id') or "",
+            "event": props.get('event', "") or "",
+            "severity": props.get('severity', "") or "",
+            "certainty": props.get('certainty', "") or "",
+            "urgency": props.get('urgency', "") or "",
+            "headline": props.get('headline', "") or "",
+            "description": props.get('description', "") or "",
+            "instruction": props.get('instruction', "") or "",
+            "onset": props.get('onset'),
+            "expires": props.get('expires'),
+            "ends": props.get('ends'),
+            "areaDesc": props.get('areaDesc', "") or "",
+            "senderName": props.get('senderName', "") or ""
+        })
+    return alerts
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -142,6 +171,23 @@ def weather_data():
     if data:
         return jsonify(data)
     return jsonify({"error": "Failed to fetch NWS data"}), 500
+
+@app.route('/api/alerts', methods=['GET'])
+def api_alerts():
+    try:
+        lat_f = float(request.args.get('lat'))
+        lon_f = float(request.args.get('lon'))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Missing or invalid lat/lon"}), 400
+
+    alerts = get_active_alerts(lat_f, lon_f)
+    return jsonify({
+        "lat": lat_f,
+        "lon": lon_f,
+        "count": len(alerts),
+        "alerts": alerts,
+        "generatedAt": datetime.utcnow().isoformat() + "Z"
+    })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
