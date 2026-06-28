@@ -399,9 +399,9 @@ Project Context: MyWeatherHub
                 <div class="wx-hourly" id="hourly-quick-view"></div>
             </div>
 
-            <!-- Precipitation -->
-            <div class="wx-card">
-                <div class="wx-card-head"><span class="wx-label">Precipitation</span><span class="wx-sub" id="precip-range">Next 12h</span></div>
+            <!-- Precipitation (only shown when >1% chance in the next 24h) -->
+            <div class="wx-card" id="precip-card" style="display:none;">
+                <div class="wx-card-head"><span class="wx-label">Precipitation</span><span class="wx-sub" id="precip-range">Next 24h</span></div>
                 <div class="wx-precip" id="precip-bars"></div>
                 <div class="wx-precip-cap" id="precip-caption"></div>
             </div>
@@ -695,9 +695,17 @@ Project Context: MyWeatherHub
         }
 
         function renderPrecipBars(data) {
+            const card = document.getElementById('precip-card');
             const wrap = document.getElementById('precip-bars');
             const cap = document.getElementById('precip-caption');
-            const series = data.hourly.slice(0, 12).map(h => h.precipProb || 0);
+            const series = data.hourly.slice(0, 24).map(h => h.precipProb || 0);
+
+            // Only surface the Precipitation card when there's a real chance
+            // (> 1%) somewhere in the next 24 hours.
+            const maxProb = series.length ? Math.max(...series) : 0;
+            if (maxProb <= 1) { card.style.display = 'none'; return; }
+            card.style.display = '';
+
             wrap.innerHTML = series.map(p => {
                 let bg = 'rgba(126,192,239,.30)';
                 if (p >= 60) bg = 'linear-gradient(#bfe1f4,#4f9fd8)';
@@ -706,13 +714,14 @@ Project Context: MyWeatherHub
                 const h = Math.max(6, p);
                 return `<div class="wx-pbar" style="height:${h}%;background:${bg};"></div>`;
             }).join('');
+
             const idx = series.findIndex(p => p >= 40);
             if (idx >= 0) {
                 const when = new Date(data.hourly[idx].startTime).toLocaleTimeString([], { hour: 'numeric' });
                 cap.innerText = `${data.is_snow ? 'Snow' : 'Light rain'} likely around ${when}`;
                 cap.style.color = '#7ec0ef';
             } else {
-                cap.innerText = 'No precipitation expected in the next 12h';
+                cap.innerText = `${data.is_snow ? 'Light snow' : 'Light rain'} possible in the next 24h`;
                 cap.style.color = 'var(--muted)';
             }
         }
