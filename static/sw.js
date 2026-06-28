@@ -1,4 +1,4 @@
-const CACHE_NAME = 'weather-hub-v5';
+const CACHE_NAME = 'weather-hub-v6';
 // Only include files we are 100% sure exist
 const ASSETS = [
     '/',
