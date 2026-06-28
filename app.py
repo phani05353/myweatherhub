@@ -24,6 +24,12 @@ session.mount('https://', HTTPAdapter(max_retries=retries, pool_connections=10, 
 
 HEADERS = {'User-Agent': '(WeatherHubProject, maruthi.phanikumar@yopmail.com)'}
 
+# TimezoneFinder loads a large polygon index. Build it ONCE at import (shared
+# across gunicorn workers when started with --preload, copy-on-write) instead of
+# per request. Re-instantiating it on every /weather_data call spiked memory and
+# pushed slow requests past gunicorn's worker timeout (the SIGKILL "out of memory").
+tf = TimezoneFinder()
+
 def fetch_json(url):
     try:
         resp = session.get(url, headers=HEADERS, timeout=10)
@@ -59,7 +65,6 @@ def get_weather_data(lat, lon):
         if not hourly_periods:
             return None
 
-        tf = TimezoneFinder()
         tz_name = tf.timezone_at(lng=lon_f, lat=lat_f) or 'UTC'
         local_tz = pytz.timezone(tz_name)
 
