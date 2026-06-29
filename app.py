@@ -14,7 +14,7 @@ from urllib3.util.retry import Retry
 from suntime import Sun
 from timezonefinder import TimezoneFinder
 import pytz
-from datetime import datetime
+from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
@@ -71,6 +71,13 @@ def get_weather_data(lat, lon):
         sun = Sun(lat_f, lon_f)
         sunrise = sun.get_sunrise_time().astimezone(local_tz)
         sunset = sun.get_sunset_time().astimezone(local_tz)
+        # suntime computes sunrise/sunset for "today" in UTC. For western
+        # longitudes the sunset for that UTC date lands on the PREVIOUS local
+        # evening, so the raw sunset can come back BEFORE the sunrise — which made
+        # the client's sun-arc fall back to its mid-sky default. Roll it forward a
+        # day so we always return today's (sunrise -> sunset) pair in order.
+        if sunset <= sunrise:
+            sunset = sunset + timedelta(days=1)
 
         daily_periods = daily_data.get('properties', {}).get('periods', [])
         daily_forecasts = []
@@ -100,6 +107,7 @@ def get_weather_data(lat, lon):
                 "startTime": p['startTime'],
                 "temperature": p['temperature'],
                 "shortForecast": p['shortForecast'],
+                "isDaytime": p.get('isDaytime', True),
                 "precipProb": p.get('probabilityOfPrecipitation', {}).get('value') or 0,
                 "humidity": p.get('relativeHumidity', {}).get('value') or 0,
                 "windSpeed": float(str(p.get('windSpeed', '0')).split(' ')[0]) if str(p.get('windSpeed', '0')).split(' ')[0].replace('.','',1).isdigit() else 0

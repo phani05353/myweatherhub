@@ -553,6 +553,7 @@ Project Context: MyWeatherHub
         }
 
         async function fetchWeather(lat, lon) {
+            window.__lastCoords = { lat, lon }; // remembered for the periodic refresh
             const ldr = document.querySelector('.loading-text');
             ldr.innerText = "Reading Atmosphere..";
             try {
@@ -649,6 +650,13 @@ Project Context: MyWeatherHub
                     { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
                 );
             } else { fetchByIP(ldr); }
+
+            // Silent periodic refresh (every 10 min) so a tab left open through
+            // sunset rolls over to night visuals (icon/orb/arc) on its own,
+            // instead of freezing on the load-time day/night state.
+            setInterval(() => {
+                if (window.__lastCoords) fetchWeather(window.__lastCoords.lat, window.__lastCoords.lon);
+            }, 10 * 60 * 1000);
         };
 
         function showActivityDetails() {
@@ -836,7 +844,13 @@ Project Context: MyWeatherHub
 
             // favicon emoji
             const weatherText = data.current.shortForecast.toLowerCase();
-            const isDay = data.current.isDaytime !== undefined ? data.current.isDaytime : data.current.is_day;
+            // Day vs night from the ACTUAL time relative to today's sun times
+            // (sunrise -> sunset), recomputed every render so a tab left open
+            // doesn't keep showing the daytime sun/orb. Falls back to NWS's
+            // per-period flag only if the sun times are unusable. Drives the
+            // favicon, the hero icon, and the background celestial orb.
+            const _sr = new Date(data.sun.sunrise), _ss = new Date(data.sun.sunset), _n = new Date();
+            const isDay = (_ss > _sr) ? (_n >= _sr && _n < _ss) : (data.current.isDaytime ?? true);
             let emoji = isDay ? '☀️' : '🌙';
             if (weatherText.includes("rain")) emoji = '🌧️';
             if (weatherText.includes("snow")) emoji = '❄️';
@@ -885,7 +899,7 @@ Project Context: MyWeatherHub
                     hHtml += `<div class="wx-hour sun"><span class="wx-hour-t">${item.displayTime}</span><i class="wi ${item.icon} wx-hour-i"></i><span class="wx-hour-tmp" style="font-size:11px;text-transform:uppercase;">${item.type}</span></div>`;
                 } else {
                     const hDate = new Date(item.startTime);
-                    const hv = getVisuals(item.shortForecast, true);
+                    const hv = getVisuals(item.shortForecast, item.isDaytime ?? true);
                     const isNow = !firstWeatherShown; firstWeatherShown = true;
                     hHtml += `<div class="wx-hour ${isNow ? 'now' : ''}"><span class="wx-hour-t">${isNow ? 'Now' : hDate.toLocaleTimeString([], { hour: 'numeric' })}</span><i class="wi ${hv.icon} wx-hour-i"></i><span class="wx-hour-tmp">${formatTemp(item.temperature)}°</span><span class="wx-hour-p">${item.precipProb > 0 ? item.precipProb + '%' : ''}</span></div>`;
                 }
@@ -893,11 +907,11 @@ Project Context: MyWeatherHub
             document.getElementById('hourly-quick-view').innerHTML = hHtml;
 
             // Sky + icon + celestial
-            const vis = getVisuals(data.current.shortForecast, data.current.isDaytime);
+            const vis = getVisuals(data.current.shortForecast, isDay);
             document.getElementById('main-icon').className = `wi ${vis.icon}`;
             document.getElementById('dynamic-bg').style.background = vis.sky;
             document.getElementById('meta-theme').setAttribute('content', vis.themeColor);
-            updateCelestial(data.current.isDaytime);
+            updateCelestial(isDay);
 
             // 7-day
             const weekTemps = data.daily.flatMap(d => [formatTemp(d.high), formatTemp(d.low)]);
