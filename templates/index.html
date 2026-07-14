@@ -763,6 +763,14 @@ Project Context: MyWeatherHub
             document.getElementById('uv-dot').style.left = Math.min(100, (uv / 11) * 100) + '%';
         }
 
+        // Escape untrusted third-party API text (NWS alerts, Open-Meteo place
+        // names) before it goes into innerHTML, to prevent DOM XSS.
+        function escHtml(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+
         function renderAlerts(data) {
             const wrap = document.getElementById('alerts-wrap');
             wrap.innerHTML = '';
@@ -774,7 +782,7 @@ Project Context: MyWeatherHub
                 el.onclick = () => showAlertDetails(p.event, p.headline, p.description, p.expires);
                 el.innerHTML = `
                     <div class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2l9 16H2L11 2z" fill="${extreme ? '#ff4757' : '#FF5E7E'}"/><path d="M11 8v4M11 15v.5" stroke="#241019" stroke-width="1.8" stroke-linecap="round"/></svg></div>
-                    <div style="flex:1;min-width:0;"><div class="ttl">${p.event}</div><div class="dsc">${p.headline || ''}</div></div>`;
+                    <div style="flex:1;min-width:0;"><div class="ttl">${escHtml(p.event)}</div><div class="dsc">${escHtml(p.headline || '')}</div></div>`;
                 wrap.appendChild(el);
             });
         }
@@ -788,10 +796,10 @@ Project Context: MyWeatherHub
             document.getElementById('modalContent').innerHTML = `
                 <div class="p-2">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 style="color:#FFC2CE;" class="m-0">${headline || ''}</h6>
+                        <h6 style="color:#FFC2CE;" class="m-0">${escHtml(headline || '')}</h6>
                         <span class="badge" style="background:rgba(255,255,255,.08);font-size:0.65rem;">Expires: ${dateStr}, ${timeStr}</span>
                     </div>
-                    <p class="small" style="line-height:1.6;color:var(--muted2);">${description || ''}</p>
+                    <p class="small" style="line-height:1.6;color:var(--muted2);">${escHtml(description || '')}</p>
                 </div>`;
             hourlyModal.show();
         }
@@ -1100,7 +1108,7 @@ Project Context: MyWeatherHub
                     const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`);
                     const data = await response.json();
                     if (data.results && data.results.length > 0) {
-                        resultsDiv.innerHTML = data.results.map(loc => `<div class="search-result-item" onclick="selectLocation(${loc.latitude}, ${loc.longitude}, '${(loc.name || '').replace(/'/g, '')}')"><div class="fw-bold">${loc.name}</div><div class="small" style="opacity:.5;">${loc.admin1 || ''}, ${loc.country_code.toUpperCase()}</div></div>`).join('');
+                        resultsDiv.innerHTML = data.results.map(loc => `<div class="search-result-item" onclick="selectLocation(${loc.latitude}, ${loc.longitude}, '${(loc.name || '').replace(/'/g, '')}')"><div class="fw-bold">${escHtml(loc.name)}</div><div class="small" style="opacity:.5;">${escHtml(loc.admin1 || '')}, ${escHtml((loc.country_code || '').toUpperCase())}</div></div>`).join('');
                         resultsDiv.style.display = 'block';
                     } else { resultsDiv.style.display = 'none'; }
                 } catch (err) { console.error("Search error:", err); }
