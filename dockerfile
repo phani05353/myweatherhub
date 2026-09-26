@@ -4,7 +4,10 @@ WORKDIR /app
 
 # Install dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# setuptools ships with the base image (not our requirements) and the 3.11-slim
+# copy lags a security fix (PYSEC-2026-3447, fixed in 83.0.0) — lift it first.
+RUN pip install --no-cache-dir -U "setuptools>=83" && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy everything, including the templates folder
 COPY . .
